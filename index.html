@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v1.6</title>
+  <title>War for ACME — GM Control Panel v2.0</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v1.6 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.0 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,22 +24,62 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v1.6</strong>
-  <span>Safer night resolution • separate result and reason • redirection/protection sources • undo last resolution</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.0</strong>
+  <span>Live Game Mode • Action Assistant • automatic priorities • interaction reminders • full timeline • testing mode</span>
 </section>
 
 <nav class="tabs" aria-label="Application sections">
-  <button class="tab active" data-view="dashboardView">Dashboard</button>
+  <button class="tab active" data-view="liveView">Live Game</button>
+  <button class="tab" data-view="dashboardView">Dashboard</button>
   <button class="tab" data-view="playersView">Players</button>
   <button class="tab" data-view="queueView">Night Queue</button>
   <button class="tab" data-view="reportsView">Reports</button>
   <button class="tab" data-view="databaseView">Character Database</button>
   <button class="tab" data-view="statisticsView">Statistics</button>
+  <button class="tab" data-view="timelineView">Timeline</button>
   <button class="tab" data-view="logView">GM Log</button>
 </nav>
 
 <main>
-  <section id="dashboardView" class="view active">
+  <section id="liveView" class="view active">
+    <div id="liveMetrics" class="metrics"></div>
+    <div class="grid2">
+      <article class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Next Action</h2>
+            <div class="muted">The highest-priority unresolved action appears here.</div>
+          </div>
+          <span id="liveModeBadge" class="badge">LIVE MODE</span>
+        </div>
+        <div id="nextActionPanel"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Interaction Assistant</h2>
+        <div id="interactionAssistant"></div>
+      </article>
+    </div>
+
+    <div class="grid2 top-gap">
+      <article class="panel">
+        <h2>Recent Timeline</h2>
+        <div id="recentTimeline" class="scroll-area"></div>
+      </article>
+      <article class="panel">
+        <h2>Game Controls</h2>
+        <div class="toolbar">
+          <button id="jumpQueueBtn">Open Night Queue</button>
+          <button id="jumpReportsBtn" class="secondary">Open Reports</button>
+          <button id="toggleTestingBtn" class="secondary">Enable Testing Mode</button>
+          <button id="clearTestBtn" class="danger">Clear Test Data</button>
+        </div>
+        <p id="testingStatus" class="muted">Testing Mode is off.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="dashboardView" class="view">
     <div id="dashboardMetrics" class="metrics"></div>
     <div class="grid2">
       <article class="panel">
@@ -134,11 +174,11 @@
         <select id="actionTargets" multiple size="6"></select>
         <div class="grid2">
           <div>
-            <label for="actionPriority">Priority</label>
+            <label for="actionPriority">Priority <span class="muted">(auto-filled from mechanic)</span></label>
             <input id="actionPriority" type="number" value="50">
           </div>
           <div>
-            <label for="actionKillTier">Kill tier</label>
+            <label for="actionKillTier">Kill tier <span class="muted">(auto-detected when possible)</span></label>
             <select id="actionKillTier">
               <option>None</option><option>Standard Kill</option><option>Instant Kill</option>
               <option>Super Kill</option><option>Omega Kill</option>
@@ -186,6 +226,7 @@
         <label for="statusDuration">Status duration in days</label>
         <input id="statusDuration" type="number" min="0" value="1">
 
+        <div id="actionAssistantPreview" class="assistant-box"></div>
         <label for="actionNote">GM note</label>
         <textarea id="actionNote" placeholder="Optional hidden details"></textarea>
         <button id="queueActionBtn" class="full">Add to Queue</button>
@@ -267,6 +308,22 @@
       <article class="panel"><h2>Mechanics by Faction</h2><div id="mechanicsByFaction"></div></article>
       <article class="panel"><h2>Setup Warnings</h2><div id="setupWarnings"></div></article>
     </div>
+  </section>
+
+  <section id="timelineView" class="view">
+    <article class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Complete Game Timeline</h2>
+          <div class="muted">Every player assignment, queued action, resolution, phase change and ruling appears here.</div>
+        </div>
+        <div class="toolbar">
+          <select id="timelineDayFilter"><option value="ALL">All days</option></select>
+          <button id="exportTimelineBtn" class="secondary">Export Timeline</button>
+        </div>
+      </div>
+      <div id="fullTimeline" class="timeline-list"></div>
+    </article>
   </section>
 
   <section id="logView" class="view">

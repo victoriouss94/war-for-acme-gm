@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.6";
+const APP_VERSION = "2.0";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -11,19 +11,47 @@ const MECHANICS = [
   ["Marks",["Mark","Hunt","Wanted"]],["Conversions",["Conversion","Faction Change"]]
 ];
 
+const PRIORITY_RULES = [
+  {terms:["Omega Kill"],priority:100,killTier:"Omega Kill"},
+  {terms:["Super Kill"],priority:95,killTier:"Super Kill"},
+  {terms:["Instant Kill"],priority:90,killTier:"Instant Kill"},
+  {terms:["Protection","Bodyguard","Guard"],priority:20,killTier:"None"},
+  {terms:["Redirect","Target Control"],priority:15,killTier:"None"},
+  {terms:["Roleblock","Block"],priority:10,killTier:"None"},
+  {terms:["Watcher","Tracker","Intel","Ask","Role Reveal","Graveyard"],priority:50,killTier:"None"},
+  {terms:["Poison"],priority:60,killTier:"None"},
+  {terms:["Bleed"],priority:60,killTier:"None"},
+  {terms:["Mark","Hunt","Wanted"],priority:55,killTier:"None"},
+  {terms:["Conversion","Faction Change"],priority:65,killTier:"None"}
+];
+
+function defaultPriorityFor(type){
+  const rule=PRIORITY_RULES.find(r=>r.terms.some(t=>String(type||"").toLowerCase().includes(t.toLowerCase())));
+  return rule?.priority ?? 50;
+}
+function defaultKillTierFor(type){
+  const rule=PRIORITY_RULES.find(r=>r.terms.some(t=>String(type||"").toLowerCase().includes(t.toLowerCase())));
+  return rule?.killTier ?? "None";
+}
+
+
 let database = {characters:[],abilities:[],mechanics:[]};
 let state = loadState();
 
 function defaultState(){
   return {
     version:APP_VERSION,day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],
-    worldDomination:{progress:0,goal:3,active:false},worldEvents:[],resolutionHistory:[]
+    worldDomination:{progress:0,goal:3,active:false},worldEvents:[],resolutionHistory:[],testingMode:false,timeline:[]
   };
 }
 function loadState(){
   try{
     const saved=JSON.parse(localStorage.getItem("war-for-acme-v15"));
-    return saved ? {...defaultState(),...saved} : defaultState();
+    if(!saved)return defaultState();
+    const merged={...defaultState(),...saved};
+    if(!merged.timeline)merged.timeline=[];
+    if(typeof merged.testingMode!=="boolean")merged.testingMode=false;
+    return merged;
   }catch{return defaultState();}
 }
 function save(){
@@ -34,7 +62,9 @@ function escapeHtml(value){
   return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 }
 function addLog(text){
-  state.log.unshift({day:state.day,phase:PHASES[state.phaseIndex],time:new Date().toLocaleTimeString(),text});
+  const entry={day:state.day,phase:PHASES[state.phaseIndex],time:new Date().toLocaleTimeString(),timestamp:new Date().toISOString(),text};
+  state.log.unshift(entry);
+  state.timeline.unshift({...entry,type:"LOG"});
 }
 function parseUses(value){
   const match=String(value||"").match(/(\d+)/);
@@ -78,7 +108,8 @@ function bindEvents(){
   [playerFactionFilter,playerLifeFilter,playerStatusFilter].forEach(el=>el.addEventListener("change",renderPlayers));
   playerSearch.addEventListener("input",renderPlayers);
 
-  actionActor.addEventListener("change",renderAbilityOptions);
+  actionActor.addEventListener("change",()=>{renderAbilityOptions();updateActionAssistant();});
+  actionAbility.addEventListener("change",updateActionAssistant);
   queueActionBtn.addEventListener("click",queueAction);
   sortQueueBtn.addEventListener("click",()=>{state.queue.sort((a,b)=>a.priority-b.priority);save();});
   resolveAllBtn.addEventListener("click",resolveAll);
@@ -109,6 +140,19 @@ function bindEvents(){
   resetBtn.addEventListener("click",resetGame);
   saveSetupBtn.addEventListener("click",saveRosterSetup);
   loadSetupBtn.addEventListener("click",loadRosterSetup);
+  jumpQueueBtn.addEventListener("click",()=>activateView("queueView"));
+  jumpReportsBtn.addEventListener("click",()=>activateView("reportsView"));
+  toggleTestingBtn.addEventListener("click",toggleTestingMode);
+  clearTestBtn.addEventListener("click",clearTestingData);
+  timelineDayFilter.addEventListener("change",renderTimeline);
+  exportTimelineBtn.addEventListener("click",exportTimeline);
+}
+
+function activateView(viewId){
+  document.querySelectorAll(".tab,.view").forEach(el=>el.classList.remove("active"));
+  const tab=[...document.querySelectorAll(".tab")].find(t=>t.dataset.view===viewId);
+  if(tab)tab.classList.add("active");
+  document.getElementById(viewId)?.classList.add("active");
 }
 
 function renderCharacterOptions(){
@@ -217,6 +261,27 @@ function renderActionSelectors(){
 function renderAbilityOptions(){
   const actor=playerById(actionActor.value);
   actionAbility.innerHTML=actor&&actor.abilities.length?actor.abilities.map((a,i)=>`<option value="${i}">${escapeHtml(a.name)} — ${escapeHtml(a.type)}</option>`).join(""):'<option value="">No abilities</option>';
+  updateActionAssistant();
+}
+
+function updateActionAssistant(){
+  const actor=playerById(actionActor.value);
+  const ability=actor?.abilities[Number(actionAbility.value)];
+  if(!ability){
+    actionAssistantPreview.innerHTML='<div class="muted">Select an actor and ability.</div>';
+    return;
+  }
+  const priority=defaultPriorityFor(ability.type);
+  const killTier=defaultKillTierFor(ability.type);
+  actionPriority.value=priority;
+  actionKillTier.value=killTier;
+  actionAssistantPreview.innerHTML=`
+    <strong>Action Assistant</strong><br>
+    Suggested priority: <strong>${priority}</strong><br>
+    Suggested kill tier: <strong>${escapeHtml(killTier)}</strong><br>
+    Mechanic: <strong>${escapeHtml(ability.type)}</strong><br>
+    ${escapeHtml(ability.description)}
+  `;
 }
 function queueAction(){
   const actor=playerById(actionActor.value);
@@ -255,7 +320,7 @@ function queueAction(){
     resolved:false
   });
 
-  addLog(`Queued: ${actor.name} used ${ability.name} on ${targetNames.join(", ")||"no target"}.`);
+  addLog(`Queued: ${actor.name} used ${ability.name} on ${targetNames.join(", ")||"no target"} at priority ${Number(actionPriority.value)||50}.`);
   actionNote.value="";
   save();
 }
@@ -470,6 +535,113 @@ function renderStatistics(){
   setupWarnings.innerHTML=warnings.map(([level,text])=>`<div class="warning ${level}">${escapeHtml(text)}</div>`).join("");
 }
 
+function interactionWarningsFor(action){
+  if(!action)return [];
+  const warnings=[];
+  const actor=playerById(action.actorId);
+  const targets=action.targetIds.map(playerById).filter(Boolean);
+
+  if(!actor?.alive)warnings.push(["high","The acting player is dead. Confirm whether the action should still resolve."]);
+  if(actor?.statuses.Blocked)warnings.push(["high","The acting player currently has the Blocked status."]);
+  if(actor?.statuses.Silenced)warnings.push(["medium","The acting player is Silenced. Confirm whether silence affects this ability."]);
+
+  targets.forEach(target=>{
+    if(!target.alive)warnings.push(["high",`${target.name} is already dead.`]);
+    if(target.statuses.Protected)warnings.push(["medium",`${target.name} is currently Protected.`]);
+    if(target.statuses.Immune)warnings.push(["medium",`${target.name} currently has an Immunity status.`]);
+    if(target.statuses.Redirected)warnings.push(["medium",`${target.name} has an active Redirected status.`]);
+    if(target.passive)warnings.push(["good",`${target.name}'s passive: ${target.passive}`]);
+  });
+
+  if(action.killTier!=="None"){
+    warnings.push(["medium",`Kill tier selected: ${action.killTier}. Compare it against the target's protection tier manually.`]);
+  }
+  if(state.worldDomination.active&&actor?.faction==="Warner Syndicate"){
+    warnings.push(["good","World Domination is active for the Warner Syndicate. Check upgraded wording."]);
+  }
+  if(!warnings.length)warnings.push(["good","No obvious status conflict detected. The GM must still confirm card-specific exceptions."]);
+  return warnings;
+}
+
+function renderLiveMode(){
+  const alive=state.players.filter(p=>p.alive).length;
+  const pending=state.queue.filter(q=>!q.resolved).sort((a,b)=>a.priority-b.priority);
+  const resolved=state.queue.filter(q=>q.resolved).length;
+  const next=pending[0];
+
+  liveMetrics.innerHTML=[
+    ["Day",state.day],["Phase",PHASES[state.phaseIndex]],["Alive",alive],
+    ["Pending",pending.length],["Resolved Tonight",resolved]
+  ].map(([label,value])=>`<div class="metric"><strong>${escapeHtml(value)}</strong><span>${label}</span></div>`).join("");
+
+  nextActionPanel.innerHTML=next?`
+    <div class="live-action-card">
+      <h3>${escapeHtml(next.actorName)} → ${escapeHtml(next.abilityName)}</h3>
+      <div class="role-line">Targets: ${escapeHtml(next.targetNames.join(", ")||"None")}</div>
+      <div class="resolution-details">
+        <div><strong>Priority:</strong> ${next.priority}</div>
+        <div><strong>Mechanic:</strong> ${escapeHtml(next.type)}</div>
+        <div><strong>Kill tier:</strong> ${escapeHtml(next.killTier)}</div>
+        <div><strong>Current result:</strong> ${escapeHtml(next.result)}</div>
+      </div>
+      <div class="actions">
+        <button id="liveOpenActionBtn">Open in Queue</button>
+      </div>
+    </div>`:'<div class="empty">No unresolved action is waiting.</div>';
+
+  document.getElementById("liveOpenActionBtn")?.addEventListener("click",()=>activateView("queueView"));
+
+  interactionAssistant.innerHTML=interactionWarningsFor(next).map(([level,text])=>`<div class="interaction-warning ${level}">${escapeHtml(text)}</div>`).join("");
+
+  recentTimeline.innerHTML=(state.timeline||[]).slice(0,10).map(entry=>`
+    <div class="timeline-entry">
+      <div class="timeline-time">Day ${entry.day}<br>${escapeHtml(entry.phase)}<br>${escapeHtml(entry.time)}</div>
+      <div>${escapeHtml(entry.text)}</div>
+    </div>`).join("")||'<div class="empty">No timeline entries yet.</div>';
+
+  testingStatus.textContent=state.testingMode?"Testing Mode is ON. Test data is marked and may be cleared safely.":"Testing Mode is off.";
+  liveModeBadge.textContent=state.testingMode?"TEST MODE":"LIVE MODE";
+  document.body.classList.toggle("testing-active",state.testingMode);
+  toggleTestingBtn.textContent=state.testingMode?"Disable Testing Mode":"Enable Testing Mode";
+}
+
+function toggleTestingMode(){
+  state.testingMode=!state.testingMode;
+  addLog(`Testing Mode ${state.testingMode?"enabled":"disabled"}.`);
+  save();
+}
+function clearTestingData(){
+  if(!state.testingMode)return alert("Enable Testing Mode first.");
+  if(!confirm("Clear all current players, actions, reports and test progress?"))return;
+  state.players=[];
+  state.queue=[];
+  state.archive=[];
+  state.worldEvents=[];
+  state.worldDomination={progress:0,goal:3,active:false};
+  addLog("Testing data cleared.");
+  save();
+}
+function renderTimeline(){
+  const days=[...new Set((state.timeline||[]).map(e=>e.day))].sort((a,b)=>a-b);
+  const current=timelineDayFilter.value;
+  timelineDayFilter.innerHTML='<option value="ALL">All days</option>'+days.map(day=>`<option value="${day}" ${String(day)===String(current)?"selected":""}>Day ${day}</option>`).join("");
+  const filtered=(state.timeline||[]).filter(e=>current==="ALL"||String(e.day)===String(current));
+  fullTimeline.innerHTML=filtered.length?filtered.map(entry=>`
+    <div class="timeline-entry">
+      <div class="timeline-time">Day ${entry.day}<br>${escapeHtml(entry.phase)}<br>${escapeHtml(entry.time)}</div>
+      <div>${escapeHtml(entry.text)}</div>
+    </div>`).join(""):'<div class="empty">No timeline entries match this filter.</div>';
+}
+function exportTimeline(){
+  const lines=(state.timeline||[]).slice().reverse().map(e=>`Day ${e.day} | ${e.phase} | ${e.time} | ${e.text}`);
+  const blob=new Blob([lines.join("\n")],{type:"text/plain"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download=`war-for-acme-timeline-day-${state.day}.txt`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function renderDashboard(){
   const alive=state.players.filter(p=>p.alive).length;
   const dead=state.players.length-alive;
@@ -585,6 +757,7 @@ function renderLogAndArchive(){
 }
 
 function render(){
+  renderLiveMode();
   renderDashboard();
   renderPlayers();
   renderActionSelectors();
@@ -593,6 +766,7 @@ function render(){
   renderDatabase();
   renderStatistics();
   renderLogAndArchive();
+  renderTimeline();
 }
 
 initialize();
