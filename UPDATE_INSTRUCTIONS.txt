@@ -1,29 +1,21 @@
-WAR FOR ACME GM — VERSION 1.1 UPDATE
+WAR FOR ACME GM — VERSION 1.5 BIG UPDATE
 
-IMPORTANT: Copy the CONTENTS of this folder into your GitHub repository folder.
-
-Copy:
-- index.html
-- VERSION.txt
-- CHANGELOG.md
-- README.md
-- css folder
-- js folder
-- data folder
-- assets folder
+Copy ALL files and folders from this package into your existing GitHub repository.
 
 When Windows asks, choose:
 REPLACE THE FILES IN THE DESTINATION
 
-Then:
-1. Open GitHub Desktop.
-2. Confirm that several changed and new files appear.
-3. Summary: Publish War for ACME GM v1.1
-4. Click Commit to main.
-5. Click Push origin.
-6. Wait 1–2 minutes.
-7. Open the live website and press Ctrl + F5.
+GitHub Desktop:
+1. Confirm that index.html, css/main.css, js/app.js, VERSION.txt and CHANGELOG.md changed.
+2. Summary: Publish War for ACME GM v1.5
+3. Click Commit to main.
+4. Click Push origin.
+5. Wait 1–2 minutes.
+6. Open the live website and press Ctrl + F5.
 
-Success check:
-The top of the website must show:
-WAR FOR ACME — GAME-NIGHT BUILD v1.1
+SUCCESS CHECK:
+The banner must say:
+WAR FOR ACME — GAME-NIGHT BUILD v1.5
+
+IMPORTANT:
+Use Backup Game after every completed night.

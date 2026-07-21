@@ -1,135 +1,512 @@
-const CHARACTER_DB=[{"id": "tweety", "character": "Tweety", "faction": "ACME Defense Force", "role": "Seer", "purpose": "Investigate hidden roles and faction information.", "passive_name": "", "passive_description": "", "basic_ask": "Basic Ask each night.", "advanced_ask": "One Advanced Ask per game.", "signature_name": "Exact Reveal", "signature_description": "Reveals a chosen player's exact role and faction.", "tags": ["Intel", "Investigator", "Basic Ask", "Advanced Ask"], "source": "tweety(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Tweety", "ability_name": "Basic Ask", "mechanic_type": "Intel", "timing": "Night", "uses": "Unlimited/each night", "resets_each_day": "No", "description": "Ask one Basic Ask about a chosen player.", "source_note": "Current card"}, {"character": "Tweety", "ability_name": "Advanced Ask", "mechanic_type": "Intel", "timing": "Night", "uses": "1/game", "resets_each_day": "No", "description": "Ask one Advanced Ask.", "source_note": "Current card"}]}, {"id": "barnyard_dawg", "character": "Barnyard Dawg", "faction": "ACME Defense Force", "role": "Sting", "purpose": "Detect danger and protect a chosen ally.", "passive_name": "Danger Sense", "passive_description": "Detects nearby danger or hostile activity.", "basic_ask": "", "advanced_ask": "", "signature_name": "Guard Duty", "signature_description": "Blocks the first harmful ability used against the protected player.", "tags": ["Protection", "Detection", "Guardian"], "source": "barnyard dog(4).png", "review": "Needs exact wording check", "abilities": [{"character": "Barnyard Dawg", "ability_name": "Guard", "mechanic_type": "Protection", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Protect a chosen player from the first harmful ability.", "source_note": "Current card"}]}, {"id": "beaky_buzzard", "character": "Beaky Buzzard", "faction": "ACME Defense Force", "role": "Scavenger", "purpose": "Replace his weak starting role by inheriting a dead role.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Scavenge", "signature_description": "Once per game, permanently copies a dead player's role, faction, abilities, and win condition.", "tags": ["Copy", "Dead Player", "Role Change"], "source": "beaky buzzard(3).png", "review": "Reviewed", "abilities": [{"character": "Beaky Buzzard", "ability_name": "Scavenge", "mechanic_type": "Copy", "timing": "Any valid timing", "uses": "1/game", "resets_each_day": "No", "description": "Permanently copy a dead player's role package.", "source_note": "Current card"}]}, {"id": "bertie", "character": "Bertie", "faction": "ACME Defense Force", "role": "Sober", "purpose": "Restrict communication to plain text.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "No Reactions", "signature_description": "Chosen player may only use text; reactions, GIFs, images, and similar replies are forbidden under the card's penalty.", "tags": ["Communication Control", "Restriction"], "source": "bertie(sober)(4).png", "review": "Needs exact wording check", "abilities": [{"character": "Bertie", "ability_name": "Text Only", "mechanic_type": "Communication Control", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Chosen player may communicate only through text.", "source_note": "Current card"}]}, {"id": "bugs_bunny", "character": "Bugs Bunny", "faction": "ACME Defense Force", "role": "Master Strategist", "purpose": "Avoid danger, gather hostile-action intel, and redirect threats.", "passive_name": "What's Up, Doc?", "passive_description": "Avoids the first harmful effect that would affect him.", "basic_ask": "", "advanced_ask": "", "signature_name": "Ain't I a Stinker?", "signature_description": "Redirects a selected player's next action.", "tags": ["Protection", "Intel", "Redirect"], "source": "bugs bunny(6).png", "review": "Needs exact wording check", "abilities": [{"character": "Bugs Bunny", "ability_name": "Avoid Harm", "mechanic_type": "Passive Protection", "timing": "Passive", "uses": "1 trigger", "resets_each_day": "No", "description": "Avoid the first harmful effect.", "source_note": "Current card"}, {"character": "Bugs Bunny", "ability_name": "Redirect Next Action", "mechanic_type": "Redirect", "timing": "Night/Signature", "uses": "1/game", "resets_each_day": "No", "description": "Redirect a player's next action.", "source_note": "Current card"}]}, {"id": "cecil_turtle", "character": "Cecil Turtle", "faction": "ACME Defense Force", "role": "Map", "purpose": "Provide board-position and movement information to ACME.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "", "signature_description": "Pending exact transcription from the finalized slide.", "tags": ["Map", "Movement Intel"], "source": "cecil (map)(3).png", "review": "Transcription required", "abilities": []}, {"id": "wile_e_coyote", "character": "Wile E. Coyote", "faction": "ACME Defense Force", "role": "Inventor", "purpose": "Use ACME inventions to create tactical effects.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "", "signature_description": "Pending exact transcription from the finalized slide.", "tags": ["Inventor", "Utility", "ACME"], "source": "coyote(2).png", "review": "Transcription required", "abilities": []}, {"id": "daffy_duck", "character": "Daffy Duck", "faction": "ACME Defense Force", "role": "Pending verification", "purpose": "Pending exact transcription from the finalized slide.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "", "signature_description": "", "tags": ["Pending"], "source": "daffy duck(5).png", "review": "Transcription required", "abilities": []}, {"id": "egghead", "character": "Egghead", "faction": "ACME Defense Force", "role": "ACME Inventor", "purpose": "Build or deploy ACME technology for the team.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "", "signature_description": "Pending exact transcription from the finalized slide.", "tags": ["Inventor", "Technology", "Support"], "source": "egghead(3).png", "review": "Transcription required", "abilities": []}, {"id": "road_runner", "character": "Road Runner", "faction": "ACME Defense Force", "role": "Escape Artist", "purpose": "Avoid direct harm and track movement.", "passive_name": "Too Fast", "passive_description": "Dodges the first direct harmful ability used against him once per game.", "basic_ask": "", "advanced_ask": "", "signature_name": "Speed Rescue", "signature_description": "Protects another player from the first direct harmful ability used against them.", "tags": ["Protection", "Tracking", "Escape"], "source": "road runner(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Road Runner", "ability_name": "Dodge", "mechanic_type": "Passive Protection", "timing": "Passive", "uses": "1/game", "resets_each_day": "No", "description": "Dodge first direct harmful ability.", "source_note": "Current card"}, {"character": "Road Runner", "ability_name": "Track Movement", "mechanic_type": "Intel", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Track movement activity.", "source_note": "Current card"}]}, {"id": "sam_sheepdog", "character": "Sam Sheepdog", "faction": "ACME Defense Force", "role": "Sentinel", "purpose": "Intercept attacks and stop dangerous actors.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Clock Out", "signature_description": "Prevents a chosen player from acting for one night.", "tags": ["Protection", "Intercept", "Roleblock"], "source": "sam sheepdog(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Sam Sheepdog", "ability_name": "Intercept", "mechanic_type": "Protection", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Intercept the first harmful ability from a chosen source/against a chosen player.", "source_note": "Current card"}, {"character": "Sam Sheepdog", "ability_name": "Stop Action", "mechanic_type": "Roleblock", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Prevent a player from acting for one night.", "source_note": "Current card"}]}, {"id": "sarge", "character": "Sarge", "faction": "ACME Defense Force", "role": "Sheriff", "purpose": "Mark proven threats as Wanted and execute them.", "passive_name": "Law of ACME", "passive_description": "Cannot be converted or killed by the Den's standard faction kill.", "basic_ask": "", "advanced_ask": "", "signature_name": "Serve the Warrant", "signature_description": "Uses an Instant Kill against a Wanted player.", "tags": ["Instant Kill", "Mark", "Wanted", "Immunity"], "source": "sarge(sheriff)(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Sarge", "ability_name": "Warrant", "mechanic_type": "Mark", "timing": "Triggered", "uses": "Conditional", "resets_each_day": "No", "description": "Mark qualifying players as Wanted.", "source_note": "Current card"}, {"character": "Sarge", "ability_name": "Serve the Warrant", "mechanic_type": "Instant Kill", "timing": "Signature", "uses": "Conditional", "resets_each_day": "No", "description": "Instant Kill a Wanted player.", "source_note": "Current card"}]}, {"id": "slowpoke_rodriguez", "character": "Slowpoke Rodriguez", "faction": "ACME Defense Force", "role": "Timekeeper", "purpose": "Delay actions and punish attackers.", "passive_name": "Slow but Deadly", "passive_description": "If attacked and he survives, retaliates with an Instant Kill under the card's conditions.", "basic_ask": "", "advanced_ask": "", "signature_name": "Delayed Delivery", "signature_description": "Delays a chosen player's Night Ability until the following night.", "tags": ["Delay", "Instant Kill", "Retaliation"], "source": "slowpoke(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Slowpoke Rodriguez", "ability_name": "Delay Ability", "mechanic_type": "Delay", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Move a player's Night Ability to the following night.", "source_note": "Current card"}, {"character": "Slowpoke Rodriguez", "ability_name": "Retaliation", "mechanic_type": "Instant Kill", "timing": "Passive/Triggered", "uses": "Conditional", "resets_each_day": "No", "description": "Retaliate if attacked and survives.", "source_note": "Current card"}]}, {"id": "speedy_gonzales", "character": "Speedy Gonzales", "faction": "ACME Defense Force", "role": "Courier", "purpose": "Guarantee allied actions and improve successful abilities.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Super-Speed Delivery", "signature_description": "After helping enough players, upgrades another player's Night Ability.", "tags": ["Guarantee", "Support", "Upgrade"], "source": "speedy gonzales(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Speedy Gonzales", "ability_name": "Guarantee Ability", "mechanic_type": "Support", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Ensure a chosen player's Night Ability succeeds.", "source_note": "Current card"}]}, {"id": "sylvester", "character": "Sylvester", "faction": "ACME Defense Force / Warner Syndicate", "role": "Traitor", "purpose": "Begin with ACME and potentially betray them after finding Tweety.", "passive_name": "Hidden Betrayal", "passive_description": "Starts aligned with ACME and can change allegiance when the card's condition is met.", "basic_ask": "", "advanced_ask": "", "signature_name": "Betrayal Kit", "signature_description": "His abilities change after joining the Warner Syndicate.", "tags": ["Traitor", "Faction Change", "Conditional"], "source": "sylvester(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Sylvester", "ability_name": "Betrayal", "mechanic_type": "Faction Change", "timing": "Triggered", "uses": "Conditional", "resets_each_day": "No", "description": "Switch faction after meeting the Tweety condition.", "source_note": "Current card"}]}, {"id": "taz", "character": "Taz", "faction": "ACME Defense Force", "role": "Berserker", "purpose": "Mark targets and escalate into lethal attacks.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Frenzy", "signature_description": "Upgrades Savage Bite into a Super Kill under the card's conditions.", "tags": ["Mark", "Instant Kill", "Super Kill", "Offense"], "source": "taz(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Taz", "ability_name": "Savage Bite", "mechanic_type": "Mark", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "First bite marks; second bite can Instant Kill.", "source_note": "Current card"}, {"character": "Taz", "ability_name": "Frenzy Bite", "mechanic_type": "Super Kill", "timing": "Signature", "uses": "Conditional", "resets_each_day": "No", "description": "Upgrade a bite into a Super Kill.", "source_note": "Current card"}]}, {"id": "elmer_fudd", "character": "Elmer Fudd", "faction": "ACME Defense Force", "role": "Hunter", "purpose": "Choose prey, track them, and build toward an execution.", "passive_name": "Prey", "passive_description": "Designates and follows a chosen prey target.", "basic_ask": "", "advanced_ask": "", "signature_name": "The Hunt Ends", "signature_description": "A committed hunter payoff that eliminates the prey when its conditions are satisfied.", "tags": ["Hunter", "Mark", "Tracking", "Kill"], "source": "elmer fudd(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Elmer Fudd", "ability_name": "Choose Prey", "mechanic_type": "Mark/Hunt", "timing": "Night", "uses": "Conditional", "resets_each_day": "Yes", "description": "Designate and track prey.", "source_note": "Current card"}]}, {"id": "foghorn_leghorn", "character": "Foghorn Leghorn", "faction": "ACME Defense Force", "role": "Ability Booster", "purpose": "Strengthen allied Night Abilities.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Strongest Possible Version", "signature_description": "Causes an allied ability to resolve with all optional bonuses or its strongest valid form.", "tags": ["Support", "Ability Boost", "Guarantee"], "source": "foghorn leghorn(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Foghorn Leghorn", "ability_name": "Boost Ability", "mechanic_type": "Support", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Strengthen an allied ability.", "source_note": "Current card"}]}, {"id": "witch_hazel", "character": "Witch Hazel", "faction": "ACME Defense Force", "role": "Poisoner", "purpose": "Spread poison through visiting chains.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Hexing Brew", "signature_description": "Poisons a chosen player; anyone visiting a poisoned player also becomes poisoned, and the same spread rule applies to them.", "tags": ["Poison", "Spread", "Damage Over Time"], "source": "witch hazel (poison)(1).png", "review": "Reviewed", "abilities": [{"character": "Witch Hazel", "ability_name": "Hexing Brew", "mechanic_type": "Poison", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Poison a player; poison spreads to visitors.", "source_note": "Current card"}]}, {"id": "yosemite_sam", "character": "Yosemite Sam", "faction": "ACME Defense Force", "role": "Duelist", "purpose": "Force enemies into direct confrontations.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Unavoidable Duel", "signature_description": "Forces a duel that cannot be avoided under the card's rules.", "tags": ["Duel", "Offense", "Challenge"], "source": "yosemite sam(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Yosemite Sam", "ability_name": "Duel", "mechanic_type": "Challenge", "timing": "Night/Day", "uses": "Conditional", "resets_each_day": "Varies", "description": "Force a duel.", "source_note": "Current card"}]}, {"id": "goofy_gophers", "character": "Goofy Gophers", "faction": "ACME Defense Force", "role": "Intel Scrambler", "purpose": "Disrupt and falsify enemy investigations.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Total Blackout", "signature_description": "Causes investigations to fail or return false information according to the card.", "tags": ["False Intel", "Investigation Block", "Control"], "source": "goofy gophers(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Goofy Gophers", "ability_name": "Smoke Screen", "mechanic_type": "False Intel", "timing": "Night", "uses": "Conditional", "resets_each_day": "Yes", "description": "Cause false investigation results.", "source_note": "Current card"}, {"character": "Goofy Gophers", "ability_name": "Total Blackout", "mechanic_type": "Investigation Block", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Disrupt multiple or all investigations per exact card wording.", "source_note": "Current card"}]}, {"id": "gossamer", "character": "Gossamer", "faction": "ACME Defense Force", "role": "Gravedigger", "purpose": "Learn information from dead players.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Graveyard Ledger", "signature_description": "Reveals role information from the graveyard under the card's limits.", "tags": ["Dead Player", "Intel", "Graveyard"], "source": "gossamer(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Gossamer", "ability_name": "Question the Dead", "mechanic_type": "Graveyard Intel", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Gain information from a dead player.", "source_note": "Current card"}]}, {"id": "granny", "character": "Granny", "faction": "ACME Defense Force", "role": "Watcher", "purpose": "Observe who visits a chosen player and in what order.", "passive_name": "Everybody Knows Granny", "passive_description": "Publicly recognizable or treated as known according to the card.", "basic_ask": "", "advanced_ask": "", "signature_name": "I've Seen Enough", "signature_description": "Provides an enhanced visitor report after meeting its condition.", "tags": ["Watcher", "Visitor Intel", "Order"], "source": "granny(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Granny", "ability_name": "Keep an Eye on Things", "mechanic_type": "Watcher", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "See visitors to a chosen player, including order if specified.", "source_note": "Current card"}]}, {"id": "hector", "character": "Hector", "faction": "ACME Defense Force", "role": "Guardian", "purpose": "Protect one ally from the first harmful ability.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Nobody Gets Past Me", "signature_description": "Enhanced protection that stops the first harmful ability against the chosen player.", "tags": ["Protection", "Guardian"], "source": "hector(5).png", "review": "Needs exact wording check", "abilities": [{"character": "Hector", "ability_name": "Guard Dog", "mechanic_type": "Protection", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Stop first harmful ability against chosen player.", "source_note": "Current card"}]}, {"id": "henery_hawk", "character": "Henery Hawk", "faction": "ACME Defense Force", "role": "Executioner", "purpose": "Provide limited direct elimination power.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "I Found a Chicken!", "signature_description": "Has two Instant Kill uses according to the current card.", "tags": ["Instant Kill", "Executioner", "Offense"], "source": "henery hawk(3).png", "review": "Reviewed", "abilities": [{"character": "Henery Hawk", "ability_name": "I Found a Chicken!", "mechanic_type": "Instant Kill", "timing": "Signature", "uses": "2/game", "resets_each_day": "No", "description": "Instant Kill a target.", "source_note": "Current card"}]}, {"id": "hubie", "character": "Hubie", "faction": "ACME Defense Force", "role": "Drunk", "purpose": "Create communication chaos around a selected player.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Mouse Mayhem!", "signature_description": "Restricts selected players to emojis, GIFs, and pictures under the card's communication rules.", "tags": ["Communication Control", "Chaos", "Restriction"], "source": "hubie(drunk)(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Hubie", "ability_name": "Dizzy Discussion", "mechanic_type": "Communication Control", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Restrict communication format.", "source_note": "Current card"}]}, {"id": "lola_bunny", "character": "Lola Bunny", "faction": "Current Allegiance", "role": "Tactician", "purpose": "Guarantee the success of allied abilities for her current side.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Full Court Press", "signature_description": "Once per game, protected allied Night Abilities cannot be blocked, redirected, silenced, or fail because of control effects.", "tags": ["Guarantee", "Faction Support", "Unblockable"], "source": "lola bunny(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Lola Bunny", "ability_name": "Full Court Press", "mechanic_type": "Guarantee", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Protect allied Night Abilities from failure/control.", "source_note": "Current card"}]}, {"id": "marvin", "character": "Marvin the Martian", "faction": "ACME Defense Force", "role": "Commander", "purpose": "Provide strategic intelligence and a precision elimination.", "passive_name": "Commander of ACME", "passive_description": "Leadership passive with protection from the Den's standard kill under the current design.", "basic_ask": "", "advanced_ask": "Military Intelligence: one Advanced Ask per game.", "signature_name": "Illudium Q-36", "signature_description": "One Super Kill.", "tags": ["Commander", "Advanced Ask", "Super Kill", "Immunity"], "source": "marvin(4).png", "review": "Needs exact wording check", "abilities": [{"character": "Marvin the Martian", "ability_name": "Military Intelligence", "mechanic_type": "Advanced Ask", "timing": "Night", "uses": "1/game", "resets_each_day": "No", "description": "Use one Advanced Ask.", "source_note": "Current card"}, {"character": "Marvin the Martian", "ability_name": "Illudium Q-36", "mechanic_type": "Super Kill", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Super Kill one player.", "source_note": "Current card"}]}, {"id": "miss_prissy", "character": "Miss Prissy", "faction": "ACME Defense Force", "role": "Lawyer", "purpose": "Protect players from voting elimination.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Order in the Court!", "signature_description": "Prevents one player from being eliminated by voting for the day.", "tags": ["Vote Protection", "Hidden Vote", "Support"], "source": "miss prissy(4).png", "review": "Needs exact wording check", "abilities": [{"character": "Miss Prissy", "ability_name": "I Object!", "mechanic_type": "Vote Manipulation", "timing": "Day", "uses": "2/game", "resets_each_day": "No", "description": "Remove one hidden vote when a chosen player would be eliminated.", "source_note": "Current card"}, {"character": "Miss Prissy", "ability_name": "Order in the Court!", "mechanic_type": "Vote Protection", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Prevent voting elimination for one day.", "source_note": "Current card"}]}, {"id": "pete_puma", "character": "Pete Puma", "faction": "ACME Defense Force", "role": "Confuser", "purpose": "Randomly distribute protection and redirection effects.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "I Meant the Other One!", "signature_description": "Randomly assigns protection, redirection, and no effect among selected players.", "tags": ["Protection", "Redirect", "Random"], "source": "pete(3).png", "review": "Needs exact wording check", "abilities": [{"character": "Pete Puma", "ability_name": "Wait... Which One?", "mechanic_type": "Random Support", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Randomly gives protection and redirect effects.", "source_note": "Current card"}, {"character": "Pete Puma", "ability_name": "I Meant the Other One!", "mechanic_type": "Random Support", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Shuffle protection, redirect, and no effect among three players.", "source_note": "Current card"}]}, {"id": "porky_pig", "character": "Porky Pig", "faction": "ACME Defense Force", "role": "Medic", "purpose": "Protect teammates from harmful effects and unlock stronger protection.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "That's All, Folks!", "signature_description": "After saving three different players, gains full protection for a chosen target until morning under the card's limits.", "tags": ["Medic", "Protection", "Unlock Progress"], "source": "porky pig(4).png", "review": "Needs exact wording check", "abilities": [{"character": "Porky Pig", "ability_name": "C-Can I Help?", "mechanic_type": "Protection", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Protect one player from one harmful effect.", "source_note": "Current card"}, {"character": "Porky Pig", "ability_name": "That's All, Folks!", "mechanic_type": "Protection", "timing": "Signature", "uses": "Unlock after 3 saves", "resets_each_day": "No", "description": "Grant stronger protection after saving three different players.", "source_note": "Current card"}]}, {"id": "ralph_wolf", "character": "Ralph Wolf", "faction": "ACME Defense Force", "role": "Tracker", "purpose": "Track whom a selected player visits.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Fresh Tracks", "signature_description": "Enhanced tracking reveals both whom the target visited and who visited them.", "tags": ["Tracker", "Movement Intel", "Visitor Intel"], "source": "ralph wolf(2).png", "review": "Needs exact wording check", "abilities": [{"character": "Ralph Wolf", "ability_name": "Follow the Trail", "mechanic_type": "Tracker", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Learn whom a chosen player visited.", "source_note": "Current card"}, {"character": "Ralph Wolf", "ability_name": "Fresh Tracks", "mechanic_type": "Tracker", "timing": "Signature", "uses": "Conditional", "resets_each_day": "No", "description": "Learn both visits made and visitors received.", "source_note": "Current card"}]}, {"id": "brain", "character": "Brain", "faction": "Warner Syndicate", "role": "Mastermind", "purpose": "Lead the Syndicate and complete the World Domination plan.", "passive_name": "Master Planner", "passive_description": "Coordinates World Domination and the Syndicate's prototype progress.", "basic_ask": "", "advanced_ask": "", "signature_name": "World Domination", "signature_description": "Activates the Syndicate's completed prototypes and late-game powers.", "win_condition": "Complete World Domination and satisfy the Warner Syndicate faction victory condition.", "investigation_result": "Appears according to the finalized Brain card.", "tags": ["Leadership", "World Domination", "Intel", "Instant Kill", "Super Kill", "Omega Kill"], "source": "brain(1).png", "review": "Needs exact wording check", "abilities": [{"character": "Brain", "ability_name": "Brilliant Scheme", "mechanic_type": "World Domination Progress", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Advances Brain's plan or prototype progress.", "source_note": "Provisional structured wording"}, {"character": "Brain", "ability_name": "Redirect", "mechanic_type": "Redirect", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Changes the target of a Night Ability.", "source_note": "Provisional structured wording"}, {"character": "Brain", "ability_name": "Instant Kill", "mechanic_type": "Instant Kill", "timing": "Night", "uses": "1/game before activation", "resets_each_day": "No", "description": "Eliminates one target before World Domination.", "source_note": "Provisional structured wording"}, {"character": "Brain", "ability_name": "World Domination Powers", "mechanic_type": "Super Kill / Omega Kill", "timing": "Night", "uses": "Conditional", "resets_each_day": "Varies", "description": "Unlocks high-level kill abilities after activation.", "source_note": "Needs exact card verification"}]}, {"id": "pinky", "character": "Pinky", "faction": "Warner Syndicate", "role": "Chaotic Assistant", "purpose": "Support Brain and create unpredictable disruptions.", "passive_name": "Pinky Logic", "passive_description": "His actions may behave unpredictably under the card's rules.", "basic_ask": "", "advanced_ask": "", "signature_name": "Chaos Amplifier", "signature_description": "Expands or strengthens Pinky's chaotic effects after World Domination.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Pinky card.", "tags": ["Chaos", "Random", "World Domination"], "source": "pinky.png", "review": "Needs exact wording check", "abilities": [{"character": "Pinky", "ability_name": "Random Mischief", "mechanic_type": "Random", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Produces a random helpful, failed, or amplified effect.", "source_note": "Provisional"}]}, {"id": "yakko", "character": "Yakko", "faction": "Warner Syndicate", "role": "Trickster", "purpose": "Disrupt players through social and action manipulation.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Chaos Conductor", "signature_description": "Strengthens Yakko's disruptive abilities after activation.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Yakko card.", "tags": ["Roleblock", "Vote Control", "Chaos"], "source": "yakko.png", "review": "Needs exact wording check", "abilities": [{"character": "Yakko", "ability_name": "Lyric Lullaby", "mechanic_type": "Roleblock", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Distracts a chosen player.", "source_note": "Provisional"}, {"character": "Yakko", "ability_name": "Musical Mischief", "mechanic_type": "Position Swap", "timing": "Day/Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Swaps two players' public positions.", "source_note": "Provisional"}]}, {"id": "wakko", "character": "Wakko", "faction": "Warner Syndicate", "role": "Chaos Engineer", "purpose": "Deploy unpredictable gadgets and malfunctions.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Bag of Everything", "signature_description": "Produces random gadget effects, with stronger results after World Domination.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Wakko card.", "tags": ["Random", "Gadget", "Ability Failure", "Chaos"], "source": "wakko.png", "review": "Needs exact wording check", "abilities": [{"character": "Wakko", "ability_name": "Bag of Everything", "mechanic_type": "Random Gadget", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Generates a random gadget effect.", "source_note": "Provisional"}, {"character": "Wakko", "ability_name": "ACME Malfunction", "mechanic_type": "Ability Failure", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Causes an opposing ability to malfunction.", "source_note": "Provisional"}]}, {"id": "dot", "character": "Dot", "faction": "Warner Syndicate", "role": "Social Manipulator", "purpose": "Control votes, influence players, and recruit allies.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Queen of Influence", "signature_description": "Strengthens Dot's recruitment and social-control effects after activation.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Dot card.", "tags": ["Conversion", "Vote Control", "Instant Kill", "Social Control"], "source": "dot.png", "review": "Needs exact wording check", "abilities": [{"character": "Dot", "ability_name": "Recruitment", "mechanic_type": "Conversion", "timing": "Night", "uses": "2/game", "resets_each_day": "No", "description": "Attempts to recruit a player.", "source_note": "Provisional"}, {"character": "Dot", "ability_name": "Sweet Distraction", "mechanic_type": "Vote Control", "timing": "Day", "uses": "Per card", "resets_each_day": "Varies", "description": "Removes a player's vote.", "source_note": "Provisional"}, {"character": "Dot", "ability_name": "Social Elimination", "mechanic_type": "Instant Kill", "timing": "Night", "uses": "1/game", "resets_each_day": "No", "description": "Instantly eliminates a chosen player.", "source_note": "Provisional"}]}, {"id": "buttons", "character": "Buttons", "faction": "Warner Syndicate", "role": "Royal Protector", "purpose": "Protect Mindy and sacrifice himself for important allies.", "passive_name": "Mindy's Guardian", "passive_description": "Has special protective interactions with Mindy.", "basic_ask": "", "advanced_ask": "", "signature_name": "Emergency Protocol", "signature_description": "Can sacrifice himself to save a priority Syndicate member under the card's conditions.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Buttons card.", "tags": ["Protection", "Bodyguard", "Sacrifice"], "source": "buttons.png", "review": "Needs exact wording check", "abilities": [{"character": "Buttons", "ability_name": "Guardian's Choice", "mechanic_type": "Protection", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Protects Mindy or another chosen player.", "source_note": "Provisional"}, {"character": "Buttons", "ability_name": "Sacrifice", "mechanic_type": "Bodyguard", "timing": "Triggered", "uses": "Conditional", "resets_each_day": "No", "description": "Takes an attack meant for Mindy.", "source_note": "Provisional"}]}, {"id": "dr_scratchansniff", "character": "Dr. Scratchansniff", "faction": "Warner Syndicate", "role": "Support Specialist", "purpose": "Analyze actions, research roles, and provide experimental support.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Master Experiments", "signature_description": "Upgrades his information and support effects after activation.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized card.", "tags": ["Intel", "Role Reveal", "Support", "Random"], "source": "dr.scratchansniff.png", "review": "Needs exact wording check", "abilities": [{"character": "Dr. Scratchansniff", "ability_name": "Analyze", "mechanic_type": "Intel", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Detects Night-action information.", "source_note": "Provisional"}, {"character": "Dr. Scratchansniff", "ability_name": "Research", "mechanic_type": "Role Reveal", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Learns a player's exact role.", "source_note": "Provisional"}]}, {"id": "hello_nurse", "character": "Hello Nurse", "faction": "Warner Syndicate", "role": "Enchanter", "purpose": "Disable or distract dangerous players.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Heartbreaker", "signature_description": "Prevents a chosen player from attacking the Syndicate under the card's conditions.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Hello Nurse card.", "tags": ["Roleblock", "Vote Control", "Attack Prevention"], "source": "hello nurse.png", "review": "Needs exact wording check", "abilities": [{"character": "Hello Nurse", "ability_name": "Mesmerize", "mechanic_type": "Roleblock", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Roleblocks a chosen player.", "source_note": "Provisional"}, {"character": "Hello Nurse", "ability_name": "Distract", "mechanic_type": "Vote Control", "timing": "Day", "uses": "Per card", "resets_each_day": "Varies", "description": "Cancels a player's voting power.", "source_note": "Provisional"}]}, {"id": "chicken_boo", "character": "Chicken Boo", "faction": "Warner Syndicate", "role": "Disguise Specialist", "purpose": "Infiltrate other groups by impersonating players.", "passive_name": "Disguise", "passive_description": "Can appear as another player or role under investigation.", "basic_ask": "", "advanced_ask": "", "signature_name": "Imposter", "signature_description": "Publicly impersonates a player for one Day under the card's rules.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Changes with his disguise.", "tags": ["Disguise", "False Intel", "Roleblock", "Impersonation"], "source": "chicken boo(1).png", "review": "Needs exact wording check", "abilities": [{"character": "Chicken Boo", "ability_name": "Disguise", "mechanic_type": "Disguise", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Appears as another player.", "source_note": "Provisional"}, {"character": "Chicken Boo", "ability_name": "Infiltration", "mechanic_type": "Roleblock", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Secretly roleblocks a player.", "source_note": "Provisional"}]}, {"id": "mindy", "character": "Mindy", "faction": "Warner Syndicate", "role": "Chaos Catalyst", "purpose": "Generate random effects while relying on Buttons for protection.", "passive_name": "Buttons!", "passive_description": "Has special interactions with Buttons.", "basic_ask": "", "advanced_ask": "", "signature_name": "Happy Accident", "signature_description": "Triggers a larger chaotic effect under the card's conditions.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Mindy card.", "tags": ["Random", "Chaos", "Protection Synergy"], "source": "mindy.png", "review": "Needs exact wording check", "abilities": [{"character": "Mindy", "ability_name": "Roll for Chaos", "mechanic_type": "Random", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Triggers a random Night effect.", "source_note": "Provisional"}]}, {"id": "skippy_squirrel", "character": "Skippy Squirrel", "faction": "Warner Syndicate", "role": "Field Scout", "purpose": "Track movement and deliver intelligence to Brain.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Deliver Message", "signature_description": "Provides gathered movement intelligence to Brain or the Syndicate.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Skippy card.", "tags": ["Tracker", "Movement Intel", "Support"], "source": "skippy.png", "review": "Needs exact wording check", "abilities": [{"character": "Skippy Squirrel", "ability_name": "Reconnaissance", "mechanic_type": "Tracker", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Tracks player activity.", "source_note": "Provisional"}]}, {"id": "slappy_squirrel", "character": "Slappy Squirrel", "faction": "Warner Syndicate", "role": "Veteran Operative", "purpose": "Detect traps, follow targets, and cancel harmful actions.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Countermeasures", "signature_description": "Cancels a harmful ability under the card's limits.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized Slappy card.", "tags": ["Protection", "Tracker", "Trap Detection", "Block"], "source": "slappy squirrel.png", "review": "Needs exact wording check", "abilities": [{"character": "Slappy Squirrel", "ability_name": "Countermeasures", "mechanic_type": "Block / Protection", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Cancels one harmful ability.", "source_note": "Provisional"}, {"character": "Slappy Squirrel", "ability_name": "Covert Follow", "mechanic_type": "Tracker", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Tracks a chosen target.", "source_note": "Provisional"}]}, {"id": "night_squirrel", "character": "Night Squirrel", "faction": "Warner Syndicate", "role": "Covert Operative", "purpose": "Perform hidden intelligence or disruption work for the Syndicate.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "", "signature_description": "Pending exact transcription from the finalized Night Squirrel card.", "win_condition": "Win with the Warner Syndicate.", "investigation_result": "Appears according to the finalized card.", "tags": ["Covert", "Intel", "Pending"], "source": "night squirrel.png", "review": "Transcription required", "abilities": []}, {"id": "death", "character": "Death", "faction": "Independent Wildcard", "role": "Legendary Neutral", "purpose": "Reap souls and complete a personal elimination objective.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Final Destination", "signature_description": "Binds players by fate under the card's rules.", "win_condition": "Eliminate the required iconic targets or Warner siblings according to the finalized card.", "investigation_result": "Appears according to the finalized Death card.", "tags": ["Instant Kill", "Mark", "Challenge", "Personal Win Condition"], "source": "death(1).png", "review": "Needs exact wording check", "abilities": [{"character": "Death", "ability_name": "Reap Soul", "mechanic_type": "Mark / Delayed Kill", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Marks a player to die on a later Night.", "source_note": "Needs exact card verification"}, {"character": "Death", "ability_name": "Soul Reap", "mechanic_type": "Instant Kill", "timing": "Night", "uses": "2/game", "resets_each_day": "No", "description": "Starts with two Instant Kills.", "source_note": "Provisional"}, {"character": "Death", "ability_name": "Final Destination", "mechanic_type": "Bind / Challenge", "timing": "Conditional", "uses": "Per card", "resets_each_day": "Varies", "description": "Binds players through fate.", "source_note": "Provisional"}]}, {"id": "gabby_goat", "character": "Gabby Goat", "faction": "Independent Wildcard", "role": "Rumor Monger", "purpose": "Create false deaths and misinformation.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Fake News Broadcast", "signature_description": "Makes GM information false for a Day under the card's rules.", "win_condition": "Successfully use the required rumor abilities and survive to the required Day.", "investigation_result": "Appears according to the finalized Gabby Goat card.", "tags": ["False Death", "False Intel", "Announcement Control"], "source": "gabby goat.png", "review": "Needs exact wording check", "abilities": [{"character": "Gabby Goat", "ability_name": "Death Rumor", "mechanic_type": "False Death", "timing": "Night/Announcement", "uses": "Per card", "resets_each_day": "Varies", "description": "Makes a player appear dead temporarily.", "source_note": "Provisional"}, {"character": "Gabby Goat", "ability_name": "False Exposure", "mechanic_type": "False Announcement", "timing": "Day", "uses": "Per card", "resets_each_day": "Varies", "description": "Creates a fake kill event or victim treatment.", "source_note": "Provisional"}]}, {"id": "michigan_j_frog", "character": "Michigan J. Frog", "faction": "Independent Wildcard", "role": "Master Shapeshifter", "purpose": "Copy identities and abilities without being exposed.", "passive_name": "Perfect Disguise", "passive_description": "Alters investigation results while disguised.", "basic_ask": "", "advanced_ask": "", "signature_name": "Slip Away", "signature_description": "Escapes death once under the card's conditions.", "win_condition": "Complete three successful disguises.", "investigation_result": "Matches the active disguise.", "tags": ["Copy", "Disguise", "Death Escape", "Personal Win Condition"], "source": "michigan.png", "review": "Needs exact wording check", "abilities": [{"character": "Michigan J. Frog", "ability_name": "Take Any Form", "mechanic_type": "Copy / Disguise", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Copies another player's identity and Night Ability.", "source_note": "Provisional"}, {"character": "Michigan J. Frog", "ability_name": "Slip Away", "mechanic_type": "Death Escape", "timing": "Triggered", "uses": "1/game", "resets_each_day": "No", "description": "Escapes death once.", "source_note": "Provisional"}]}, {"id": "pepe_le_pew", "character": "Pepé Le Pew", "faction": "Independent Wildcard", "role": "Cupid", "purpose": "Control targets and bind players into linked pairs.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Bind", "signature_description": "Links two players together under the card's consequences.", "win_condition": "Successfully bind two pairs twice, with at least one pair surviving to the end.", "investigation_result": "Appears as himself according to the finalized card.", "tags": ["Target Control", "Bind", "Linked Fate", "Personal Win Condition"], "source": "pepe le pew(1).png", "review": "Needs exact wording check", "abilities": [{"character": "Pepé Le Pew", "ability_name": "Scent Control", "mechanic_type": "Target Control", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "Chooses the targets of another player's ability.", "source_note": "Provisional"}, {"character": "Pepé Le Pew", "ability_name": "Bind", "mechanic_type": "Linked Fate", "timing": "Night", "uses": "3/game or per card", "resets_each_day": "No", "description": "Links two players together.", "source_note": "Needs exact use count verification"}]}, {"id": "petunia_pig", "character": "Petunia Pig", "faction": "Independent Wildcard", "role": "Dealmaker", "purpose": "Create agreements and punish players who break them.", "passive_name": "The Fine Print", "passive_description": "Can force or strengthen a rejected deal under the card's rules.", "basic_ask": "", "advanced_ask": "", "signature_name": "Contract", "signature_description": "Punishes a player who breaks a deal.", "win_condition": "Complete three successful deals.", "investigation_result": "Appears according to the finalized Petunia card.", "tags": ["Deal", "Contract", "Punishment", "Personal Win Condition"], "source": "petunia.png", "review": "Needs exact wording check", "abilities": [{"character": "Petunia Pig", "ability_name": "Broker a Deal", "mechanic_type": "Deal", "timing": "Day/Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Creates a secret agreement.", "source_note": "Provisional"}, {"character": "Petunia Pig", "ability_name": "Contract", "mechanic_type": "Punishment", "timing": "Triggered", "uses": "Per card", "resets_each_day": "Varies", "description": "Punishes a player who breaks a deal.", "source_note": "Provisional"}]}, {"id": "playboy_penguin", "character": "Playboy Penguin", "faction": "Independent Wildcard", "role": "Survivor", "purpose": "Hide behind others and survive lethal attention.", "passive_name": "Too Cute to Hurt", "passive_description": "Can only be targeted by Omega and Instant Kills under the finalized design.", "basic_ask": "", "advanced_ask": "", "signature_name": "Puppy Eyes", "signature_description": "Survives hanging.", "win_condition": "Successfully hide behind someone twice, causing players to die instead of him.", "investigation_result": "Appears according to the finalized Playboy Penguin card.", "tags": ["Protection", "Redirect Death", "Execution Survival", "Personal Win Condition"], "source": "playboy penguin.png", "review": "Reviewed", "abilities": [{"character": "Playboy Penguin", "ability_name": "Hide Behind Someone", "mechanic_type": "Redirect Death", "timing": "Night", "uses": "Each night", "resets_each_day": "Yes", "description": "If attacked, another player dies instead under the card's rules.", "source_note": "Reviewed summary"}, {"character": "Playboy Penguin", "ability_name": "Puppy Eyes", "mechanic_type": "Execution Survival", "timing": "Day", "uses": "Per card", "resets_each_day": "No", "description": "Survives hanging.", "source_note": "Reviewed summary"}]}, {"id": "yoyo_dodo", "character": "Yoyo Dodo", "faction": "Independent Wildcard", "role": "Reality Warper", "purpose": "Randomize Night actions and destabilize the game.", "passive_name": "", "passive_description": "", "basic_ask": "", "advanced_ask": "", "signature_name": "Reality Collapse", "signature_description": "Uses a major reality-warping effect and then dies under the card's rules.", "win_condition": "Survive until the start of Day 3.", "investigation_result": "Appears as a Villager.", "tags": ["Random", "Target Randomization", "Self-Death", "Personal Win Condition"], "source": "yoyo dodo.png", "review": "Needs exact wording check", "abilities": [{"character": "Yoyo Dodo", "ability_name": "Welcome to Wackyland", "mechanic_type": "Target Randomization", "timing": "Night", "uses": "Per card", "resets_each_day": "Varies", "description": "Randomizes targeted Night Abilities.", "source_note": "Provisional"}, {"character": "Yoyo Dodo", "ability_name": "Reality Collapse", "mechanic_type": "Chaos / Self-Death", "timing": "Signature", "uses": "1/game", "resets_each_day": "No", "description": "Triggers a major chaos effect and kills Yoyo afterward.", "source_note": "Provisional"}]}];
-const PHASES=["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
-const STATUS_LIST=["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
-const TEMP_STATUSES=["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
-const TRACKED=[
- ["Instant Kill",["Instant Kill"]],
- ["Super Kill",["Super Kill"]],
- ["Omega Kill",["Omega Kill"]],
- ["Standard Kill",["Standard Kill"]],
- ["Intel",["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"]],
- ["Protection",["Protection","Bodyguard","Guard"]],
- ["Roleblock",["Roleblock","Block"]],
- ["Redirect",["Redirect","Target Control"]],
- ["Poison",["Poison"]],
- ["Bleed",["Bleed"]],
- ["Mark",["Mark","Hunt","Wanted"]],
- ["Vote Control",["Vote Control","Vote Protection","Vote Manipulation"]],
- ["Conversion",["Conversion","Faction Change"]]
+
+const APP_VERSION = "1.5";
+const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
+const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
+const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
+const MECHANICS = [
+  ["Instant Kills",["Instant Kill"]],["Super Kills",["Super Kill"]],["Omega Kills",["Omega Kill"]],
+  ["Intel",["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"]],
+  ["Protection",["Protection","Bodyguard","Guard"]],["Blocks",["Roleblock","Block"]],
+  ["Redirects",["Redirect","Target Control"]],["Poison",["Poison"]],["Bleed",["Bleed"]],
+  ["Marks",["Mark","Hunt","Wanted"]],["Conversions",["Conversion","Faction Change"]]
 ];
-let state=JSON.parse(localStorage.getItem("acme-gm-state-v06")||"null")||{day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],resolutionHistory:[]};
 
-function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function save(){localStorage.setItem("acme-gm-state-v06",JSON.stringify(state));render()}
-function addLog(text){state.log.unshift({day:state.day,phase:PHASES[state.phaseIndex],time:new Date().toLocaleTimeString(),text})}
-function parseUses(t){const m=String(t).match(/(\d+)/);if(m)return +m[1];if(/each night|unlimited/i.test(t))return 999;return 1}
-function mechMatch(type,words){return words.some(w=>String(type).toLowerCase().includes(w.toLowerCase()))}
+let database = {characters:[],abilities:[],mechanics:[]};
+let state = loadState();
 
-function setupCharacterOptions(){
- const f=document.querySelector("#factionFilter").value,list=CHARACTER_DB.filter(c=>f==="ALL"||c.faction===f);
- document.querySelector("#characterSelect").innerHTML=list.map(c=>`<option value="${c.id}">${esc(c.character)} — ${esc(c.role)}</option>`).join("");previewCharacter()
+function defaultState(){
+  return {
+    version:APP_VERSION,day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],
+    worldDomination:{progress:0,goal:3,active:false},worldEvents:[]
+  };
 }
-function previewCharacter(){
- const c=CHARACTER_DB.find(x=>x.id===document.querySelector("#characterSelect").value);
- document.querySelector("#preview").innerHTML=c?`<b>${esc(c.character)}</b><br>${esc(c.faction)} • ${esc(c.role)}<p>${esc(c.purpose)}</p>`:"No character available."
+function loadState(){
+  try{
+    const saved=JSON.parse(localStorage.getItem("war-for-acme-v15"));
+    return saved ? {...defaultState(),...saved} : defaultState();
+  }catch{return defaultState();}
+}
+function save(){
+  localStorage.setItem("war-for-acme-v15",JSON.stringify(state));
+  render();
+}
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+function addLog(text){
+  state.log.unshift({day:state.day,phase:PHASES[state.phaseIndex],time:new Date().toLocaleTimeString(),text});
+}
+function parseUses(value){
+  const match=String(value||"").match(/(\d+)/);
+  if(match)return Number(match[1]);
+  if(/each night|unlimited/i.test(String(value)))return 999;
+  return 1;
+}
+function mechanicMatches(type,terms){
+  return terms.some(term=>String(type||"").toLowerCase().includes(term.toLowerCase()));
+}
+function characterAbilities(name){
+  return database.abilities.filter(a=>a.character===name);
+}
+function characterById(id){return database.characters.find(c=>c.id===id);}
+function playerById(id){return state.players.find(p=>p.id===id);}
+
+async function initialize(){
+  try{
+    const response=await fetch("data/master_database.json",{cache:"no-store"});
+    if(!response.ok)throw new Error("Database could not be loaded.");
+    database=await response.json();
+  }catch(error){
+    alert("The character database did not load. Refresh the GitHub Pages website. Details: "+error.message);
+  }
+  bindEvents();
+  renderCharacterOptions();
+  render();
+}
+
+function bindEvents(){
+  document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{
+    document.querySelectorAll(".tab,.view").forEach(el=>el.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.view).classList.add("active");
+  }));
+
+  addFactionFilter.addEventListener("change",renderCharacterOptions);
+  characterSelect.addEventListener("change",renderCharacterPreview);
+  addPlayerBtn.addEventListener("click",addPlayer);
+
+  [playerFactionFilter,playerLifeFilter,playerStatusFilter].forEach(el=>el.addEventListener("change",renderPlayers));
+  playerSearch.addEventListener("input",renderPlayers);
+
+  actionActor.addEventListener("change",renderAbilityOptions);
+  queueActionBtn.addEventListener("click",queueAction);
+  sortQueueBtn.addEventListener("click",()=>{state.queue.sort((a,b)=>a.priority-b.priority);save();});
+  resolveAllBtn.addEventListener("click",resolveAll);
+  clearQueueBtn.addEventListener("click",()=>{if(confirm("Clear every queued action?")){state.queue=[];save();}});
+  archiveNightBtn.addEventListener("click",archiveNight);
+
+  generateReportsBtn.addEventListener("click",generateReports);
+  addWorldEventBtn.addEventListener("click",addWorldEvent);
+
+  databaseSearch.addEventListener("input",renderDatabase);
+  databaseFactionFilter.addEventListener("change",renderDatabase);
+
+  addManualLogBtn.addEventListener("click",()=>{
+    const text=manualLogText.value.trim();
+    if(text){addLog(text);manualLogText.value="";save();}
+  });
+
+  advancePhaseBtn.addEventListener("click",advancePhase);
+  advanceDayBtn.addEventListener("click",advanceDay);
+  worldMinusBtn.addEventListener("click",()=>changeWorldProgress(-1));
+  worldPlusBtn.addEventListener("click",()=>changeWorldProgress(1));
+  worldToggleBtn.addEventListener("click",toggleWorldDomination);
+
+  backupBtn.addEventListener("click",downloadBackup);
+  loadBtn.addEventListener("click",()=>loadFile.click());
+  loadFile.addEventListener("change",event=>loadBackup(event.target.files[0]));
+  resetBtn.addEventListener("click",resetGame);
+  saveSetupBtn.addEventListener("click",saveRosterSetup);
+  loadSetupBtn.addEventListener("click",loadRosterSetup);
+}
+
+function renderCharacterOptions(){
+  const faction=addFactionFilter.value;
+  const list=database.characters.filter(c=>faction==="ALL"||c.faction===faction);
+  characterSelect.innerHTML=list.map(c=>`<option value="${c.id}">${escapeHtml(c.character)} — ${escapeHtml(c.role)}</option>`).join("");
+  renderCharacterPreview();
+}
+function renderCharacterPreview(){
+  const c=characterById(characterSelect.value);
+  characterPreview.innerHTML=c?`
+    <strong>${escapeHtml(c.character)}</strong><div class="role-line">${escapeHtml(c.faction)} • ${escapeHtml(c.role)}</div>
+    <p>${escapeHtml(c.purpose)}</p>
+    ${c.passive_name||c.passive_description?`<div><strong>Passive:</strong> ${escapeHtml(c.passive_name)} — ${escapeHtml(c.passive_description)}</div>`:""}
+    ${c.signature_name?`<div><strong>Signature:</strong> ${escapeHtml(c.signature_name)} — ${escapeHtml(c.signature_description)}</div>`:""}
+  `:'<div class="empty">No character available.</div>';
 }
 function addPlayer(){
- const c=CHARACTER_DB.find(x=>x.id===document.querySelector("#characterSelect").value);if(!c)return;
- state.players.push({id:crypto.randomUUID(),player:document.querySelector("#playerName").value.trim()||"Unnamed Player",character:c.character,role:c.role,faction:c.faction,purpose:c.purpose,passive_name:c.passive_name,passive_description:c.passive_description,signature_name:c.signature_name,signature_description:c.signature_description,alive:true,statuses:{},statusTimers:{},abilities:(c.abilities||[]).map(a=>({name:a.ability_name,type:a.mechanic_type,max:parseUses(a.uses),used:0,resets:a.resets_each_day==="Yes",description:a.description}))});
- addLog(`Player added as ${c.character}.`);document.querySelector("#playerName").value="";save()
+  const c=characterById(characterSelect.value);
+  if(!c)return;
+  const name=playerName.value.trim()||"Unnamed Player";
+  const abilities=characterAbilities(c.character).map(a=>({
+    name:a.ability_name,type:a.mechanic_type,description:a.description,
+    max:parseUses(a.uses),used:0,resets:a.resets_each_day==="Yes"
+  }));
+  state.players.push({
+    id:crypto.randomUUID(),name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
+    purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
+    signatureName:c.signature_name||"",signature:c.signature_description||"",
+    winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},
+    abilities,wildcardProgress:0,wildcardGoal:3
+  });
+  addLog(`${name} was assigned ${c.character}.`);
+  playerName.value="";
+  save();
 }
-function setupQueueSelectors(){
- const alive=state.players.filter(p=>p.alive);
- document.querySelector("#queueActor").innerHTML=alive.map(p=>`<option value="${p.id}">${esc(p.player)} — ${esc(p.character)}</option>`).join("");
- document.querySelector("#queueTargets").innerHTML=alive.map(p=>`<option value="${p.id}">${esc(p.player)} — ${esc(p.character)}</option>`).join("");setupAbilitySelector()
+
+function filteredPlayers(){
+  const search=playerSearch.value.toLowerCase();
+  return state.players.filter(p=>
+    (playerFactionFilter.value==="ALL"||p.faction===playerFactionFilter.value)&&
+    (playerLifeFilter.value==="ALL"||(playerLifeFilter.value==="ALIVE"&&p.alive)||(playerLifeFilter.value==="DEAD"&&!p.alive))&&
+    (playerStatusFilter.value==="ALL"||p.statuses[playerStatusFilter.value])&&
+    (!search||p.name.toLowerCase().includes(search)||p.character.toLowerCase().includes(search))
+  );
 }
-function setupAbilitySelector(){
- const p=state.players.find(x=>x.id===document.querySelector("#queueActor").value);
- document.querySelector("#queueAbility").innerHTML=p&&p.abilities.length?p.abilities.map((a,i)=>`<option value="${i}">${esc(a.name)} — ${esc(a.type)}</option>`).join(""):'<option value="">No abilities</option>'
+function renderPlayers(){
+  const list=filteredPlayers();
+  playersGrid.innerHTML=list.length?list.map(p=>`
+    <article class="player-card ${p.alive?"":"dead"}" data-player="${p.id}">
+      <div class="card-head">
+        <div><div class="player-name">${escapeHtml(p.name)}</div><div class="role-line">${escapeHtml(p.character)} • ${escapeHtml(p.role)} • ${escapeHtml(p.faction)}</div></div>
+        <span class="badge">${p.alive?"ALIVE":"DEAD"}</span>
+      </div>
+      <div class="info-box">
+        <strong>Purpose:</strong> ${escapeHtml(p.purpose)}
+        ${p.passive?`<br><strong>Passive:</strong> ${escapeHtml(p.passiveName)} — ${escapeHtml(p.passive)}`:""}
+        ${p.signature?`<br><strong>Signature:</strong> ${escapeHtml(p.signatureName)} — ${escapeHtml(p.signature)}`:""}
+        ${p.faction==="Independent Wildcard"?`<br><strong>Win condition:</strong> ${escapeHtml(p.winCondition)}`:""}
+      </div>
+      ${p.faction==="Independent Wildcard"?`
+        <div class="progress-line">
+          <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,(p.wildcardProgress/p.wildcardGoal)*100)}%"></div></div>
+          <strong>${p.wildcardProgress}/${p.wildcardGoal}</strong>
+        </div>
+        <div class="actions"><button data-progress="-1" class="secondary">− Win Progress</button><button data-progress="1">+ Win Progress</button></div>
+      `:""}
+      <div class="status-grid">${STATUSES.map(s=>`<label class="status-toggle"><input type="checkbox" data-status="${s}" ${p.statuses[s]?"checked":""}> ${s}</label>`).join("")}</div>
+      <div>${p.abilities.length?p.abilities.map((a,i)=>`
+        <div class="ability-row">
+          <strong>${escapeHtml(a.name)}</strong> <span class="badge">${escapeHtml(a.type)}</span>
+          <small>${escapeHtml(a.description)} • ${a.max===999?`Used today: ${a.used}`:`${a.used}/${a.max} used`}</small>
+          <div class="actions"><button data-use="${i}">Use</button><button data-undo-use="${i}" class="secondary">Undo</button></div>
+        </div>`).join(""):'<div class="muted">No normalized ability records yet.</div>'}</div>
+      <div class="actions"><button data-life class="${p.alive?"danger":"success"}">${p.alive?"Mark Dead":"Revive"}</button><button data-remove class="secondary">Remove</button></div>
+    </article>
+  `).join(""):'<div class="empty">No matching players.</div>';
+
+  playersGrid.querySelectorAll("[data-player]").forEach(card=>{
+    const p=playerById(card.dataset.player);
+    card.querySelectorAll("[data-status]").forEach(box=>box.addEventListener("change",()=>{p.statuses[box.dataset.status]=box.checked;save();}));
+    card.querySelectorAll("[data-use]").forEach(btn=>btn.addEventListener("click",()=>useAbility(p,Number(btn.dataset.use),1)));
+    card.querySelectorAll("[data-undo-use]").forEach(btn=>btn.addEventListener("click",()=>useAbility(p,Number(btn.dataset.undoUse),-1)));
+    card.querySelectorAll("[data-progress]").forEach(btn=>btn.addEventListener("click",()=>{p.wildcardProgress=Math.max(0,Math.min(p.wildcardGoal,p.wildcardProgress+Number(btn.dataset.progress)));save();}));
+    card.querySelector("[data-life]").addEventListener("click",()=>{p.alive=!p.alive;addLog(`${p.name} is now ${p.alive?"alive":"dead"}.`);save();});
+    card.querySelector("[data-remove]").addEventListener("click",()=>{if(confirm(`Remove ${p.name}?`)){state.players=state.players.filter(x=>x.id!==p.id);save();}});
+  });
 }
-function addQueue(){
- const actor=state.players.find(x=>x.id===document.querySelector("#queueActor").value);if(!actor)return;
- const i=+document.querySelector("#queueAbility").value,a=actor.abilities[i];if(!a)return;
- const ids=[...document.querySelector("#queueTargets").selectedOptions].map(o=>o.value),targets=ids.map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
- state.queue.push({id:crypto.randomUUID(),actorId:actor.id,actorName:actor.player,abilityIndex:i,abilityName:a.name,type:a.type,targetIds:ids,targetNames:targets.map(t=>t.player),priority:+document.querySelector("#queuePriority").value||50,killTier:document.querySelector("#killTier").value,outcome:document.querySelector("#queueOutcome").value,note:document.querySelector("#queueNote").value.trim(),resolved:false});
- addLog(`Queued: ${actor.player} — ${a.name}.`);save()
+function useAbility(player,index,change){
+  const a=player.abilities[index];
+  if(change>0&&a.used>=a.max)return alert("No uses remain.");
+  a.used=Math.max(0,a.used+change);
+  addLog(`${change>0?"Used":"Restored"} ${player.name}'s ability: ${a.name}.`);
+  save();
 }
-function snapshot(){return JSON.stringify({players:state.players,queue:state.queue,log:state.log})}
+
+function renderActionSelectors(){
+  const alive=state.players.filter(p=>p.alive);
+  actionActor.innerHTML=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
+  actionTargets.innerHTML=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
+  renderAbilityOptions();
+}
+function renderAbilityOptions(){
+  const actor=playerById(actionActor.value);
+  actionAbility.innerHTML=actor&&actor.abilities.length?actor.abilities.map((a,i)=>`<option value="${i}">${escapeHtml(a.name)} — ${escapeHtml(a.type)}</option>`).join(""):'<option value="">No abilities</option>';
+}
+function queueAction(){
+  const actor=playerById(actionActor.value);
+  if(!actor)return alert("Add players first.");
+  const abilityIndex=Number(actionAbility.value);
+  const ability=actor.abilities[abilityIndex];
+  if(!ability)return alert("This character has no normalized ability record.");
+  const targetIds=[...actionTargets.selectedOptions].map(o=>o.value);
+  const targetNames=targetIds.map(id=>playerById(id)?.name).filter(Boolean);
+  state.queue.push({
+    id:crypto.randomUUID(),actorId:actor.id,actorName:actor.name,character:actor.character,
+    abilityIndex,abilityName:ability.name,type:ability.type,targetIds,targetNames,
+    priority:Number(actionPriority.value)||50,killTier:actionKillTier.value,
+    outcome:actionOutcome.value,note:actionNote.value.trim(),resolved:false
+  });
+  addLog(`Queued: ${actor.name} used ${ability.name} on ${targetNames.join(", ")||"no target"}.`);
+  actionNote.value="";
+  save();
+}
+function renderQueue(){
+  const pending=state.queue.filter(q=>!q.resolved).length;
+  queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved`;
+  const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
+  queueList.innerHTML=ordered.length?ordered.map(q=>`
+    <article class="queue-card ${q.resolved?"resolved":""}" data-action="${q.id}">
+      <div class="card-head"><strong>${escapeHtml(q.actorName)} — ${escapeHtml(q.abilityName)}</strong><span class="badge">Priority ${q.priority}</span></div>
+      <div class="queue-meta">Targets: ${escapeHtml(q.targetNames.join(", ")||"None")} • ${escapeHtml(q.type)} • ${escapeHtml(q.killTier)}</div>
+      <label>Outcome</label>
+      <select data-outcome ${q.resolved?"disabled":""}>
+        ${["Pending","Successful","Failed","Blocked","Redirected","Protected","Immune","Delayed","Cancelled","Target Died","Escaped Death"].map(o=>`<option ${o===q.outcome?"selected":""}>${o}</option>`).join("")}
+      </select>
+      ${q.note?`<div class="queue-meta">GM note: ${escapeHtml(q.note)}</div>`:""}
+      <div class="actions"><button data-resolve class="${q.resolved?"secondary":"success"}">${q.resolved?"Resolved":"Resolve"}</button><button data-delete class="danger">Remove</button></div>
+    </article>
+  `).join(""):'<div class="empty">No actions queued.</div>';
+
+  queueList.querySelectorAll("[data-action]").forEach(card=>{
+    const action=state.queue.find(q=>q.id===card.dataset.action);
+    const outcome=card.querySelector("[data-outcome]");
+    outcome.addEventListener("change",()=>{action.outcome=outcome.value;save();});
+    card.querySelector("[data-resolve]").addEventListener("click",()=>resolveAction(action.id));
+    card.querySelector("[data-delete]").addEventListener("click",()=>{state.queue=state.queue.filter(q=>q.id!==action.id);save();});
+  });
+}
 function resolveAction(id){
- const q=state.queue.find(x=>x.id===id);if(!q||q.resolved)return;state.resolutionHistory.push(snapshot());
- const actor=state.players.find(x=>x.id===q.actorId);if(actor&&actor.abilities[q.abilityIndex]&&actor.abilities[q.abilityIndex].used<actor.abilities[q.abilityIndex].max)actor.abilities[q.abilityIndex].used++;
- q.targetIds.forEach(id=>{const t=state.players.find(p=>p.id===id);if(!t)return;if(q.outcome==="Target Died")t.alive=false;if(q.outcome==="Protected")t.statuses.Protected=true;if(q.outcome==="Blocked")t.statuses.Blocked=true;if(q.outcome==="Delayed")t.statuses.Delayed=true;if(q.outcome==="Successful"&&/Poison/i.test(q.type))t.statuses.Poisoned=true;if(q.outcome==="Successful"&&/Bleed/i.test(q.type))t.statuses.Bleeding=true;if(q.outcome==="Successful"&&/(Mark|Hunt)/i.test(q.type))t.statuses.Marked=true});
- q.resolved=true;addLog(`Resolved: ${q.actorName} used ${q.abilityName} — ${q.outcome}.`);save()
+  const q=state.queue.find(x=>x.id===id);
+  if(!q||q.resolved)return;
+  if(q.outcome==="Pending")return alert("Choose an outcome before resolving.");
+  const actor=playerById(q.actorId);
+  const ability=actor?.abilities[q.abilityIndex];
+  if(ability&&ability.used<ability.max)ability.used++;
+  q.targetIds.forEach(targetId=>{
+    const target=playerById(targetId);
+    if(!target)return;
+    if(q.outcome==="Target Died")target.alive=false;
+    if(q.outcome==="Protected")target.statuses.Protected=true;
+    if(q.outcome==="Blocked")target.statuses.Blocked=true;
+    if(q.outcome==="Delayed")target.statuses.Delayed=true;
+    if(q.outcome==="Successful"&&/Poison/i.test(q.type))target.statuses.Poisoned=true;
+    if(q.outcome==="Successful"&&/Bleed/i.test(q.type))target.statuses.Bleeding=true;
+    if(q.outcome==="Successful"&&/(Mark|Hunt|Wanted)/i.test(q.type))target.statuses.Marked=true;
+  });
+  q.resolved=true;
+  addLog(`Resolved: ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — ${q.outcome}.`);
+  save();
 }
-function resolveAll(){state.queue.filter(q=>!q.resolved).sort((a,b)=>a.priority-b.priority).forEach(q=>resolveAction(q.id))}
-function undoLast(){const s=state.resolutionHistory.pop();if(!s)return alert("Nothing to undo.");const old=JSON.parse(s);state.players=old.players;state.queue=old.queue;state.log=old.log;save()}
-function archiveNight(){const items=state.queue.filter(q=>q.resolved);if(!items.length)return alert("Resolve actions first.");state.archive.unshift({day:state.day,created:new Date().toLocaleString(),actions:JSON.parse(JSON.stringify(items))});save()}
-function generateReport(){const a=state.queue.filter(q=>q.resolved),lines=[`Morning Report — Day ${state.day}`,""];a.forEach(q=>{if(q.outcome==="Target Died")lines.push(`• ${q.targetNames.join(", ")} died.`);else if(q.outcome==="Successful"&&/Poison/i.test(q.type))lines.push(`• ${q.targetNames.join(", ")} was poisoned.`);else if(q.outcome==="Successful"&&/Bleed/i.test(q.type))lines.push(`• ${q.targetNames.join(", ")} began bleeding.`);else if(["Blocked","Protected","Immune","Redirected"].includes(q.outcome))lines.push(`• One action was ${q.outcome.toLowerCase()}.`)});if(lines.length===2)lines.push("• Nothing publicly reportable happened.");document.querySelector("#morningReport").value=lines.join("\n")}
-function advanceDay(){state.day++;state.phaseIndex=0;state.players.forEach(p=>{TEMP_STATUSES.forEach(s=>p.statuses[s]=false);p.abilities.forEach(a=>{if(a.resets)a.used=0})});state.queue=[];addLog(`Advanced to Day ${state.day}.`);save()}
-function advancePhase(){state.phaseIndex=(state.phaseIndex+1)%PHASES.length;if(state.phaseIndex===0)state.day++;addLog(`Phase advanced to ${PHASES[state.phaseIndex]}.`);save()}
-function toggleStatus(id,s){const p=state.players.find(x=>x.id===id);p.statuses[s]=!p.statuses[s];save()}
-function toggleAlive(id){const p=state.players.find(x=>x.id===id);p.alive=!p.alive;save()}
-function removePlayer(id){state.players=state.players.filter(p=>p.id!==id);save()}
-function exportGame(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`war-for-acme-day-${state.day}.json`;a.click();URL.revokeObjectURL(a.href)}
-function importGame(file){const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save()}catch(e){alert("Invalid file.")}};r.readAsText(file)}
-function resetGame(){if(confirm("Reset the entire game?")){state={day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],resolutionHistory:[]};save()}}
-
-function countMechanic(players,labelWords,aliveOnly=false){
- return players.filter(p=>!aliveOnly||p.alive).reduce((n,p)=>n+p.abilities.filter(a=>mechMatch(a.type,labelWords)).length,0)
+function resolveAll(){
+  const pending=[...state.queue].filter(q=>!q.resolved).sort((a,b)=>a.priority-b.priority);
+  for(const q of pending){
+    if(q.outcome==="Pending")continue;
+    resolveAction(q.id);
+  }
 }
-function fullDbCount(words){return CHARACTER_DB.reduce((n,c)=>n+(c.abilities||[]).filter(a=>mechMatch(a.mechanic_type,words)).length,0)}
-function renderStats(){
- const living=state.players.filter(p=>p.alive);
- const metrics=TRACKED.map(([label,words])=>[label,countMechanic(state.players,words,true)]);
- document.querySelector("#liveMetrics").innerHTML=metrics.map(([l,v])=>`<div class="metric"><b>${v}</b><span>${l} remaining</span></div>`).join("");
+function archiveNight(){
+  const resolved=state.queue.filter(q=>q.resolved);
+  if(!resolved.length)return alert("Resolve at least one action first.");
+  state.archive.unshift({day:state.day,time:new Date().toLocaleString(),actions:JSON.parse(JSON.stringify(resolved))});
+  addLog(`Night ${state.day} archived with ${resolved.length} resolved actions.`);
+  save();
+}
 
- const factions=["ACME Defense Force","Warner Syndicate","Independent Wildcard"];
- document.querySelector("#factionStats").innerHTML=factions.map(f=>{
-   const ps=living.filter(p=>p.faction===f);
-   const kills=countMechanic(ps,["Kill"],false),intel=countMechanic(ps,["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"],false),prot=countMechanic(ps,["Protection","Bodyguard","Guard"],false),ctrl=countMechanic(ps,["Roleblock","Redirect","Target Control","Vote Control","Conversion"],false);
-   return `<div class="warning"><b>${esc(f)}</b><div class="queue-meta">${ps.length} alive • Offense ${kills} • Intel ${intel} • Protection ${prot} • Control ${ctrl}</div></div>`;
- }).join("");
+function generateReports(){
+  const resolved=state.queue.filter(q=>q.resolved);
+  const publicLines=[`══════════════════════`,`🌅 DAY ${state.day}`,""];
+  const gmLines=[`GM NIGHT SUMMARY — DAY ${state.day}`,""];
+  const playerLines=[];
 
- const warnings=[];
- const livingCount=living.length;
- const instant=countMechanic(state.players,["Instant Kill"],true),superk=countMechanic(state.players,["Super Kill"],true),omega=countMechanic(state.players,["Omega Kill"],true);
- const protection=countMechanic(state.players,["Protection","Bodyguard","Guard"],true),intel=countMechanic(state.players,["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"],true),blocks=countMechanic(state.players,["Roleblock","Block"],true);
- const poison=countMechanic(state.players,["Poison"],true);
- if(livingCount>0 && protection===0)warnings.push(["high","No living protection roles remain."]);
- if(livingCount>0 && intel===0)warnings.push(["medium","No living information roles remain."]);
- if(instant+superk+omega>Math.max(3,Math.floor(livingCount/4)))warnings.push(["high","High concentration of powerful kills in the living roster."]);
- if(blocks>Math.max(4,Math.floor(livingCount/3)))warnings.push(["medium","Heavy blocking/control presence may slow the game."]);
- if(poison>0 && protection===0)warnings.push(["high","Poison exists but no living protection role is available."]);
- if(!warnings.length)warnings.push(["good","No major setup warnings detected."]);
- document.querySelector("#warnings").innerHTML=warnings.map(([cls,text])=>`<div class="warning ${cls}">${esc(text)}</div>`).join("");
+  resolved.forEach(q=>{
+    if(q.outcome==="Target Died")q.targetNames.forEach(name=>publicLines.push(`☠ ${name} has died.`));
+    if(q.outcome==="Escaped Death")q.targetNames.forEach(name=>publicLines.push(`⚠ ${name} escaped death.`));
+    gmLines.push(`• ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — ${q.outcome}${q.note?` (${q.note})`:""}.`);
 
- const tbody=document.querySelector("#comparisonTable tbody");
- tbody.innerHTML=TRACKED.map(([label,words])=>`<tr><td>${esc(label)}</td><td>${fullDbCount(words)}</td><td>${countMechanic(state.players,words,false)}</td><td>${countMechanic(state.players,words,true)}</td></tr>`).join("")
+    q.targetNames.forEach(name=>{
+      if(q.outcome==="Blocked")playerLines.push(`TO: ${name}\nYour ability was blocked.`);
+      if(q.outcome==="Protected")playerLines.push(`TO: ${name}\nYou were protected from an action.`);
+      if(q.outcome==="Immune")playerLines.push(`TO: ${name}\nAn ability failed because you were immune.`);
+      if(q.outcome==="Delayed")playerLines.push(`TO: ${name}\nYour action or effect was delayed.`);
+      if(q.outcome==="Successful"&&/Poison/i.test(q.type))playerLines.push(`TO: ${name}\nYou have been poisoned.`);
+      if(q.outcome==="Successful"&&/Bleed/i.test(q.type))playerLines.push(`TO: ${name}\nYou are bleeding.`);
+      if(q.outcome==="Successful"&&/(Mark|Hunt|Wanted)/i.test(q.type))playerLines.push(`TO: ${name}\nYou have been marked.`);
+    });
+  });
+
+  state.worldEvents.filter(e=>!e.archived).forEach(e=>publicLines.push(`🌍 ${e.text||e.title}`));
+  if(publicLines.length===3)publicLines.push("Nothing publicly reportable happened.");
+  if(resolved.length===0)gmLines.push("No resolved actions.");
+  if(playerLines.length===0)playerLines.push("No private player messages were generated.");
+
+  publicLines.push("","══════════════════════");
+  publicReport.value=publicLines.join("\n");
+  gmReport.value=gmLines.join("\n");
+  playerMessages.value=playerLines.join("\n\n────────────\n\n");
+}
+function addWorldEvent(){
+  const title=worldEventTitle.value.trim();
+  const text=worldEventText.value.trim();
+  if(!title&&!text)return alert("Enter a public world event.");
+  state.worldEvents.push({id:crypto.randomUUID(),title:title||"World Event",text:text||title,day:state.day,archived:false});
+  worldEventTitle.value="";worldEventText.value="";
+  addLog(`Public world event added: ${text||title}.`);
+  save();
+}
+function renderWorldEvents(){
+  const events=state.worldEvents.filter(e=>!e.archived);
+  worldEventsList.innerHTML=events.length?events.map(e=>`
+    <div class="list-item" data-world-event="${e.id}">
+      <strong>${escapeHtml(e.title)}</strong><div class="role-line">${escapeHtml(e.text)}</div>
+      <div class="actions"><button data-remove-world class="danger">Remove</button></div>
+    </div>`).join(""):'<div class="empty">No pending public world events.</div>';
+  worldEventsList.querySelectorAll("[data-world-event]").forEach(item=>{
+    item.querySelector("[data-remove-world]").addEventListener("click",()=>{
+      state.worldEvents=state.worldEvents.filter(e=>e.id!==item.dataset.worldEvent);save();
+    });
+  });
+}
+
+function renderDatabase(){
+  const search=databaseSearch.value.toLowerCase();
+  const faction=databaseFactionFilter.value;
+  const list=database.characters.filter(c=>{
+    if(faction!=="ALL"&&c.faction!==faction)return false;
+    const abilities=characterAbilities(c.character);
+    const haystack=[c.character,c.faction,c.role,c.purpose,c.passive_name,c.passive_description,c.signature_name,c.signature_description,c.win_condition,...abilities.flatMap(a=>[a.ability_name,a.mechanic_type,a.description])].join(" ").toLowerCase();
+    return !search||haystack.includes(search);
+  });
+  databaseResults.innerHTML=list.length?list.map(c=>{
+    const abilities=characterAbilities(c.character);
+    return `<article class="database-card">
+      <div class="card-head"><div><strong>${escapeHtml(c.character)}</strong><div class="role-line">${escapeHtml(c.faction)} • ${escapeHtml(c.role)}</div></div><span class="badge">${escapeHtml(c.review||"")}</span></div>
+      <p>${escapeHtml(c.purpose)}</p>
+      ${c.passive_name||c.passive_description?`<div class="info-box"><strong>Passive:</strong> ${escapeHtml(c.passive_name)} — ${escapeHtml(c.passive_description)}</div>`:""}
+      ${c.signature_name?`<div class="info-box"><strong>Signature:</strong> ${escapeHtml(c.signature_name)} — ${escapeHtml(c.signature_description)}</div>`:""}
+      ${abilities.map(a=>`<div class="ability-row"><strong>${escapeHtml(a.ability_name)}</strong> <span class="badge">${escapeHtml(a.mechanic_type)}</span><small>${escapeHtml(a.description)} • ${escapeHtml(a.uses)}</small></div>`).join("")}
+    </article>`;
+  }).join(""):'<div class="empty">No matching characters.</div>';
+}
+function countMechanic(players,terms,aliveOnly){
+  return players.filter(p=>!aliveOnly||p.alive).reduce((sum,p)=>sum+p.abilities.filter(a=>mechanicMatches(a.type,terms)).length,0);
+}
+function renderStatistics(){
+  mechanicMetrics.innerHTML=MECHANICS.map(([label,terms])=>`<div class="metric"><strong>${countMechanic(state.players,terms,true)}</strong><span>${label} alive</span></div>`).join("");
+  const factions=["ACME Defense Force","Warner Syndicate","Independent Wildcard"];
+  mechanicsByFaction.innerHTML=factions.map(f=>{
+    const players=state.players.filter(p=>p.alive&&p.faction===f);
+    return `<div class="list-item"><strong>${escapeHtml(f)}</strong><div class="role-line">${players.length} alive • Offense ${countMechanic(players,["Kill"],false)} • Intel ${countMechanic(players,["Intel","Ask","Watcher","Tracker"],false)} • Protection ${countMechanic(players,["Protection","Bodyguard","Guard"],false)} • Control ${countMechanic(players,["Block","Redirect","Control","Conversion"],false)}</div></div>`;
+  }).join("");
+
+  const living=state.players.filter(p=>p.alive);
+  const warnings=[];
+  const protection=countMechanic(state.players,["Protection","Bodyguard","Guard"],true);
+  const intel=countMechanic(state.players,["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"],true);
+  const highKills=countMechanic(state.players,["Instant Kill","Super Kill","Omega Kill"],true);
+  if(living.length&&protection===0)warnings.push(["high","No living protection abilities remain."]);
+  if(living.length&&intel===0)warnings.push(["high","No living information abilities remain."]);
+  if(highKills>Math.max(3,Math.floor(living.length/4)))warnings.push(["high","The living roster contains a high concentration of powerful kills."]);
+  if(!warnings.length)warnings.push(["good","No major roster warning detected."]);
+  setupWarnings.innerHTML=warnings.map(([level,text])=>`<div class="warning ${level}">${escapeHtml(text)}</div>`).join("");
+}
+
+function renderDashboard(){
+  const alive=state.players.filter(p=>p.alive).length;
+  const dead=state.players.length-alive;
+  const pending=state.queue.filter(q=>!q.resolved).length;
+  dashboardMetrics.innerHTML=[
+    ["Day",state.day],["Phase",PHASES[state.phaseIndex]],["Alive",alive],["Dead",dead],["Pending Actions",pending]
+  ].map(([label,value])=>`<div class="metric"><strong>${escapeHtml(value)}</strong><span>${label}</span></div>`).join("");
+
+  factionSnapshot.innerHTML=["ACME Defense Force","Warner Syndicate","Independent Wildcard"].map(f=>`
+    <div class="list-item"><strong>${escapeHtml(f)}</strong><div class="role-line">${state.players.filter(p=>p.faction===f&&p.alive).length} alive / ${state.players.filter(p=>p.faction===f).length} assigned</div></div>
+  `).join("");
+
+  const alerts=STATUSES.map(s=>[s,state.players.filter(p=>p.alive&&p.statuses[s]).length]).filter(x=>x[1]);
+  activeAlerts.innerHTML=alerts.length?alerts.map(([status,count])=>`<div class="list-item"><strong>${count}</strong> ${escapeHtml(status)}</div>`).join(""):'<div class="empty">No active status alerts.</div>';
+
+  const wd=state.worldDomination;
+  worldProgressBar.style.width=`${Math.min(100,(wd.progress/wd.goal)*100)}%`;
+  worldProgressText.textContent=`${wd.progress} / ${wd.goal}`;
+  worldStatus.textContent=wd.active?"World Domination is ACTIVE.":"World Domination is inactive.";
+  worldToggleBtn.textContent=wd.active?"Deactivate":"Activate";
+}
+function changeWorldProgress(delta){
+  const wd=state.worldDomination;
+  wd.progress=Math.max(0,Math.min(wd.goal,wd.progress+delta));
+  addLog(`World Domination progress changed to ${wd.progress}/${wd.goal}.`);
+  save();
+}
+function toggleWorldDomination(){
+  const wd=state.worldDomination;
+  if(!wd.active&&wd.progress<wd.goal&&!confirm("Progress is incomplete. Activate anyway?"))return;
+  wd.active=!wd.active;
+  if(wd.active)state.worldEvents.push({id:crypto.randomUUID(),title:"World Domination",text:"World Domination has been activated.",day:state.day,archived:false});
+  addLog(`World Domination is now ${wd.active?"active":"inactive"}.`);
+  save();
+}
+
+function advancePhase(){
+  state.phaseIndex=(state.phaseIndex+1)%PHASES.length;
+  if(state.phaseIndex===0)state.day++;
+  addLog(`Phase advanced to ${PHASES[state.phaseIndex]}.`);
+  save();
+}
+function advanceDay(){
+  state.day++;
+  state.phaseIndex=0;
+  state.players.forEach(p=>{
+    TEMP_STATUSES.forEach(s=>p.statuses[s]=false);
+    p.abilities.forEach(a=>{if(a.resets)a.used=0;});
+  });
+  state.queue=[];
+  state.worldEvents.forEach(e=>e.archived=true);
+  addLog(`Advanced to Day ${state.day}. Temporary statuses, nightly ability usage, queue and public events were reset.`);
+  save();
+}
+function downloadBackup(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download=`war-for-acme-day-${state.day}-backup.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+function loadBackup(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{state={...defaultState(),...JSON.parse(reader.result)};save();}
+    catch{alert("That backup file is invalid.");}
+  };
+  reader.readAsText(file);
+}
+function resetGame(){
+  if(confirm("Reset the entire game? This removes players, actions, logs and progress.")){state=defaultState();save();}
+}
+function saveRosterSetup(){
+  const setup=state.players.map(p=>({name:p.name,characterId:p.characterId}));
+  localStorage.setItem("war-for-acme-roster-setup",JSON.stringify(setup));
+  alert("Roster setup saved in this browser.");
+}
+function loadRosterSetup(){
+  const raw=localStorage.getItem("war-for-acme-roster-setup");
+  if(!raw)return alert("No roster setup has been saved.");
+  if(state.players.length&&!confirm("Replace the current roster with the saved setup?"))return;
+  const setup=JSON.parse(raw);
+  state.players=[];
+  setup.forEach(item=>{
+    const c=characterById(item.characterId);
+    if(!c)return;
+    state.players.push({
+      id:crypto.randomUUID(),name:item.name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
+      purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
+      signatureName:c.signature_name||"",signature:c.signature_description||"",
+      winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},
+      abilities:characterAbilities(c.character).map(a=>({name:a.ability_name,type:a.mechanic_type,description:a.description,max:parseUses(a.uses),used:0,resets:a.resets_each_day==="Yes"})),
+      wildcardProgress:0,wildcardGoal:3
+    });
+  });
+  addLog("Saved roster setup loaded.");
+  save();
+}
+
+function renderLogAndArchive(){
+  gameLog.innerHTML=state.log.length?state.log.map(entry=>`<div class="list-item"><strong>Day ${entry.day} • ${escapeHtml(entry.phase)}</strong><div class="role-line">${entry.time}</div><div>${escapeHtml(entry.text)}</div></div>`).join(""):'<div class="empty">No log entries.</div>';
+  nightArchive.innerHTML=state.archive.length?state.archive.map(n=>`<div class="list-item"><strong>Day ${n.day}</strong><div class="role-line">${escapeHtml(n.time)} • ${n.actions.length} actions</div></div>`).join(""):'<div class="empty">No archived nights.</div>';
 }
 
 function render(){
- document.querySelector("#dayStat").textContent=state.day;document.querySelector("#phaseStat").textContent=PHASES[state.phaseIndex];
- document.querySelector("#aliveStat").textContent=state.players.filter(p=>p.alive).length;document.querySelector("#deadStat").textContent=state.players.filter(p=>!p.alive).length;document.querySelector("#queueStat").textContent=state.queue.length;
- setupQueueSelectors();renderStats();
-
- const qbox=document.querySelector("#queue");qbox.innerHTML=state.queue.length?"":'<div class="empty">No actions queued.</div>';
- state.queue.slice().sort((a,b)=>a.priority-b.priority).forEach(q=>{const d=document.createElement("div");d.className="queue-item";d.innerHTML=`<div class="queue-head"><b>${esc(q.actorName)} — ${esc(q.abilityName)}</b><span class="badge">P${q.priority}</span></div><div class="queue-meta">Targets: ${esc(q.targetNames.join(", ")||"None")} • ${esc(q.type)} • ${esc(q.outcome)}</div><div class="actions"><button data-resolve class="${q.resolved?"secondary":"success"}">${q.resolved?"Resolved":"Resolve"}</button><button data-remove class="danger">Remove</button></div>`;d.querySelector("[data-resolve]").addEventListener("click",()=>resolveAction(q.id));d.querySelector("[data-remove]").addEventListener("click",()=>{state.queue=state.queue.filter(x=>x.id!==q.id);save()});qbox.appendChild(d)});
- document.querySelector("#archive").innerHTML=state.archive.length?state.archive.map(n=>`<div class="archive-item"><b>Day ${n.day}</b><div class="queue-meta">${esc(n.created)} • ${n.actions.length} actions</div></div>`).join(""):'<div class="empty">No archived nights.</div>';
- document.querySelector("#log").innerHTML=state.log.length?state.log.map(x=>`<div class="log-item"><b>Day ${x.day} • ${esc(x.phase)}</b> • ${x.time}<br>${esc(x.text)}</div>`).join(""):'<div class="empty">No log entries.</div>';
-
- const faction=document.querySelector("#filterFaction").value,life=document.querySelector("#filterLife").value,status=document.querySelector("#filterStatus").value,search=document.querySelector("#filterSearch").value.toLowerCase();
- const list=state.players.filter(p=>(faction==="ALL"||p.faction===faction)&&(life==="ALL"||(life==="ALIVE"&&p.alive)||(life==="DEAD"&&!p.alive))&&(status==="ALL"||p.statuses[status])&&(!search||p.player.toLowerCase().includes(search)||p.character.toLowerCase().includes(search)));
- document.querySelector("#playerWrap").classList.toggle("compact",document.querySelector("#compactToggle").checked);
- const box=document.querySelector("#players");box.innerHTML=list.length?"":'<div class="empty">No matching players.</div>';
- list.forEach(p=>{const card=document.createElement("article");card.className="card"+(p.alive?"":" dead");card.innerHTML=`<div class="card-top"><div><div class="name">${esc(p.player)}</div><div class="role">${esc(p.character)} • ${esc(p.role)} • ${esc(p.faction)}</div></div><span class="badge">${p.alive?"ALIVE":"DEAD"}</span></div><div class="info-box"><b>Purpose:</b> ${esc(p.purpose)}</div><div class="statuses">${STATUS_LIST.map(s=>`<label class="status"><input type="checkbox" data-status="${s}" ${p.statuses[s]?"checked":""}> ${s}</label>`).join("")}</div><div>${p.abilities.map(a=>`<div class="ability"><div><b>${esc(a.name)}</b> <span class="badge">${esc(a.type)}</span><small>${esc(a.description)}</small></div></div>`).join("")}</div><div class="actions"><button data-alive class="${p.alive?"danger":""}">${p.alive?"Mark Dead":"Revive"}</button><button data-remove class="secondary">Remove</button></div>`;card.querySelectorAll("[data-status]").forEach(el=>el.addEventListener("change",()=>toggleStatus(p.id,el.dataset.status)));card.querySelector("[data-alive]").addEventListener("click",()=>toggleAlive(p.id));card.querySelector("[data-remove]").addEventListener("click",()=>removePlayer(p.id));box.appendChild(card)})
+  renderDashboard();
+  renderPlayers();
+  renderActionSelectors();
+  renderQueue();
+  renderWorldEvents();
+  renderDatabase();
+  renderStatistics();
+  renderLogAndArchive();
 }
 
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab,.tabview").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelector("#"+b.dataset.tab).classList.add("active")}));
-document.querySelector("#factionFilter").addEventListener("change",setupCharacterOptions);document.querySelector("#characterSelect").addEventListener("change",previewCharacter);
-document.querySelector("#addPlayer").addEventListener("click",addPlayer);document.querySelector("#queueActor").addEventListener("change",setupAbilitySelector);document.querySelector("#addQueue").addEventListener("click",addQueue);
-document.querySelector("#sortQueue").addEventListener("click",()=>{state.queue.sort((a,b)=>a.priority-b.priority);save()});document.querySelector("#resolveAll").addEventListener("click",resolveAll);document.querySelector("#archiveNight").addEventListener("click",archiveNight);document.querySelector("#clearQueue").addEventListener("click",()=>{state.queue=[];save()});
-document.querySelector("#generateReport").addEventListener("click",generateReport);document.querySelector("#clearReport").addEventListener("click",()=>document.querySelector("#morningReport").value="");
-document.querySelector("#advancePhase").addEventListener("click",advancePhase);document.querySelector("#advanceDay").addEventListener("click",advanceDay);document.querySelector("#undoLast").addEventListener("click",undoLast);
-document.querySelector("#exportBtn").addEventListener("click",exportGame);document.querySelector("#importBtn").addEventListener("click",()=>document.querySelector("#importFile").click());document.querySelector("#importFile").addEventListener("change",e=>e.target.files[0]&&importGame(e.target.files[0]));document.querySelector("#resetBtn").addEventListener("click",resetGame);
-["filterFaction","filterLife","filterStatus","filterSearch","compactToggle"].forEach(id=>document.querySelector("#"+id).addEventListener(id==="filterSearch"?"input":"change",render));
-setupCharacterOptions();render();
+initialize();

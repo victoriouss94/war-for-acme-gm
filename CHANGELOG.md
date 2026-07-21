@@ -1,11 +1,16 @@
 # War for ACME GM — Changelog
 
-## Version 1.1 — Game-Night Production Build
+## Version 1.5 — Big Wednesday Game-Night Update
 
-- Preserves every feature from Phase 6.
-- Adds a prominent Version 1.1 build banner.
-- Converts the project from one large HTML file into separate HTML, CSS, JavaScript, and data files.
-- Includes the master character database as `data/master_database.json`.
-- Keeps player tracking, alive/dead states, statuses, ability data, night queue, resolution, morning reports, statistics, faction breakdowns, setup warnings, logs, and backup import/export.
-- Adds `VERSION.txt` so the deployed version can always be verified.
-- Adds a multi-file GitHub Pages structure for clearer future updates.
+- Rebuilt the interface as a clear seven-section GM operations center.
+- Preserves player tracking, night queue, reports, statistics, logs, backups, and the master database.
+- Adds separate public, GM-only, and private-player reports.
+- Public announcements use player names and include only deaths, escapes from death, and approved world events.
+- Adds World Domination progress and activation tracking.
+- Adds Independent Wildcard win-condition progress.
+- Adds editable queue outcomes before resolution.
+- Adds ability-use and restore buttons directly on player cards.
+- Adds saved roster setups for rapid game preparation.
+- Adds a searchable 52-character database.
+- Adds faction summaries, status alerts, balance warnings, and night archives.
+- Improves mobile and tablet layout.

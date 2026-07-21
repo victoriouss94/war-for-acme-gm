@@ -1,125 +1,256 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>War for ACME — GM Control Panel v1.1</title>
-<link rel="stylesheet" href="css/main.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>War for ACME — GM Control Panel v1.5</title>
+  <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-<header>
-<div><h1>War for ACME — GM Control Panel</h1><div class="sub">GAME-NIGHT BUILD v1.1 • dashboard, roster, night queue, reports, database statistics and backups</div></div>
-<div class="toolbar">
-<button id="advancePhase">Advance Phase</button><button id="advanceDay">Advance Day</button>
-<button id="undoLast" class="secondary">Undo Last Resolution</button><button id="exportBtn" class="secondary">Export</button>
-<button id="importBtn" class="secondary">Import</button><input id="importFile" type="file" accept=".json" style="display:none">
-<button id="resetBtn" class="danger">Reset</button>
-</div>
+<header class="topbar">
+  <div>
+    <h1>War for ACME — GM Control Panel</h1>
+    <div class="subtitle">GAME-NIGHT BUILD v1.5 • Wednesday-ready GM operations center</div>
+  </div>
+  <div class="toolbar">
+    <button id="advancePhaseBtn">Advance Phase</button>
+    <button id="advanceDayBtn">Advance Day</button>
+    <button id="backupBtn" class="secondary">Backup Game</button>
+    <button id="loadBtn" class="secondary">Load Backup</button>
+    <input id="loadFile" type="file" accept=".json" hidden>
+    <button id="resetBtn" class="danger">Reset Game</button>
+  </div>
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v1.1</strong>
-  <span>All Phase 6 tools preserved. This is the new multi-file production build.</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v1.5</strong>
+  <span>Player-name announcements • GM/private reports • World Domination • Wildcard progress • searchable database</span>
 </section>
 
+<nav class="tabs" aria-label="Application sections">
+  <button class="tab active" data-view="dashboardView">Dashboard</button>
+  <button class="tab" data-view="playersView">Players</button>
+  <button class="tab" data-view="queueView">Night Queue</button>
+  <button class="tab" data-view="reportsView">Reports</button>
+  <button class="tab" data-view="databaseView">Character Database</button>
+  <button class="tab" data-view="statisticsView">Statistics</button>
+  <button class="tab" data-view="logView">GM Log</button>
+</nav>
 
 <main>
-<aside>
-<section class="panel">
-<h2>Add Player</h2>
-<label>Player name</label><input id="playerName" placeholder="Player name">
-<label>Faction filter</label>
-<select id="factionFilter"><option value="ALL">All groups</option><option>ACME Defense Force</option><option>Warner Syndicate</option><option>Independent Wildcard</option></select>
-<label>Character</label><select id="characterSelect"></select>
-<div id="preview" class="info-box"></div>
-<button id="addPlayer" style="width:100%">Add Player</button>
-</section>
+  <section id="dashboardView" class="view active">
+    <div id="dashboardMetrics" class="metrics"></div>
+    <div class="grid2">
+      <article class="panel">
+        <h2>Faction Snapshot</h2>
+        <div id="factionSnapshot"></div>
+      </article>
+      <article class="panel">
+        <h2>Active Alerts</h2>
+        <div id="activeAlerts"></div>
+      </article>
+    </div>
+    <div class="grid2 top-gap">
+      <article class="panel">
+        <h2>World Domination</h2>
+        <div class="progress-line">
+          <div class="progress-track"><div id="worldProgressBar" class="progress-fill"></div></div>
+          <strong id="worldProgressText">0 / 3</strong>
+        </div>
+        <div class="toolbar">
+          <button id="worldMinusBtn" class="secondary">− Progress</button>
+          <button id="worldPlusBtn">+ Progress</button>
+          <button id="worldToggleBtn" class="secondary">Activate</button>
+        </div>
+        <p id="worldStatus" class="muted">World Domination is inactive.</p>
+      </article>
+      <article class="panel">
+        <h2>Quick Game Safety</h2>
+        <p class="muted">Use <strong>Backup Game</strong> after every completed night. The website saves automatically in this browser, but downloaded backups protect against browser or device problems.</p>
+        <div class="toolbar">
+          <button id="saveSetupBtn" class="secondary">Save Roster Setup</button>
+          <button id="loadSetupBtn" class="secondary">Load Roster Setup</button>
+        </div>
+      </article>
+    </div>
+  </section>
 
-<section class="panel" style="margin-top:12px">
-<h2>Queue Action</h2>
-<label>Actor</label><select id="queueActor"></select>
-<label>Ability</label><select id="queueAbility"></select>
-<label>Targets</label><select id="queueTargets" multiple size="4"></select>
-<div class="grid3">
-<div><label>Priority</label><input id="queuePriority" type="number" value="50"></div>
-<div><label>Kill tier</label><select id="killTier"><option>None</option><option>Standard Kill</option><option>Instant Kill</option><option>Super Kill</option><option>Omega Kill</option></select></div>
-<div><label>Outcome</label><select id="queueOutcome"><option>Pending</option><option>Successful</option><option>Failed</option><option>Blocked</option><option>Redirected</option><option>Protected</option><option>Immune</option><option>Delayed</option><option>Cancelled</option><option>Target Died</option></select></div>
-</div>
-<label>GM note</label><textarea id="queueNote"></textarea>
-<button id="addQueue" style="width:100%">Add to Queue</button>
-</section>
+  <section id="playersView" class="view">
+    <div class="layout">
+      <aside class="panel">
+        <h2>Add Player</h2>
+        <label for="playerName">Player / Discord name</label>
+        <input id="playerName" placeholder="Example: Hussain">
+        <label for="addFactionFilter">Faction filter</label>
+        <select id="addFactionFilter">
+          <option value="ALL">All groups</option>
+          <option>ACME Defense Force</option>
+          <option>Warner Syndicate</option>
+          <option>Independent Wildcard</option>
+        </select>
+        <label for="characterSelect">Character</label>
+        <select id="characterSelect"></select>
+        <div id="characterPreview" class="info-box"></div>
+        <button id="addPlayerBtn" class="full">Add Player</button>
+      </aside>
 
-<section class="panel" style="margin-top:12px">
-<h2>Morning Announcement</h2>
-<textarea id="morningReport"></textarea>
-<div class="toolbar"><button id="generateReport">Generate</button><button id="clearReport" class="secondary">Clear</button></div>
-</section>
+      <div>
+        <div class="filters">
+          <select id="playerFactionFilter">
+            <option value="ALL">All factions</option>
+            <option>ACME Defense Force</option>
+            <option>Warner Syndicate</option>
+            <option>Independent Wildcard</option>
+          </select>
+          <select id="playerLifeFilter">
+            <option value="ALL">Alive and dead</option>
+            <option value="ALIVE">Alive only</option>
+            <option value="DEAD">Dead only</option>
+          </select>
+          <select id="playerStatusFilter">
+            <option value="ALL">All statuses</option>
+            <option>Protected</option><option>Blocked</option><option>Poisoned</option>
+            <option>Bleeding</option><option>Marked</option><option>Silenced</option>
+            <option>Redirected</option><option>Controlled</option><option>Wanted</option>
+            <option>Delayed</option><option>Converted</option><option>Immune</option>
+          </select>
+          <input id="playerSearch" placeholder="Search player or character">
+        </div>
+        <div id="playersGrid" class="card-grid"></div>
+      </div>
+    </div>
+  </section>
 
-<section class="panel" style="margin-top:12px">
-<h2>Game Log</h2><div id="log"></div>
-</section>
-</aside>
+  <section id="queueView" class="view">
+    <div class="layout">
+      <aside class="panel">
+        <h2>Queue Night Action</h2>
+        <label for="actionActor">Actor</label>
+        <select id="actionActor"></select>
+        <label for="actionAbility">Ability</label>
+        <select id="actionAbility"></select>
+        <label for="actionTargets">Targets</label>
+        <select id="actionTargets" multiple size="6"></select>
+        <div class="grid2">
+          <div>
+            <label for="actionPriority">Priority</label>
+            <input id="actionPriority" type="number" value="50">
+          </div>
+          <div>
+            <label for="actionKillTier">Kill tier</label>
+            <select id="actionKillTier">
+              <option>None</option><option>Standard Kill</option><option>Instant Kill</option>
+              <option>Super Kill</option><option>Omega Kill</option>
+            </select>
+          </div>
+        </div>
+        <label for="actionOutcome">Outcome</label>
+        <select id="actionOutcome">
+          <option>Pending</option><option>Successful</option><option>Failed</option>
+          <option>Blocked</option><option>Redirected</option><option>Protected</option>
+          <option>Immune</option><option>Delayed</option><option>Cancelled</option>
+          <option>Target Died</option><option>Escaped Death</option>
+        </select>
+        <label for="actionNote">GM note</label>
+        <textarea id="actionNote" placeholder="Optional hidden details"></textarea>
+        <button id="queueActionBtn" class="full">Add to Queue</button>
+      </aside>
 
-<section>
-<div class="stats">
-<div class="stat"><b id="dayStat">1</b><span>Day</span></div>
-<div class="stat"><b id="phaseStat">Day Discussion</b><span>Phase</span></div>
-<div class="stat"><b id="aliveStat">0</b><span>Alive</span></div>
-<div class="stat"><b id="deadStat">0</b><span>Dead</span></div>
-<div class="stat"><b id="queueStat">0</b><span>Queued</span></div>
-</div>
+      <article class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Night Resolution Center</h2>
+            <div id="queueSummary" class="muted"></div>
+          </div>
+          <div class="toolbar">
+            <button id="sortQueueBtn" class="secondary">Sort by Priority</button>
+            <button id="resolveAllBtn" class="success">Resolve All</button>
+            <button id="archiveNightBtn" class="secondary">Archive Night</button>
+            <button id="clearQueueBtn" class="danger">Clear Queue</button>
+          </div>
+        </div>
+        <div id="queueList"></div>
+      </article>
+    </div>
+  </section>
 
-<div class="tabs">
-<button class="tab active" data-tab="rosterView">Roster</button>
-<button class="tab" data-tab="queueView">Night Queue</button>
-<button class="tab" data-tab="statsView">Statistics</button>
-</div>
+  <section id="reportsView" class="view">
+    <div class="grid3">
+      <article class="panel">
+        <h2>Public Announcement</h2>
+        <p class="muted">Only player deaths, escapes from death, and approved world events appear here. Character names and secret effects are never revealed.</p>
+        <textarea id="publicReport" class="report-box"></textarea>
+        <button id="generateReportsBtn" class="full">Generate All Reports</button>
+      </article>
+      <article class="panel">
+        <h2>Private GM Summary</h2>
+        <p class="muted">This section records every resolved action and hidden result.</p>
+        <textarea id="gmReport" class="report-box"></textarea>
+      </article>
+      <article class="panel">
+        <h2>Private Player Messages</h2>
+        <p class="muted">Copy only the relevant message to each affected player.</p>
+        <textarea id="playerMessages" class="report-box"></textarea>
+      </article>
+    </div>
 
-<div id="rosterView" class="tabview active">
-<div class="filters">
-<select id="filterFaction"><option value="ALL">All factions</option><option>ACME Defense Force</option><option>Warner Syndicate</option><option>Independent Wildcard</option></select>
-<select id="filterLife"><option value="ALL">Alive & dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select>
-<select id="filterStatus"><option value="ALL">All statuses</option><option>Poisoned</option><option>Bleeding</option><option>Marked</option><option>Blocked</option><option>Protected</option></select>
-<input id="filterSearch" placeholder="Search player or character">
-<label class="status"><input id="compactToggle" type="checkbox"> Compact view</label>
-</div>
-<div id="playerWrap"><div id="players"></div></div>
-</div>
+    <article class="panel top-gap">
+      <h2>Add Public World Event</h2>
+      <div class="grid2">
+        <div>
+          <label for="worldEventTitle">Event title</label>
+          <input id="worldEventTitle" placeholder="Example: World Domination Activated">
+        </div>
+        <div>
+          <label for="worldEventText">Public text</label>
+          <input id="worldEventText" placeholder="What every player is allowed to know">
+        </div>
+      </div>
+      <button id="addWorldEventBtn">Add World Event</button>
+      <div id="worldEventsList" class="top-gap"></div>
+    </article>
+  </section>
 
-<div id="queueView" class="tabview">
-<div class="grid2">
-<section class="panel">
-<h2>Night Action Queue</h2>
-<div class="toolbar"><button id="sortQueue" class="secondary">Sort</button><button id="resolveAll" class="success">Resolve All</button><button id="archiveNight" class="secondary">Archive Night</button><button id="clearQueue" class="danger">Clear</button></div>
-<div id="queue"></div>
-</section>
-<section class="panel"><h2>Night Archive</h2><div id="archive"></div></section>
-</div>
-</div>
+  <section id="databaseView" class="view">
+    <article class="panel">
+      <div class="filters database-filters">
+        <input id="databaseSearch" placeholder="Search character, role, passive, ability or mechanic">
+        <select id="databaseFactionFilter">
+          <option value="ALL">All factions</option>
+          <option>ACME Defense Force</option>
+          <option>Warner Syndicate</option>
+          <option>Independent Wildcard</option>
+        </select>
+      </div>
+      <div id="databaseResults" class="database-grid"></div>
+    </article>
+  </section>
 
-<div id="statsView" class="tabview">
-<section class="panel" style="margin-bottom:10px">
-<h2>Current Roster — Living Players</h2>
-<div id="liveMetrics" class="metric-grid"></div>
-</section>
+  <section id="statisticsView" class="view">
+    <div id="mechanicMetrics" class="metrics"></div>
+    <div class="grid2">
+      <article class="panel"><h2>Mechanics by Faction</h2><div id="mechanicsByFaction"></div></article>
+      <article class="panel"><h2>Setup Warnings</h2><div id="setupWarnings"></div></article>
+    </div>
+  </section>
 
-<div class="grid2">
-<section class="panel">
-<h2>Mechanics by Faction</h2>
-<div id="factionStats"></div>
-</section>
-<section class="panel">
-<h2>Balance Warnings</h2>
-<div id="warnings"></div>
-</section>
-</div>
-
-<section class="panel" style="margin-top:10px">
-<h2>Full Database vs Current Setup</h2>
-<div style="overflow:auto"><table id="comparisonTable"><thead><tr><th>Mechanic</th><th>Full Database</th><th>Current Roster</th><th>Alive Remaining</th></tr></thead><tbody></tbody></table></div>
-</section>
-</div>
-</section>
+  <section id="logView" class="view">
+    <div class="grid2">
+      <article class="panel">
+        <h2>Add GM Note</h2>
+        <textarea id="manualLogText" placeholder="Write a manual ruling, correction or reminder"></textarea>
+        <button id="addManualLogBtn">Add Note</button>
+      </article>
+      <article class="panel">
+        <h2>Game Log</h2>
+        <div id="gameLog" class="scroll-area"></div>
+      </article>
+    </div>
+    <article class="panel top-gap">
+      <h2>Night Archive</h2>
+      <div id="nightArchive"></div>
+    </article>
+  </section>
 </main>
 
 <script src="js/app.js"></script>
