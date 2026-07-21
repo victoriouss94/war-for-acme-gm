@@ -1,21 +1,23 @@
-WAR FOR ACME GM — VERSION 1.5 BIG UPDATE
+WAR FOR ACME GM — VERSION 1.6 UPDATE
 
-Copy ALL files and folders from this package into your existing GitHub repository.
-
-When Windows asks, choose:
-REPLACE THE FILES IN THE DESTINATION
+Copy ALL files and folders into your current GitHub repository.
+Choose REPLACE THE FILES IN THE DESTINATION.
 
 GitHub Desktop:
-1. Confirm that index.html, css/main.css, js/app.js, VERSION.txt and CHANGELOG.md changed.
-2. Summary: Publish War for ACME GM v1.5
-3. Click Commit to main.
-4. Click Push origin.
-5. Wait 1–2 minutes.
-6. Open the live website and press Ctrl + F5.
+1. Summary: Publish War for ACME GM v1.6
+2. Commit to main
+3. Push origin
+4. Wait 1–2 minutes
+5. Refresh the live site with Ctrl + F5
 
-SUCCESS CHECK:
-The banner must say:
-WAR FOR ACME — GAME-NIGHT BUILD v1.5
+Success check:
+The top banner must say GAME-NIGHT BUILD v1.6.
 
-IMPORTANT:
-Use Backup Game after every completed night.
+Night Queue test:
+- Queue one action.
+- Choose Result: Failed.
+- Choose Reason: Protected.
+- Select the affected player and protection source.
+- Resolve it.
+- Confirm the GM log records both the result and the reason.
+- Click Undo Last Resolution and confirm the action becomes unresolved again.

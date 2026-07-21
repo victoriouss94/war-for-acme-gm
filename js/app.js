@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.5";
+const APP_VERSION = "1.6";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -17,7 +17,7 @@ let state = loadState();
 function defaultState(){
   return {
     version:APP_VERSION,day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],
-    worldDomination:{progress:0,goal:3,active:false},worldEvents:[]
+    worldDomination:{progress:0,goal:3,active:false},worldEvents:[],resolutionHistory:[]
   };
 }
 function loadState(){
@@ -102,6 +102,7 @@ function bindEvents(){
   worldPlusBtn.addEventListener("click",()=>changeWorldProgress(1));
   worldToggleBtn.addEventListener("click",toggleWorldDomination);
 
+  undoResolutionBtn.addEventListener("click",undoLastResolution);
   backupBtn.addEventListener("click",downloadBackup);
   loadBtn.addEventListener("click",()=>loadFile.click());
   loadFile.addEventListener("change",event=>loadBackup(event.target.files[0]));
@@ -137,7 +138,7 @@ function addPlayer(){
     id:crypto.randomUUID(),name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
     purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
     signatureName:c.signature_name||"",signature:c.signature_description||"",
-    winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},
+    winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},statusDurations:{},
     abilities,wildcardProgress:0,wildcardGoal:3
   });
   addLog(`${name} was assigned ${c.character}.`);
@@ -175,7 +176,7 @@ function renderPlayers(){
         </div>
         <div class="actions"><button data-progress="-1" class="secondary">− Win Progress</button><button data-progress="1">+ Win Progress</button></div>
       `:""}
-      <div class="status-grid">${STATUSES.map(s=>`<label class="status-toggle"><input type="checkbox" data-status="${s}" ${p.statuses[s]?"checked":""}> ${s}</label>`).join("")}</div>
+      <div class="status-grid">${STATUSES.map(s=>`<label class="status-toggle"><input type="checkbox" data-status="${s}" ${p.statuses[s]?"checked":""}> ${s}${p.statusDurations?.[s]!=null?` (${p.statusDurations[s]})`:""}</label>`).join("")}</div>
       <div>${p.abilities.length?p.abilities.map((a,i)=>`
         <div class="ability-row">
           <strong>${escapeHtml(a.name)}</strong> <span class="badge">${escapeHtml(a.type)}</span>
@@ -206,8 +207,11 @@ function useAbility(player,index,change){
 
 function renderActionSelectors(){
   const alive=state.players.filter(p=>p.alive);
-  actionActor.innerHTML=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
-  actionTargets.innerHTML=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
+  const options=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
+  actionActor.innerHTML=options;
+  actionTargets.innerHTML=options;
+  protectionSource.innerHTML='<option value="">None / unknown</option>'+options;
+  redirectedTarget.innerHTML='<option value="">None</option>'+options;
   renderAbilityOptions();
 }
 function renderAbilityOptions(){
@@ -220,14 +224,37 @@ function queueAction(){
   const abilityIndex=Number(actionAbility.value);
   const ability=actor.abilities[abilityIndex];
   if(!ability)return alert("This character has no normalized ability record.");
+
   const targetIds=[...actionTargets.selectedOptions].map(o=>o.value);
   const targetNames=targetIds.map(id=>playerById(id)?.name).filter(Boolean);
+  const source=playerById(protectionSource.value);
+  const redirected=playerById(redirectedTarget.value);
+
   state.queue.push({
-    id:crypto.randomUUID(),actorId:actor.id,actorName:actor.name,character:actor.character,
-    abilityIndex,abilityName:ability.name,type:ability.type,targetIds,targetNames,
-    priority:Number(actionPriority.value)||50,killTier:actionKillTier.value,
-    outcome:actionOutcome.value,note:actionNote.value.trim(),resolved:false
+    id:crypto.randomUUID(),
+    actorId:actor.id,
+    actorName:actor.name,
+    character:actor.character,
+    abilityIndex,
+    abilityName:ability.name,
+    type:ability.type,
+    targetIds,
+    targetNames,
+    priority:Number(actionPriority.value)||50,
+    killTier:actionKillTier.value,
+    result:actionResult.value,
+    reason:actionReason.value,
+    affectedPlayer:affectedPlayer.value,
+    sourceId:source?.id||"",
+    sourceName:source?.name||"",
+    redirectedTargetId:redirected?.id||"",
+    redirectedTargetName:redirected?.name||"",
+    statusApplied:statusApplied.value,
+    statusDuration:Math.max(0,Number(statusDuration.value)||0),
+    note:actionNote.value.trim(),
+    resolved:false
   });
+
   addLog(`Queued: ${actor.name} used ${ability.name} on ${targetNames.join(", ")||"no target"}.`);
   actionNote.value="";
   save();
@@ -235,57 +262,108 @@ function queueAction(){
 function renderQueue(){
   const pending=state.queue.filter(q=>!q.resolved).length;
   queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved`;
+
   const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
   queueList.innerHTML=ordered.length?ordered.map(q=>`
     <article class="queue-card ${q.resolved?"resolved":""}" data-action="${q.id}">
-      <div class="card-head"><strong>${escapeHtml(q.actorName)} — ${escapeHtml(q.abilityName)}</strong><span class="badge">Priority ${q.priority}</span></div>
-      <div class="queue-meta">Targets: ${escapeHtml(q.targetNames.join(", ")||"None")} • ${escapeHtml(q.type)} • ${escapeHtml(q.killTier)}</div>
-      <label>Outcome</label>
-      <select data-outcome ${q.resolved?"disabled":""}>
-        ${["Pending","Successful","Failed","Blocked","Redirected","Protected","Immune","Delayed","Cancelled","Target Died","Escaped Death"].map(o=>`<option ${o===q.outcome?"selected":""}>${o}</option>`).join("")}
-      </select>
+      <div class="card-head">
+        <strong>${escapeHtml(q.actorName)} — ${escapeHtml(q.abilityName)}</strong>
+        <span class="badge">Priority ${q.priority}</span>
+      </div>
+      <div class="queue-meta">Original targets: ${escapeHtml(q.targetNames.join(", ")||"None")} • ${escapeHtml(q.type)} • ${escapeHtml(q.killTier)}</div>
+
+      <div class="resolution-details">
+        <div><strong>Result:</strong> ${escapeHtml(q.result||"Pending")}</div>
+        <div><strong>Reason:</strong> ${escapeHtml(q.reason||"None")}</div>
+        <div><strong>Affected:</strong> ${escapeHtml(q.affectedPlayer||"TARGET")}</div>
+        <div><strong>Source:</strong> ${escapeHtml(q.sourceName||"None")}</div>
+        <div><strong>Redirected target:</strong> ${escapeHtml(q.redirectedTargetName||"None")}</div>
+        <div><strong>Status applied:</strong> ${escapeHtml(q.statusApplied||"None")} ${q.statusDuration?`(${q.statusDuration} day${q.statusDuration===1?"":"s"})`:""}</div>
+      </div>
+
       ${q.note?`<div class="queue-meta">GM note: ${escapeHtml(q.note)}</div>`:""}
-      <div class="actions"><button data-resolve class="${q.resolved?"secondary":"success"}">${q.resolved?"Resolved":"Resolve"}</button><button data-delete class="danger">Remove</button></div>
+
+      <div class="actions">
+        <button data-resolve class="${q.resolved?"secondary":"success"}">${q.resolved?"Resolved":"Resolve"}</button>
+        <button data-delete class="danger">Remove</button>
+      </div>
     </article>
   `).join(""):'<div class="empty">No actions queued.</div>';
 
   queueList.querySelectorAll("[data-action]").forEach(card=>{
     const action=state.queue.find(q=>q.id===card.dataset.action);
-    const outcome=card.querySelector("[data-outcome]");
-    outcome.addEventListener("change",()=>{action.outcome=outcome.value;save();});
     card.querySelector("[data-resolve]").addEventListener("click",()=>resolveAction(action.id));
-    card.querySelector("[data-delete]").addEventListener("click",()=>{state.queue=state.queue.filter(q=>q.id!==action.id);save();});
+    card.querySelector("[data-delete]").addEventListener("click",()=>{
+      state.queue=state.queue.filter(q=>q.id!==action.id);
+      save();
+    });
   });
 }
 function resolveAction(id){
   const q=state.queue.find(x=>x.id===id);
   if(!q||q.resolved)return;
-  if(q.outcome==="Pending")return alert("Choose an outcome before resolving.");
+  if((q.result||"Pending")==="Pending")return alert("Choose an action result before resolving.");
+
+  state.resolutionHistory.push(JSON.stringify({
+    players:state.players,
+    queue:state.queue,
+    log:state.log
+  }));
+
   const actor=playerById(q.actorId);
   const ability=actor?.abilities[q.abilityIndex];
   if(ability&&ability.used<ability.max)ability.used++;
-  q.targetIds.forEach(targetId=>{
-    const target=playerById(targetId);
-    if(!target)return;
-    if(q.outcome==="Target Died")target.alive=false;
-    if(q.outcome==="Protected")target.statuses.Protected=true;
-    if(q.outcome==="Blocked")target.statuses.Blocked=true;
-    if(q.outcome==="Delayed")target.statuses.Delayed=true;
-    if(q.outcome==="Successful"&&/Poison/i.test(q.type))target.statuses.Poisoned=true;
-    if(q.outcome==="Successful"&&/Bleed/i.test(q.type))target.statuses.Bleeding=true;
-    if(q.outcome==="Successful"&&/(Mark|Hunt|Wanted)/i.test(q.type))target.statuses.Marked=true;
-  });
+
+  const originalTargets=q.targetIds.map(playerById).filter(Boolean);
+  const redirected=playerById(q.redirectedTargetId);
+
+  let affectedTargets=originalTargets;
+  if(q.reason==="Redirected"&&redirected)affectedTargets=[redirected];
+
+  if(q.result==="Target Died")affectedTargets.forEach(p=>p.alive=false);
+
+  let reasonTarget=null;
+  if(q.affectedPlayer==="ACTOR")reasonTarget=actor;
+  else if(q.affectedPlayer==="REDIRECTED_TARGET")reasonTarget=redirected;
+  else reasonTarget=originalTargets[0]||null;
+
+  if(reasonTarget){
+    if(q.reason==="Blocked")reasonTarget.statuses.Blocked=true;
+    if(q.reason==="Protected")reasonTarget.statuses.Protected=true;
+    if(q.reason==="Delayed")reasonTarget.statuses.Delayed=true;
+    if(q.reason==="Redirected")reasonTarget.statuses.Redirected=true;
+    if(q.reason==="Immune")reasonTarget.statuses.Immune=true;
+  }
+
+  if(q.statusApplied!=="None"){
+    affectedTargets.forEach(target=>{
+      target.statuses[q.statusApplied]=true;
+      target.statusDurations=target.statusDurations||{};
+      target.statusDurations[q.statusApplied]=q.statusDuration;
+    });
+  }
+
   q.resolved=true;
-  addLog(`Resolved: ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — ${q.outcome}.`);
+  addLog(`Resolved: ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — result ${q.result}; reason ${q.reason}.`);
   save();
 }
 function resolveAll(){
   const pending=[...state.queue].filter(q=>!q.resolved).sort((a,b)=>a.priority-b.priority);
   for(const q of pending){
-    if(q.outcome==="Pending")continue;
+    if((q.result||"Pending")==="Pending")continue;
     resolveAction(q.id);
   }
 }
+function undoLastResolution(){
+  const snapshot=state.resolutionHistory.pop();
+  if(!snapshot)return alert("There is no resolved action to undo.");
+  const restored=JSON.parse(snapshot);
+  state.players=restored.players;
+  state.queue=restored.queue;
+  state.log=restored.log;
+  save();
+}
+
 function archiveNight(){
   const resolved=state.queue.filter(q=>q.resolved);
   if(!resolved.length)return alert("Resolve at least one action first.");
@@ -301,18 +379,18 @@ function generateReports(){
   const playerLines=[];
 
   resolved.forEach(q=>{
-    if(q.outcome==="Target Died")q.targetNames.forEach(name=>publicLines.push(`☠ ${name} has died.`));
-    if(q.outcome==="Escaped Death")q.targetNames.forEach(name=>publicLines.push(`⚠ ${name} escaped death.`));
-    gmLines.push(`• ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — ${q.outcome}${q.note?` (${q.note})`:""}.`);
+    if(q.result==="Target Died")q.targetNames.forEach(name=>publicLines.push(`☠ ${name} has died.`));
+    if(q.result==="Escaped Death")q.targetNames.forEach(name=>publicLines.push(`⚠ ${name} escaped death.`));
+    gmLines.push(`• ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — result ${q.result}; reason ${q.reason}${q.note?` (${q.note})`:""}.`);
 
     q.targetNames.forEach(name=>{
-      if(q.outcome==="Blocked")playerLines.push(`TO: ${name}\nYour ability was blocked.`);
-      if(q.outcome==="Protected")playerLines.push(`TO: ${name}\nYou were protected from an action.`);
-      if(q.outcome==="Immune")playerLines.push(`TO: ${name}\nAn ability failed because you were immune.`);
-      if(q.outcome==="Delayed")playerLines.push(`TO: ${name}\nYour action or effect was delayed.`);
-      if(q.outcome==="Successful"&&/Poison/i.test(q.type))playerLines.push(`TO: ${name}\nYou have been poisoned.`);
-      if(q.outcome==="Successful"&&/Bleed/i.test(q.type))playerLines.push(`TO: ${name}\nYou are bleeding.`);
-      if(q.outcome==="Successful"&&/(Mark|Hunt|Wanted)/i.test(q.type))playerLines.push(`TO: ${name}\nYou have been marked.`);
+      if(q.reason==="Blocked")playerLines.push(`TO: ${name}\nYour ability was blocked.`);
+      if(q.reason==="Protected")playerLines.push(`TO: ${name}\nYou were protected from an action.`);
+      if(q.reason==="Immune")playerLines.push(`TO: ${name}\nAn ability failed because you were immune.`);
+      if(q.reason==="Delayed")playerLines.push(`TO: ${name}\nYour action or effect was delayed.`);
+      if(q.statusApplied==="Poisoned")playerLines.push(`TO: ${name}\nYou have been poisoned.`);
+      if(q.statusApplied==="Bleeding")playerLines.push(`TO: ${name}\nYou are bleeding.`);
+      if(q.statusApplied==="Marked")playerLines.push(`TO: ${name}\nYou have been marked.`);
     });
   });
 
@@ -440,6 +518,14 @@ function advanceDay(){
   state.players.forEach(p=>{
     TEMP_STATUSES.forEach(s=>p.statuses[s]=false);
     p.abilities.forEach(a=>{if(a.resets)a.used=0;});
+    p.statusDurations=p.statusDurations||{};
+    Object.keys(p.statusDurations).forEach(status=>{
+      if(p.statusDurations[status]>0)p.statusDurations[status]--;
+      if(p.statusDurations[status]===0){
+        p.statuses[status]=false;
+        delete p.statusDurations[status];
+      }
+    });
   });
   state.queue=[];
   state.worldEvents.forEach(e=>e.archived=true);
@@ -484,7 +570,7 @@ function loadRosterSetup(){
       id:crypto.randomUUID(),name:item.name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
       purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
       signatureName:c.signature_name||"",signature:c.signature_description||"",
-      winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},
+      winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},statusDurations:{},
       abilities:characterAbilities(c.character).map(a=>({name:a.ability_name,type:a.mechanic_type,description:a.description,max:parseUses(a.uses),used:0,resets:a.resets_each_day==="Yes"})),
       wildcardProgress:0,wildcardGoal:3
     });

@@ -58,3 +58,18 @@ textarea{min-height:70px;resize:vertical}
 .warning.high{border-color:var(--danger)}.warning.good{border-color:var(--success)}
 @media(max-width:1050px){.layout,.grid2,.grid3{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.filters,.database-filters{grid-template-columns:1fr}.tabs{overflow-x:auto;flex-wrap:nowrap}.tab{white-space:nowrap}}
+
+.resolution-details{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  margin-top:7px;
+}
+.resolution-details div{
+  background:#0b1220;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:6px;
+  font-size:11px;
+}
+@media(max-width:650px){.resolution-details{grid-template-columns:1fr}}

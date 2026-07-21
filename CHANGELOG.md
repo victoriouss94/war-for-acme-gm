@@ -1,16 +1,15 @@
 # War for ACME GM — Changelog
 
-## Version 1.5 — Big Wednesday Game-Night Update
+## Version 1.6 — Safer Night Resolution
 
-- Rebuilt the interface as a clear seven-section GM operations center.
-- Preserves player tracking, night queue, reports, statistics, logs, backups, and the master database.
-- Adds separate public, GM-only, and private-player reports.
-- Public announcements use player names and include only deaths, escapes from death, and approved world events.
-- Adds World Domination progress and activation tracking.
-- Adds Independent Wildcard win-condition progress.
-- Adds editable queue outcomes before resolution.
-- Adds ability-use and restore buttons directly on player cards.
-- Adds saved roster setups for rapid game preparation.
-- Adds a searchable 52-character database.
-- Adds faction summaries, status alerts, balance warnings, and night archives.
-- Improves mobile and tablet layout.
+- Preserves all Version 1.5 features.
+- Separates the final action result from the reason it happened.
+- Adds protection/block source tracking.
+- Adds redirected-target tracking.
+- Lets the GM specify whether the actor, original target, or redirected target was affected.
+- Adds explicit status application and status duration.
+- Status durations count down when advancing the day.
+- Adds Undo Last Resolution.
+- Improves GM and private player reports to use the new result/reason model.
+- Prevents pending actions from being resolved accidentally.
+- Keeps public announcements restricted to player deaths, death escapes, and approved world events.

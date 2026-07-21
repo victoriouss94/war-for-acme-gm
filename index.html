@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v1.5</title>
+  <title>War for ACME — GM Control Panel v1.6</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v1.5 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v1.6 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
     <button id="advanceDayBtn">Advance Day</button>
+    <button id="undoResolutionBtn" class="secondary">Undo Last Resolution</button>
     <button id="backupBtn" class="secondary">Backup Game</button>
     <button id="loadBtn" class="secondary">Load Backup</button>
     <input id="loadFile" type="file" accept=".json" hidden>
@@ -23,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v1.5</strong>
-  <span>Player-name announcements • GM/private reports • World Domination • Wildcard progress • searchable database</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v1.6</strong>
+  <span>Safer night resolution • separate result and reason • redirection/protection sources • undo last resolution</span>
 </section>
 
 <nav class="tabs" aria-label="Application sections">
@@ -144,13 +145,47 @@
             </select>
           </div>
         </div>
-        <label for="actionOutcome">Outcome</label>
-        <select id="actionOutcome">
+        <label for="actionResult">Action result</label>
+        <select id="actionResult">
           <option>Pending</option><option>Successful</option><option>Failed</option>
-          <option>Blocked</option><option>Redirected</option><option>Protected</option>
-          <option>Immune</option><option>Delayed</option><option>Cancelled</option>
-          <option>Target Died</option><option>Escaped Death</option>
+          <option>Cancelled</option><option>Target Died</option><option>Escaped Death</option>
         </select>
+
+        <label for="actionReason">Reason / interaction</label>
+        <select id="actionReason">
+          <option>None</option><option>Blocked</option><option>Protected</option>
+          <option>Immune</option><option>Redirected</option><option>Delayed</option>
+        </select>
+
+        <label for="affectedPlayer">Who was affected by the reason?</label>
+        <select id="affectedPlayer">
+          <option value="ACTOR">Actor</option>
+          <option value="TARGET">Original target</option>
+          <option value="REDIRECTED_TARGET">Redirected target</option>
+        </select>
+
+        <div class="grid2">
+          <div>
+            <label for="protectionSource">Protection / block source</label>
+            <select id="protectionSource"></select>
+          </div>
+          <div>
+            <label for="redirectedTarget">Redirected target</label>
+            <select id="redirectedTarget"></select>
+          </div>
+        </div>
+
+        <label for="statusApplied">Status applied after resolution</label>
+        <select id="statusApplied">
+          <option>None</option><option>Protected</option><option>Blocked</option>
+          <option>Poisoned</option><option>Bleeding</option><option>Marked</option>
+          <option>Silenced</option><option>Redirected</option><option>Controlled</option>
+          <option>Wanted</option><option>Delayed</option><option>Converted</option><option>Immune</option>
+        </select>
+
+        <label for="statusDuration">Status duration in days</label>
+        <input id="statusDuration" type="number" min="0" value="1">
+
         <label for="actionNote">GM note</label>
         <textarea id="actionNote" placeholder="Optional hidden details"></textarea>
         <button id="queueActionBtn" class="full">Add to Queue</button>
