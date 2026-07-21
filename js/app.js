@@ -1,0 +1,1 @@
+console.log("War for ACME GM loaded.");
