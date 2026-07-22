@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.0";
+const APP_VERSION = "2.1";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -41,7 +41,7 @@ let state = loadState();
 function defaultState(){
   return {
     version:APP_VERSION,day:1,phaseIndex:0,players:[],queue:[],log:[],archive:[],
-    worldDomination:{progress:0,goal:3,active:false},worldEvents:[],resolutionHistory:[],testingMode:false,timeline:[]
+    worldDomination:{progress:0,goal:3,active:false},worldEvents:[],resolutionHistory:[],testingMode:false,timeline:[],conversions:[]
   };
 }
 function loadState(){
@@ -51,6 +51,8 @@ function loadState(){
     const merged={...defaultState(),...saved};
     if(!merged.timeline)merged.timeline=[];
     if(typeof merged.testingMode!=="boolean")merged.testingMode=false;
+    if(!merged.conversions)merged.conversions=[];
+    merged.players.forEach(p=>{if(!p.originalFaction)p.originalFaction=p.faction; if(typeof p.convertedToWarner!=="boolean")p.convertedToWarner=false;});
     return merged;
   }catch{return defaultState();}
 }
@@ -146,6 +148,7 @@ function bindEvents(){
   clearTestBtn.addEventListener("click",clearTestingData);
   timelineDayFilter.addEventListener("change",renderTimeline);
   exportTimelineBtn.addEventListener("click",exportTimeline);
+  convertPlayerBtn.addEventListener("click",convertPlayerToWarner);
 }
 
 function activateView(viewId){
@@ -179,7 +182,7 @@ function addPlayer(){
     max:parseUses(a.uses),used:0,resets:a.resets_each_day==="Yes"
   }));
   state.players.push({
-    id:crypto.randomUUID(),name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
+    id:crypto.randomUUID(),name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,originalFaction:c.faction,convertedToWarner:false,conversionNote:"",
     purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
     signatureName:c.signature_name||"",signature:c.signature_description||"",
     winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},statusDurations:{},
@@ -642,6 +645,129 @@ function exportTimeline(){
   URL.revokeObjectURL(link.href);
 }
 
+
+function renderConversionOptions(){
+  const candidates=state.players.filter(p=>p.alive&&p.faction!=="Warner Syndicate");
+  conversionPlayer.innerHTML=candidates.length
+    ? candidates.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)} (${escapeHtml(p.faction)})</option>`).join("")
+    : '<option value="">No eligible living player</option>';
+}
+
+function convertPlayerToWarner(){
+  const player=playerById(conversionPlayer.value);
+  if(!player)return alert("There is no eligible player to convert.");
+  if(player.faction==="Warner Syndicate")return alert("This player is already in the Warner Syndicate.");
+
+  player.originalFaction=player.originalFaction||player.faction;
+  player.faction="Warner Syndicate";
+  player.convertedToWarner=true;
+  player.conversionNote=conversionNote.value.trim();
+  player.statuses.Converted=true;
+
+  state.conversions.push({
+    id:crypto.randomUUID(),
+    playerId:player.id,
+    playerName:player.name,
+    character:player.character,
+    originalFaction:player.originalFaction,
+    day:state.day,
+    note:player.conversionNote,
+    active:true
+  });
+
+  addLog(`${player.name} (${player.character}) was converted from ${player.originalFaction} to the Warner Syndicate.`);
+  conversionNote.value="";
+  save();
+}
+
+function revertWarnerConversion(playerId){
+  const player=playerById(playerId);
+  if(!player||!player.convertedToWarner)return;
+  const oldFaction=player.originalFaction||"ACME Defense Force";
+  player.faction=oldFaction;
+  player.convertedToWarner=false;
+  player.conversionNote="";
+  player.statuses.Converted=false;
+
+  const conversion=[...state.conversions].reverse().find(c=>c.playerId===playerId&&c.active);
+  if(conversion)conversion.active=false;
+
+  addLog(`${player.name}'s Warner conversion was reversed. They returned to ${oldFaction}.`);
+  save();
+}
+
+function renderWarnerRoom(){
+  renderConversionOptions();
+
+  const members=state.players.filter(p=>p.faction==="Warner Syndicate");
+  const native=members.filter(p=>!p.convertedToWarner);
+  const converted=members.filter(p=>p.convertedToWarner);
+  const alive=members.filter(p=>p.alive);
+
+  warnerMetrics.innerHTML=[
+    ["Total Members",members.length],
+    ["Alive",alive.length],
+    ["Native Warner",native.length],
+    ["Converted",converted.length]
+  ].map(([label,value])=>`<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join("");
+
+  const wd=state.worldDomination;
+  warnerWorldBar.style.width=`${Math.min(100,(wd.progress/wd.goal)*100)}%`;
+  warnerWorldText.textContent=`${wd.progress} / ${wd.goal}`;
+  warnerWorldStatus.textContent=wd.active?"World Domination is ACTIVE.":"World Domination is inactive.";
+
+  warnerRoster.innerHTML=members.length?members.map(p=>`
+    <article class="player-card ${p.alive?"":"dead"}" data-warner-member="${p.id}">
+      <div class="card-head">
+        <div>
+          <div class="player-name">${escapeHtml(p.name)}</div>
+          <div class="role-line">${escapeHtml(p.character)} • ${escapeHtml(p.role)}</div>
+        </div>
+        <div>
+          ${p.convertedToWarner?'<span class="converted-badge">CONVERTED</span>':'<span class="badge">NATIVE WARNER</span>'}
+          <span class="badge">${p.alive?"ALIVE":"DEAD"}</span>
+        </div>
+      </div>
+
+      ${p.convertedToWarner?`
+        <div class="info-box">
+          <strong>Original faction:</strong> ${escapeHtml(p.originalFaction)}<br>
+          <strong>Conversion note:</strong> ${escapeHtml(p.conversionNote||"No note")}
+        </div>`:""}
+
+      <div class="info-box">
+        <strong>Purpose:</strong> ${escapeHtml(p.purpose)}
+        ${p.passive?`<br><strong>Passive:</strong> ${escapeHtml(p.passiveName)} — ${escapeHtml(p.passive)}`:""}
+      </div>
+
+      ${p.abilities.map(a=>`
+        <div class="ability-row">
+          <strong>${escapeHtml(a.name)}</strong> <span class="badge">${escapeHtml(a.type)}</span>
+          <small>${escapeHtml(a.description)} • ${a.max===999?`Used today: ${a.used}`:`${a.used}/${a.max} used`}</small>
+        </div>`).join("")}
+
+      ${p.convertedToWarner?'<div class="actions"><button data-revert-conversion class="danger">Remove from Warner Syndicate</button></div>':""}
+    </article>
+  `).join(""):'<div class="empty">No Warner Syndicate members have been assigned.</div>';
+
+  warnerRoster.querySelectorAll("[data-warner-member]").forEach(card=>{
+    const playerId=card.dataset.warnerMember;
+    card.querySelector("[data-revert-conversion]")?.addEventListener("click",()=>revertWarnerConversion(playerId));
+  });
+
+  convertedAbilityPool.innerHTML=converted.length?converted.map(p=>`
+    <div class="ability-pool-group">
+      <strong>${escapeHtml(p.name)} — ${escapeHtml(p.character)}</strong>
+      <div class="role-line">Originally ${escapeHtml(p.originalFaction)}</div>
+      ${p.abilities.length?p.abilities.map(a=>`
+        <div class="ability-row">
+          <strong>${escapeHtml(a.name)}</strong> <span class="badge">${escapeHtml(a.type)}</span>
+          <small>${escapeHtml(a.description)}</small>
+        </div>`).join(""):'<div class="muted">No normalized abilities available.</div>'}
+    </div>
+  `).join(""):'<div class="empty">No converted role abilities are currently available.</div>';
+}
+
 function renderDashboard(){
   const alive=state.players.filter(p=>p.alive).length;
   const dead=state.players.length-alive;
@@ -739,7 +865,7 @@ function loadRosterSetup(){
     const c=characterById(item.characterId);
     if(!c)return;
     state.players.push({
-      id:crypto.randomUUID(),name:item.name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,
+      id:crypto.randomUUID(),name:item.name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,originalFaction:c.faction,convertedToWarner:false,conversionNote:"",
       purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
       signatureName:c.signature_name||"",signature:c.signature_description||"",
       winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},statusDurations:{},
@@ -767,6 +893,7 @@ function render(){
   renderStatistics();
   renderLogAndArchive();
   renderTimeline();
+  renderWarnerRoom();
 }
 
 initialize();

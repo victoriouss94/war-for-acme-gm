@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.0</title>
+  <title>War for ACME — GM Control Panel v2.1</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.0 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.1 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.0</strong>
-  <span>Live Game Mode • Action Assistant • automatic priorities • interaction reminders • full timeline • testing mode</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.1</strong>
+  <span>Private Warner Syndicate room • conversion manager • converted-role abilities • live game tools</span>
 </section>
 
 <nav class="tabs" aria-label="Application sections">
@@ -33,6 +33,7 @@
   <button class="tab" data-view="dashboardView">Dashboard</button>
   <button class="tab" data-view="playersView">Players</button>
   <button class="tab" data-view="queueView">Night Queue</button>
+  <button class="tab warner-tab" data-view="warnerView">Warner Syndicate</button>
   <button class="tab" data-view="reportsView">Reports</button>
   <button class="tab" data-view="databaseView">Character Database</button>
   <button class="tab" data-view="statisticsView">Statistics</button>
@@ -248,6 +249,54 @@
         <div id="queueList"></div>
       </article>
     </div>
+  </section>
+
+  <section id="warnerView" class="view">
+    <div class="warner-private-banner">
+      <strong>WARNER SYNDICATE — PRIVATE GM ROOM</strong>
+      <span>This section is intended only for the Game Masters. It does not create or manage a real Discord channel.</span>
+    </div>
+
+    <div class="grid2 top-gap">
+      <article class="panel warner-panel">
+        <h2>Conversion Manager</h2>
+        <p class="muted">Convert a living non-Warner player into the Warner Syndicate. Their original character and abilities remain visible here.</p>
+
+        <label for="conversionPlayer">Player to convert</label>
+        <select id="conversionPlayer"></select>
+
+        <label for="conversionNote">Conversion note</label>
+        <textarea id="conversionNote" placeholder="Example: Converted by Dot during Night 2"></textarea>
+
+        <button id="convertPlayerBtn" class="full">Add to Warner Syndicate</button>
+      </article>
+
+      <article class="panel warner-panel">
+        <h2>Warner Syndicate Status</h2>
+        <div id="warnerMetrics" class="metrics"></div>
+        <div class="progress-line">
+          <div class="progress-track"><div id="warnerWorldBar" class="progress-fill"></div></div>
+          <strong id="warnerWorldText">0 / 3</strong>
+        </div>
+        <div id="warnerWorldStatus" class="muted"></div>
+      </article>
+    </div>
+
+    <article class="panel warner-panel top-gap">
+      <div class="section-heading">
+        <div>
+          <h2>Private Warner Roster</h2>
+          <div class="muted">Native Warner characters and converted players appear together.</div>
+        </div>
+      </div>
+      <div id="warnerRoster" class="card-grid"></div>
+    </article>
+
+    <article class="panel warner-panel top-gap">
+      <h2>Converted Role Ability Pool</h2>
+      <p class="muted">This shows the abilities currently brought into the Syndicate by converted players. It does not automatically grant those abilities to every Warner member unless your rules say so.</p>
+      <div id="convertedAbilityPool"></div>
+    </article>
   </section>
 
   <section id="reportsView" class="view">

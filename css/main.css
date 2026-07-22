@@ -112,3 +112,39 @@ textarea{min-height:70px;resize:vertical}
 .timeline-entry .timeline-time{color:var(--muted);font-size:11px}
 .testing-active{border-color:#a855f7!important;box-shadow:0 0 0 1px #a855f7 inset}
 @media(max-width:650px){.timeline-entry{grid-template-columns:1fr}}
+
+.warner-tab{
+  border-color:#9b5de5!important;
+}
+.warner-private-banner{
+  border:2px solid #9b5de5;
+  background:linear-gradient(135deg,#1b1230,#24143d);
+  border-radius:14px;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.warner-private-banner strong{color:#e9d5ff}
+.warner-private-banner span{color:#c4b5fd;font-size:12px}
+.warner-panel{
+  border-color:#6d28d9;
+  box-shadow:0 0 0 1px rgba(109,40,217,.12) inset;
+}
+.converted-badge{
+  display:inline-block;
+  border:1px solid #a855f7;
+  color:#e9d5ff;
+  background:#2e1065;
+  border-radius:999px;
+  padding:3px 7px;
+  font-size:11px;
+}
+.ability-pool-group{
+  border:1px solid #6d28d9;
+  border-radius:10px;
+  padding:9px;
+  margin-bottom:8px;
+  background:#120b22;
+}
