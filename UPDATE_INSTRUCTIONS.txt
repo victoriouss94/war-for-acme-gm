@@ -1,22 +1,29 @@
-WAR FOR ACME GM — VERSION 2.1 UPDATE
+WAR FOR ACME GM — VERSION 2.2 SHARED EDITION
 
 Copy ALL files and folders into the existing GitHub repository.
 Choose REPLACE THE FILES IN THE DESTINATION.
 
 GitHub Desktop:
-1. Summary: Publish War for ACME GM v2.1
+1. Summary: Publish War for ACME GM v2.2 Shared Edition
 2. Commit to main
 3. Push origin
 4. Wait 1–2 minutes
 5. Refresh the website with Ctrl + F5
 
 SUCCESS CHECK:
-- Banner says GAME-NIGHT BUILD v2.1
-- A new WARNER SYNDICATE tab appears
-- The tab includes Conversion Manager, Private Warner Roster, and Converted Role Ability Pool
+- Banner says GAME-NIGHT BUILD v2.2
+- A synchronization bar appears below the banner
+- Enter a GM name and click Connect
+- Status should say Connected to room ACME54
 
-TEST:
-1. Add one ACME player and one Warner player.
-2. Open Warner Syndicate.
-3. Convert the ACME player.
-4. Confirm that the converted player and their abilities appear in the private Warner roster.
+TWO-DEVICE TEST:
+1. Open the website in two different browsers or devices.
+2. Enter different GM names.
+3. Connect both.
+4. Add a test player on device one.
+5. The player should appear automatically on device two.
+
+IMPORTANT:
+If asked whether to use the cloud or local copy:
+- Choose the cloud copy when another GM has already started the shared game.
+- Choose the local copy only when this browser contains the correct master game that should overwrite the empty or older cloud room.

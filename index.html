@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.1</title>
+  <title>War for ACME — GM Control Panel v2.2</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.1 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.2 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,22 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.1</strong>
-  <span>Private Warner Syndicate room • conversion manager • converted-role abilities • live game tools</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.2</strong>
+  <span>Shared GM Edition • Supabase live sync • connection status • GM attribution • emergency local fallback</span>
+</section>
+
+<section class="sync-bar">
+  <div class="sync-main">
+    <span id="syncDot" class="sync-dot offline"></span>
+    <strong id="syncStatus">Not connected</strong>
+    <span id="syncDetails" class="muted">Enter your GM name to join the shared ACME54 room.</span>
+  </div>
+  <div class="sync-controls">
+    <label class="sr-only" for="gmNameInput">GM name</label>
+    <input id="gmNameInput" placeholder="Your GM name">
+    <button id="connectSyncBtn">Connect</button>
+    <button id="forceSyncBtn" class="secondary">Force Sync</button>
+  </div>
 </section>
 
 <nav class="tabs" aria-label="Application sections">
@@ -394,6 +408,7 @@
   </section>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

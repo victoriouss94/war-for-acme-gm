@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -35,6 +35,204 @@ function defaultKillTierFor(type){
 }
 
 
+const SUPABASE_URL = "https://bipjqwemwqivyassibqm.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5fOm-lKPZBxmd6LAMDiGSw_SvVCCsk4";
+const SHARED_ROOM_CODE = "ACME54";
+const SHARED_GAME_NAME = "War for ACME";
+
+const CLOUD_CLIENT_ID = crypto.randomUUID();
+let cloud = null;
+let realtimeChannel = null;
+let cloudConnected = false;
+let applyingRemoteState = false;
+let cloudSaveTimer = null;
+let latestCloudTimestamp = "";
+let currentGmName = localStorage.getItem("war-for-acme-gm-name") || "";
+
+function setSyncStatus(status, details=""){
+  const dot=document.getElementById("syncDot");
+  const label=document.getElementById("syncStatus");
+  const detail=document.getElementById("syncDetails");
+  if(!dot||!label||!detail)return;
+  dot.className=`sync-dot ${status}`;
+  const names={
+    online:"Connected",
+    syncing:"Syncing…",
+    offline:"Offline / local mode",
+    error:"Sync error"
+  };
+  label.textContent=names[status]||status;
+  detail.textContent=details;
+}
+
+function stateHasGameData(value){
+  return Boolean(
+    value &&
+    (
+      (value.players&&value.players.length) ||
+      (value.queue&&value.queue.length) ||
+      (value.log&&value.log.length) ||
+      (value.timeline&&value.timeline.length) ||
+      value.day>1 ||
+      value.worldDomination?.progress>0 ||
+      value.worldDomination?.active
+    )
+  );
+}
+
+function normalizeRemoteState(remote){
+  const merged={...defaultState(),...(remote||{})};
+  if(!merged.timeline)merged.timeline=[];
+  if(!merged.conversions)merged.conversions=[];
+  if(!merged.resolutionHistory)merged.resolutionHistory=[];
+  merged.players=(merged.players||[]).map(p=>({
+    ...p,
+    originalFaction:p.originalFaction||p.faction,
+    convertedToWarner:Boolean(p.convertedToWarner),
+    statuses:p.statuses||{},
+    statusDurations:p.statusDurations||{},
+    abilities:p.abilities||[]
+  }));
+  return merged;
+}
+
+function scheduleCloudSave(){
+  if(!cloudConnected||applyingRemoteState||!currentGmName)return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>pushStateToCloud(),350);
+}
+
+async function pushStateToCloud(force=false){
+  if(!cloud||!currentGmName){
+    if(force)alert("Enter your GM name and connect first.");
+    return;
+  }
+  try{
+    setSyncStatus("syncing",`Saving changes by ${currentGmName}…`);
+    const updatedAt=new Date().toISOString();
+    state.syncMeta={
+      clientId:CLOUD_CLIENT_ID,
+      revision:Date.now(),
+      gmName:currentGmName,
+      roomCode:SHARED_ROOM_CODE
+    };
+    localStorage.setItem("war-for-acme-v15",JSON.stringify(state));
+
+    const {data,error}=await cloud
+      .from("game_rooms")
+      .upsert({
+        room_code:SHARED_ROOM_CODE,
+        game_name:SHARED_GAME_NAME,
+        game_state:state,
+        updated_at:updatedAt,
+        updated_by:currentGmName
+      },{onConflict:"room_code"})
+      .select()
+      .single();
+
+    if(error)throw error;
+    latestCloudTimestamp=data?.updated_at||updatedAt;
+    cloudConnected=true;
+    setSyncStatus("online",`Room ${SHARED_ROOM_CODE} • Last saved by ${currentGmName}`);
+  }catch(error){
+    cloudConnected=false;
+    setSyncStatus("error",`Cloud save failed. Local copy is safe. ${error.message}`);
+    console.error("Supabase save error:",error);
+  }
+}
+
+function applyCloudRow(row){
+  if(!row||!row.game_state)return;
+  const remote=row.game_state;
+  if(remote.syncMeta?.clientId===CLOUD_CLIENT_ID){
+    latestCloudTimestamp=row.updated_at||latestCloudTimestamp;
+    setSyncStatus("online",`Room ${SHARED_ROOM_CODE} • Your changes are synced`);
+    return;
+  }
+  if(latestCloudTimestamp&&row.updated_at&&row.updated_at<latestCloudTimestamp)return;
+
+  applyingRemoteState=true;
+  state=normalizeRemoteState(remote);
+  latestCloudTimestamp=row.updated_at||latestCloudTimestamp;
+  localStorage.setItem("war-for-acme-v15",JSON.stringify(state));
+  render();
+  applyingRemoteState=false;
+  setSyncStatus("online",`Updated by ${row.updated_by||"another GM"} • ${new Date(row.updated_at).toLocaleTimeString()}`);
+}
+
+async function connectSharedRoom(){
+  currentGmName=(document.getElementById("gmNameInput")?.value||"").trim();
+  if(!currentGmName)return alert("Enter your GM name first.");
+  localStorage.setItem("war-for-acme-gm-name",currentGmName);
+
+  try{
+    if(!window.supabase?.createClient)throw new Error("Supabase client did not load.");
+    setSyncStatus("syncing","Connecting to shared room…");
+    cloud=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+
+    const {data,error}=await cloud
+      .from("game_rooms")
+      .select("*")
+      .eq("room_code",SHARED_ROOM_CODE)
+      .single();
+
+    if(error)throw error;
+
+    if(stateHasGameData(data?.game_state)){
+      const localHasData=stateHasGameData(state);
+      if(localHasData){
+        const useCloud=confirm(
+          `Shared room ${SHARED_ROOM_CODE} already contains game data last updated by ${data.updated_by}.\n\n`+
+          `Press OK to load the shared cloud game.\nPress Cancel to upload this browser's local game instead.`
+        );
+        if(useCloud)applyCloudRow(data);
+        else await pushStateToCloud(true);
+      }else{
+        applyCloudRow(data);
+      }
+    }else{
+      cloudConnected=true;
+      await pushStateToCloud(true);
+    }
+
+    if(realtimeChannel)await cloud.removeChannel(realtimeChannel);
+    realtimeChannel=cloud
+      .channel(`game-room-${SHARED_ROOM_CODE}`)
+      .on(
+        "postgres_changes",
+        {
+          event:"*",
+          schema:"public",
+          table:"game_rooms",
+          filter:`room_code=eq.${SHARED_ROOM_CODE}`
+        },
+        payload=>applyCloudRow(payload.new)
+      )
+      .subscribe(status=>{
+        if(status==="SUBSCRIBED"){
+          cloudConnected=true;
+          setSyncStatus("online",`Room ${SHARED_ROOM_CODE} • Connected as ${currentGmName}`);
+        }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+          cloudConnected=false;
+          setSyncStatus("offline","Realtime disconnected. Local changes are still saved.");
+        }
+      });
+  }catch(error){
+    cloudConnected=false;
+    setSyncStatus("error",`Connection failed: ${error.message}`);
+    console.error("Supabase connection error:",error);
+  }
+}
+
+window.addEventListener("online",()=>{
+  setSyncStatus("syncing","Internet restored. Reconnecting…");
+  if(currentGmName)connectSharedRoom();
+});
+window.addEventListener("offline",()=>{
+  cloudConnected=false;
+  setSyncStatus("offline","No internet. Changes are being kept locally.");
+});
+
 let database = {characters:[],abilities:[],mechanics:[]};
 let state = loadState();
 
@@ -59,6 +257,7 @@ function loadState(){
 function save(){
   localStorage.setItem("war-for-acme-v15",JSON.stringify(state));
   render();
+  scheduleCloudSave();
 }
 function escapeHtml(value){
   return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -94,6 +293,10 @@ async function initialize(){
   bindEvents();
   renderCharacterOptions();
   render();
+
+  gmNameInput.value=currentGmName;
+  if(currentGmName)connectSharedRoom();
+  else setSyncStatus("offline","Enter your GM name to connect to room ACME54.");
 }
 
 function bindEvents(){
@@ -149,6 +352,9 @@ function bindEvents(){
   timelineDayFilter.addEventListener("change",renderTimeline);
   exportTimelineBtn.addEventListener("click",exportTimeline);
   convertPlayerBtn.addEventListener("click",convertPlayerToWarner);
+  connectSyncBtn.addEventListener("click",connectSharedRoom);
+  forceSyncBtn.addEventListener("click",()=>pushStateToCloud(true));
+  gmNameInput.addEventListener("keydown",event=>{if(event.key==="Enter")connectSharedRoom();});
 }
 
 function activateView(viewId){
