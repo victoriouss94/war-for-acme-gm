@@ -247,3 +247,75 @@ textarea{min-height:70px;resize:vertical}
 @media(max-width:560px){
   .ability-intel-controls{grid-template-columns:1fr}
 }
+
+.ability-hierarchy{display:grid;gap:12px}
+.ability-category{
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  background:var(--panel);
+}
+.ability-category-header,
+.ability-subtype-header{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:inherit;
+  display:grid;
+  align-items:center;
+  gap:10px;
+  text-align:left;
+  cursor:pointer;
+}
+.ability-category-header{
+  grid-template-columns:minmax(180px,1fr) repeat(4,minmax(90px,auto)) 26px;
+  padding:14px;
+  background:var(--panel-soft);
+}
+.ability-category-header:hover,
+.ability-subtype-header:hover{filter:brightness(1.04)}
+.ability-category-title strong,
+.ability-subtype-title strong{display:block}
+.ability-category-title small,
+.ability-subtype-title small{color:var(--muted)}
+.ability-stat{text-align:center}
+.ability-stat strong{display:block;font-size:1.15rem}
+.ability-subtypes{padding:0 12px 12px;display:grid;gap:8px}
+.ability-subtype{
+  border:1px solid var(--line);
+  border-radius:11px;
+  overflow:hidden;
+}
+.ability-subtype-header{
+  grid-template-columns:minmax(170px,1fr) repeat(4,minmax(80px,auto)) 26px;
+  padding:11px 12px;
+}
+.ability-subtype-details{
+  border-top:1px solid var(--line);
+  padding:10px 12px 12px;
+  background:var(--panel-soft);
+}
+.faction-sections{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.faction-section{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  background:var(--panel);
+}
+.faction-section h4{margin:0 0 6px}
+.ability-player-list{display:grid;gap:6px}
+.ability-player-row{
+  border-top:1px solid var(--line);
+  padding-top:6px;
+}
+.ability-player-row:first-child{border-top:0;padding-top:0}
+.ability-player-row strong{display:block}
+.chevron{font-size:1.1rem;text-align:center}
+@media(max-width:850px){
+  .ability-category-header,.ability-subtype-header{
+    grid-template-columns:minmax(150px,1fr) repeat(2,minmax(70px,auto)) 24px;
+  }
+  .ability-category-header .optional-stat,
+  .ability-subtype-header .optional-stat{display:none}
+  .faction-sections{grid-template-columns:1fr}
+}

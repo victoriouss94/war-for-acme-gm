@@ -1,15 +1,21 @@
 # War for ACME GM — Changelog
 
-## Version 2.4 — Ability Intelligence Edition
+## Version 2.5 — Ability Hierarchy Edition
 
-- Adds an Ability Intelligence Center.
-- Automatically counts every ability currently assigned in the game.
-- Shows total ability holders, living holders, dead holders, and remaining limited uses.
-- Breaks each ability down by ACME Defense Force, Warner Syndicate, and Independent Wildcards.
-- Searches by ability, mechanic, player, character, role, or faction.
-- Filters by category, life status, and faction.
-- Adds Investigation, Harmful, Protection, Support, Chaos, Conversion, Communication, and Other categories.
-- Includes normalized counters for Basic Ask, Advanced Ask, Watch, Track, Roleblock, Poison, Instant Kill, Super Kill, Omega Kill, Heal, Save, Guard, Protect, Wheel, Conversion, and more.
-- Clicking an ability displays its matching players, characters, factions, life status, descriptions, and uses remaining.
-- Updates automatically after deaths, revivals, faction conversions, role assignments, ability use, cloud sync, or backup restoration.
-- Preserves Supabase realtime synchronization and all v2.3 role cards.
+- Rebuilds Ability Intelligence into a true hierarchy:
+  Category → Subtype → Faction → Alive/Dead Player → Role details.
+- Basic Ask, Advanced Ask, Watch, Track, Visitor Intel, Role Reveal, Faction Reveal, and Graveyard Intel now live under Investigation.
+- Instant Kill, Super Kill, Omega Kill, Poison, Roleblock, Silence, Fear, and Ability Removal now live under Harmful.
+- Protect, Guard, Intercept, Reflect, Counterattack, Escape, Death Immunity, and Hanging Survival now live under Protection.
+- Heal, Save, Amplify/Upgrade, Guarantee Success, Double Ability, Restore Uses, and Cleanse now live under Support.
+- Wheel, Coin Flip, Prototype, Random Target, Random Ability, Backfire, and Swap/Confuse now live under Chaos.
+- Adds Conversion and Communication hierarchies.
+- Every category and subtype shows:
+  - total ability holders in game,
+  - alive holders,
+  - dead holders,
+  - remaining limited uses,
+  - ACME / Warner / Neutral breakdown,
+  - matching players and characters.
+- All values update automatically after roster changes, deaths, revivals, conversions, ability use, cloud sync, or backup restoration.
+- Preserves all Supabase realtime features and uploaded role-card artwork.

@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.4";
+const APP_VERSION = "2.5";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -327,7 +327,6 @@ function bindEvents(){
   databaseSearch.addEventListener("input",renderDatabase);
   databaseFactionFilter.addEventListener("change",renderDatabase);
   abilityIntelSearch.addEventListener("input",renderAbilityIntelligence);
-  abilityIntelCategory.addEventListener("change",renderAbilityIntelligence);
   abilityIntelLife.addEventListener("change",renderAbilityIntelligence);
   abilityIntelFaction.addEventListener("change",renderAbilityIntelligence);
 
@@ -749,72 +748,143 @@ function renderDatabase(){
   }).join(""):'<div class="empty">No matching characters.</div>';
 }
 
-const ABILITY_CATEGORY_RULES = [
-  ["Investigation",["basic ask","advanced ask","ask","watch","watcher","track","tracker","intel","investigat","role reveal","faction reveal","graveyard","visitor"]],
-  ["Harmful",["instant kill","super kill","omega kill","kill","poison","roleblock","block","silence","fear","bleed","mark","hunt","steal","remove ability"]],
-  ["Protection",["protect","protection","guard","bodyguard","intercept","reflect","immune","immunity","escape","counterattack","survive hanging"]],
-  ["Support",["heal","save","amplify","enhance","guarantee","double","restore","upgrade","motivat","courier","cleanse"]],
-  ["Chaos",["wheel","random","coin flip","gadget","prototype","backfire","chaos","swap","confus"]],
-  ["Conversion",["conversion","convert","recruit","faction change","traitor","enslave","bind"]],
-  ["Communication",["silence","text only","emoji","gif","picture","communication","private chat","channel"]]
+
+const ABILITY_CATEGORY_DEFINITIONS = [
+  {
+    name:"Investigation",
+    subtypes:[
+      ["Advanced Ask",["advanced ask"]],
+      ["Basic Ask",["basic ask"]],
+      ["Watch",["watch","watcher"]],
+      ["Track",["track","tracker"]],
+      ["Visitor Intel",["visitor","visited"]],
+      ["Role Reveal",["role reveal","exact role"]],
+      ["Faction Reveal",["faction reveal","exact faction","alignment ask"]],
+      ["Graveyard Intel",["graveyard","dead player","gravedigger"]],
+      ["Other Investigation",["intel","investigat","ask","seer"]]
+    ]
+  },
+  {
+    name:"Harmful",
+    subtypes:[
+      ["Omega Kill",["omega kill"]],
+      ["Super Kill",["super kill"]],
+      ["Instant Kill",["instant kill"]],
+      ["Poison",["poison"]],
+      ["Roleblock",["roleblock","role block","blocked"]],
+      ["Silence",["silence","silenced"]],
+      ["Fear",["fear"]],
+      ["Ability Removal",["remove ability","lose abilities","ability removal"]],
+      ["Redirect Harm",["redirect","retarget"]],
+      ["Other Harmful",["kill","harm","attack","mark","hunt","steal"]]
+    ]
+  },
+  {
+    name:"Protection",
+    subtypes:[
+      ["Protect",["protect","protection"]],
+      ["Guard",["guard","guardian","bodyguard"]],
+      ["Intercept",["intercept"]],
+      ["Reflect",["reflect"]],
+      ["Counterattack",["counterattack","counter attack"]],
+      ["Escape",["escape","evade"]],
+      ["Death Immunity",["death immunity","immune to death","cannot be killed"]],
+      ["Hanging Survival",["survive hanging","hanging immunity"]],
+      ["Other Protection",["shield","sentinel","save from death"]]
+    ]
+  },
+  {
+    name:"Support",
+    subtypes:[
+      ["Heal",["heal"]],
+      ["Save",["save"]],
+      ["Amplify / Upgrade",["amplif","enhance","upgrade","maximum version"]],
+      ["Guarantee Success",["guarantee","ensures","cannot fail","success"]],
+      ["Double Ability",["double ability","doubles","use twice"]],
+      ["Restore Uses",["restore use","regain use","extra use"]],
+      ["Cleanse",["cleanse","remove harmful","cure"]],
+      ["Other Support",["support","motivat","courier","buff"]]
+    ]
+  },
+  {
+    name:"Chaos",
+    subtypes:[
+      ["Wheel",["wheel"]],
+      ["Coin Flip",["coin flip"]],
+      ["Prototype",["prototype","blueprint"]],
+      ["Random Target",["random target","random player","random legal target"]],
+      ["Random Ability",["random ability","random effect","random role"]],
+      ["Backfire",["backfire","failure chance","chance of failure"]],
+      ["Swap / Confuse",["swap","confus","scramble"]],
+      ["Other Chaos",["chaos","gadget"]]
+    ]
+  },
+  {
+    name:"Conversion",
+    subtypes:[
+      ["Conversion",["conversion","convert"]],
+      ["Recruitment",["recruit"]],
+      ["Faction Change",["faction change","switch faction","traitor"]],
+      ["Enslaved to Death",["enslave","enslaved to death"]],
+      ["Bind",["bind","bound"]],
+      ["Other Conversion",["join the warner","becomes warner"]]
+    ]
+  },
+  {
+    name:"Communication",
+    subtypes:[
+      ["Silence",["silence","silenced"]],
+      ["Text Only",["text only","only use text"]],
+      ["Emoji / GIF / Image Only",["emoji","gif","picture only","images only"]],
+      ["Private Channel",["private chat","private channel","channel"]],
+      ["Other Communication",["communication","reply restriction"]]
+    ]
+  },
+  {
+    name:"Other",
+    subtypes:[["Other Ability",[]]]
+  }
 ];
 
-function abilityCategory(ability){
-  const text=[ability.name,ability.type,ability.description].join(" ").toLowerCase();
-  const found=ABILITY_CATEGORY_RULES.find(([,terms])=>terms.some(term=>text.includes(term)));
-  return found?.[0]||"Other";
+function abilityText(ability){
+  return [ability.name,ability.type,ability.description].filter(Boolean).join(" ").toLowerCase();
 }
 
-function normalizedAbilityName(ability){
-  const text=`${ability.name||""} ${ability.type||""}`.toLowerCase();
-  if(text.includes("omega kill"))return "Omega Kill";
-  if(text.includes("super kill"))return "Super Kill";
-  if(text.includes("instant kill"))return "Instant Kill";
-  if(text.includes("advanced ask"))return "Advanced Ask";
-  if(text.includes("basic ask"))return "Basic Ask";
-  if(text.includes("watch"))return "Watch";
-  if(text.includes("track"))return "Track";
-  if(text.includes("roleblock")||text.includes("role block"))return "Roleblock";
-  if(text.includes("poison"))return "Poison";
-  if(text.includes("protect"))return "Protect";
-  if(text.includes("guard")||text.includes("bodyguard"))return "Guard";
-  if(text.includes("heal"))return "Heal";
-  if(text.includes("save"))return "Save";
-  if(text.includes("amplif")||text.includes("enhance")||text.includes("upgrade"))return "Amplify / Upgrade";
-  if(text.includes("wheel"))return "Wheel";
-  if(text.includes("conversion")||text.includes("convert")||text.includes("recruit"))return "Conversion";
-  if(text.includes("redirect"))return "Redirect";
-  if(text.includes("silence"))return "Silence";
-  if(text.includes("fear"))return "Fear";
-  return ability.name||ability.type||"Other Ability";
+function classifyAbility(ability){
+  const text=abilityText(ability);
+  for(const category of ABILITY_CATEGORY_DEFINITIONS){
+    if(category.name==="Other")continue;
+    for(const [subtype,terms] of category.subtypes){
+      if(terms.some(term=>text.includes(term)))return {category:category.name,subtype};
+    }
+  }
+  return {category:"Other",subtype:"Other Ability"};
 }
 
-function buildAbilityInventory(){
-  const inventory=new Map();
+function abilityLimitInfo(ability){
+  const max=Number(ability.max||0);
+  const used=Number(ability.used||0);
+  if(max<=0)return {limited:false,remaining:null};
+  return {limited:true,remaining:Math.max(0,max-used)};
+}
+
+function buildAbilityHierarchy(){
+  const categories=new Map();
+  ABILITY_CATEGORY_DEFINITIONS.forEach(def=>categories.set(def.name,new Map()));
+
   state.players.forEach(player=>{
     (player.abilities||[]).forEach((ability,index)=>{
-      const name=normalizedAbilityName(ability);
-      const key=name.toLowerCase();
-      if(!inventory.has(key)){
-        inventory.set(key,{
-          name,
-          category:abilityCategory(ability),
-          members:[],
-          totalInstances:0,
-          remainingUses:0,
-          limitedUses:false
+      const cls=classifyAbility(ability);
+      const subtypeMap=categories.get(cls.category);
+      if(!subtypeMap.has(cls.subtype)){
+        subtypeMap.set(cls.subtype,{
+          name:cls.subtype,
+          category:cls.category,
+          members:[]
         });
       }
-      const item=inventory.get(key);
-      const max=Number(ability.max||0);
-      const used=Number(ability.used||0);
-      const unlimited=max===0;
-      item.totalInstances+=1;
-      if(!unlimited){
-        item.limitedUses=true;
-        item.remainingUses+=Math.max(0,max-used);
-      }
-      item.members.push({
+      const limit=abilityLimitInfo(ability);
+      subtypeMap.get(cls.subtype).members.push({
         playerId:player.id,
         playerName:player.name,
         character:player.character,
@@ -823,122 +893,154 @@ function buildAbilityInventory(){
         alive:player.alive,
         abilityIndex:index,
         ability,
-        remaining:unlimited?"Unlimited":Math.max(0,max-used)
+        limited:limit.limited,
+        remaining:limit.remaining
       });
     });
   });
-  return [...inventory.values()].sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));
+
+  return ABILITY_CATEGORY_DEFINITIONS.map(def=>({
+    name:def.name,
+    subtypes:[...(categories.get(def.name)?.values()||[])].sort((a,b)=>a.name.localeCompare(b.name))
+  })).filter(category=>category.subtypes.length);
 }
 
 function factionShortName(faction){
   if(faction==="ACME Defense Force")return "ACME";
   if(faction==="Warner Syndicate")return "Warner";
   if(faction==="Independent Wildcard")return "Neutral";
-  return faction;
+  return faction||"Unknown";
 }
 
-function inventoryCounts(item,members=item.members){
-  const factions=["ACME Defense Force","Warner Syndicate","Independent Wildcard"];
+function filteredMembers(members){
+  const search=(abilityIntelSearch.value||"").trim().toLowerCase();
+  const life=abilityIntelLife.value;
+  const faction=abilityIntelFaction.value;
+  return members.filter(member=>{
+    if(faction!=="ALL"&&member.faction!==faction)return false;
+    if(life==="ALIVE"&&!member.alive)return false;
+    if(life==="DEAD"&&member.alive)return false;
+    if(!search)return true;
+    return [
+      member.playerName,member.character,member.role,member.faction,
+      member.ability.name,member.ability.type,member.ability.description
+    ].join(" ").toLowerCase().includes(search);
+  });
+}
+
+function memberStats(members){
+  const alive=members.filter(m=>m.alive).length;
+  const dead=members.length-alive;
+  const limited=members.filter(m=>m.limited);
+  const usesLeft=limited.reduce((sum,m)=>sum+(m.remaining||0),0);
+  const hasUnlimited=members.some(m=>!m.limited);
   return {
     total:members.length,
-    alive:members.filter(m=>m.alive).length,
-    dead:members.filter(m=>!m.alive).length,
-    byFaction:Object.fromEntries(factions.map(f=>[
-      f,
-      {
-        total:members.filter(m=>m.faction===f).length,
-        alive:members.filter(m=>m.faction===f&&m.alive).length,
-        dead:members.filter(m=>m.faction===f&&!m.alive).length
-      }
-    ]))
+    alive,
+    dead,
+    usesLeft,
+    usesLabel:hasUnlimited?(limited.length?`${usesLeft} + ∞`:"∞"):String(usesLeft)
   };
 }
 
-let expandedAbilityKey="";
+let expandedAbilityCategory="";
+let expandedAbilitySubtype="";
 
 function renderAbilityIntelligence(){
-  if(!document.getElementById("abilityIntelResults"))return;
+  if(!document.getElementById("abilityHierarchy"))return;
+  const hierarchy=buildAbilityHierarchy();
   const search=(abilityIntelSearch.value||"").trim().toLowerCase();
-  const category=abilityIntelCategory.value;
-  const life=abilityIntelLife.value;
-  const faction=abilityIntelFaction.value;
-  const inventory=buildAbilityInventory();
 
-  const categoryTotals={};
-  inventory.forEach(item=>{
-    const alive=item.members.filter(m=>m.alive).length;
-    categoryTotals[item.category]=(categoryTotals[item.category]||0)+alive;
-  });
-  abilityCategoryMetrics.innerHTML=["Investigation","Harmful","Protection","Support","Chaos","Conversion","Communication","Other"]
-    .map(cat=>`<button type="button" class="metric ability-category-button" data-category="${escapeHtml(cat)}"><strong>${categoryTotals[cat]||0}</strong><span>${escapeHtml(cat)} alive</span></button>`)
-    .join("");
-
-  const rows=inventory.map(item=>{
-    let members=item.members.filter(member=>{
-      if(faction!=="ALL"&&member.faction!==faction)return false;
-      if(life==="ALIVE"&&!member.alive)return false;
-      if(life==="DEAD"&&member.alive)return false;
-      if(!search)return true;
-      const haystack=[item.name,item.category,member.playerName,member.character,member.role,member.faction,member.ability.description,member.ability.type].join(" ").toLowerCase();
-      return haystack.includes(search);
-    });
-    if(category!=="ALL"&&item.category!==category)return null;
-    if(search&&!members.length&&!`${item.name} ${item.category}`.toLowerCase().includes(search))return null;
-    if((life!=="ALL"||faction!=="ALL")&&!members.length)return null;
-    if(search&&!members.length)members=item.members;
-    const counts=inventoryCounts(item,members);
-    const allCounts=inventoryCounts(item);
-    const key=item.name.toLowerCase();
-    const factionChips=Object.entries(counts.byFaction).map(([f,c])=>
-      `<span class="faction-chip">${escapeHtml(factionShortName(f))}: <strong>${c.alive}</strong> alive / ${c.total}</span>`
-    ).join("");
-    const remaining=item.limitedUses
-      ? item.members.filter(m=>m.alive).reduce((sum,m)=>sum+(typeof m.remaining==="number"?m.remaining:0),0)
-      : "∞";
-    const detail=expandedAbilityKey===key?`<tr class="ability-detail-row"><td colspan="8"><div class="ability-member-list">${
-      members.map(m=>`<div class="ability-member"><strong>${escapeHtml(m.playerName)}</strong> — ${escapeHtml(m.character)}<div class="role-line">${escapeHtml(m.faction)} • ${m.alive?"Alive":"Dead"} • Remaining: ${escapeHtml(String(m.remaining))}</div><small>${escapeHtml(m.ability.description||"")}</small></div>`).join("")
-    }</div></td></tr>`:"";
-    return `<tr data-ability-row="${escapeHtml(key)}">
-      <td class="ability-name-cell"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)}</small></td>
-      <td><strong>${allCounts.total}</strong></td>
-      <td><strong>${allCounts.alive}</strong></td>
-      <td>${allCounts.dead}</td>
-      <td><strong>${remaining}</strong></td>
-      <td>${factionChips}</td>
-      <td>${members.map(m=>escapeHtml(m.playerName)).join(", ")||"—"}</td>
-      <td>${members.map(m=>escapeHtml(m.character)).join(", ")||"—"}</td>
-    </tr>${detail}`;
+  const visibleCategories=hierarchy.map(category=>{
+    const subtypes=category.subtypes.map(subtype=>{
+      const members=filteredMembers(subtype.members);
+      const subtypeNameMatches=!search||`${subtype.name} ${category.name}`.toLowerCase().includes(search);
+      if(search&&!members.length&&!subtypeNameMatches)return null;
+      if((abilityIntelLife.value!=="ALL"||abilityIntelFaction.value!=="ALL")&&!members.length)return null;
+      return {...subtype,members:members.length?members:subtype.members};
+    }).filter(Boolean);
+    if(!subtypes.length)return null;
+    return {...category,subtypes};
   }).filter(Boolean);
 
-  const totalAbilities=inventory.reduce((sum,item)=>sum+item.members.length,0);
-  const aliveAbilities=inventory.reduce((sum,item)=>sum+item.members.filter(m=>m.alive).length,0);
-  const acme=inventory.reduce((sum,item)=>sum+item.members.filter(m=>m.alive&&m.faction==="ACME Defense Force").length,0);
-  const warner=inventory.reduce((sum,item)=>sum+item.members.filter(m=>m.alive&&m.faction==="Warner Syndicate").length,0);
-  const neutral=inventory.reduce((sum,item)=>sum+item.members.filter(m=>m.alive&&m.faction==="Independent Wildcard").length,0);
+  abilityPowerSummary.innerHTML=visibleCategories.map(category=>{
+    const members=category.subtypes.flatMap(s=>s.members);
+    const stats=memberStats(members);
+    return `<button type="button" class="metric ability-power-card" data-open-category="${escapeHtml(category.name)}">
+      <strong>${stats.alive}</strong>
+      <span>${escapeHtml(category.name)} alive</span>
+      <small>${stats.total} in game • ${stats.usesLabel} uses left</small>
+    </button>`;
+  }).join("");
 
-  abilityIntelSummary.innerHTML=`
-    <div class="ability-summary-card"><span class="muted">Ability instances in game</span><strong>${totalAbilities}</strong></div>
-    <div class="ability-summary-card"><span class="muted">Living ability holders</span><strong>${aliveAbilities}</strong></div>
-    <div class="ability-summary-card"><span class="muted">ACME living abilities</span><strong>${acme}</strong></div>
-    <div class="ability-summary-card"><span class="muted">Warner living abilities</span><strong>${warner}</strong></div>
-    <div class="ability-summary-card"><span class="muted">Neutral living abilities</span><strong>${neutral}</strong></div>`;
+  abilityHierarchy.innerHTML=visibleCategories.map(category=>{
+    const categoryMembers=category.subtypes.flatMap(s=>s.members);
+    const catStats=memberStats(categoryMembers);
+    const categoryOpen=expandedAbilityCategory===category.name;
+    const subtypeHtml=categoryOpen?`<div class="ability-subtypes">${
+      category.subtypes.map(subtype=>{
+        const stats=memberStats(subtype.members);
+        const subtypeKey=`${category.name}::${subtype.name}`;
+        const subtypeOpen=expandedAbilitySubtype===subtypeKey;
+        const factionGroups=["ACME Defense Force","Warner Syndicate","Independent Wildcard"].map(faction=>{
+          const members=subtype.members.filter(m=>m.faction===faction);
+          if(!members.length)return "";
+          const fs=memberStats(members);
+          return `<section class="faction-section">
+            <h4>${escapeHtml(factionShortName(faction))}</h4>
+            <div class="role-line">${fs.alive} alive • ${fs.dead} dead • ${fs.usesLabel} uses left</div>
+            <div class="ability-player-list top-gap">${members.map(m=>`
+              <div class="ability-player-row">
+                <strong>${escapeHtml(m.playerName)} — ${escapeHtml(m.character)}</strong>
+                <div class="role-line">${escapeHtml(m.role||"")} • ${m.alive?"Alive":"Dead"} • ${m.limited?`${m.remaining} uses left`:"Unlimited"}</div>
+                <small>${escapeHtml(m.ability.description||m.ability.name||"")}</small>
+              </div>`).join("")}
+            </div>
+          </section>`;
+        }).join("");
+        return `<div class="ability-subtype">
+          <button type="button" class="ability-subtype-header" data-subtype="${escapeHtml(subtypeKey)}">
+            <span class="ability-subtype-title"><strong>${escapeHtml(subtype.name)}</strong><small>${escapeHtml(category.name)}</small></span>
+            <span class="ability-stat"><strong>${stats.total}</strong><small>In game</small></span>
+            <span class="ability-stat"><strong>${stats.alive}</strong><small>Alive</small></span>
+            <span class="ability-stat optional-stat"><strong>${stats.dead}</strong><small>Dead</small></span>
+            <span class="ability-stat optional-stat"><strong>${stats.usesLabel}</strong><small>Uses left</small></span>
+            <span class="chevron">${subtypeOpen?"▾":"▸"}</span>
+          </button>
+          ${subtypeOpen?`<div class="ability-subtype-details"><div class="faction-sections">${factionGroups||'<div class="empty">No matching players.</div>'}</div></div>`:""}
+        </div>`;
+      }).join("")
+    }</div>`:"";
+    return `<section class="ability-category">
+      <button type="button" class="ability-category-header" data-category="${escapeHtml(category.name)}">
+        <span class="ability-category-title"><strong>${escapeHtml(category.name)}</strong><small>${category.subtypes.length} subtypes</small></span>
+        <span class="ability-stat"><strong>${catStats.total}</strong><small>In game</small></span>
+        <span class="ability-stat"><strong>${catStats.alive}</strong><small>Alive</small></span>
+        <span class="ability-stat optional-stat"><strong>${catStats.dead}</strong><small>Dead</small></span>
+        <span class="ability-stat optional-stat"><strong>${catStats.usesLabel}</strong><small>Uses left</small></span>
+        <span class="chevron">${categoryOpen?"▾":"▸"}</span>
+      </button>
+      ${subtypeHtml}
+    </section>`;
+  }).join("")||'<div class="empty">No matching abilities or players.</div>';
 
-  abilityIntelResults.innerHTML=rows.length?`<table class="ability-intel-table">
-    <thead><tr>
-      <th>Ability</th><th>In game</th><th>Alive</th><th>Dead</th><th>Uses left</th>
-      <th>Faction breakdown</th><th>Players</th><th>Roles</th>
-    </tr></thead><tbody>${rows.join("")}</tbody>
-  </table>`:'<div class="empty">No matching abilities or players.</div>';
-
-  abilityIntelResults.querySelectorAll("[data-ability-row]").forEach(row=>row.addEventListener("click",()=>{
-    expandedAbilityKey=expandedAbilityKey===row.dataset.abilityRow?"":row.dataset.abilityRow;
+  abilityPowerSummary.querySelectorAll("[data-open-category]").forEach(button=>button.addEventListener("click",()=>{
+    expandedAbilityCategory=button.dataset.openCategory;
+    expandedAbilitySubtype="";
     renderAbilityIntelligence();
   }));
-  abilityCategoryMetrics.querySelectorAll("[data-category]").forEach(button=>button.addEventListener("click",()=>{
-    abilityIntelCategory.value=button.dataset.category;
+  abilityHierarchy.querySelectorAll("[data-category]").forEach(button=>button.addEventListener("click",()=>{
+    expandedAbilityCategory=expandedAbilityCategory===button.dataset.category?"":button.dataset.category;
+    expandedAbilitySubtype="";
+    renderAbilityIntelligence();
+  }));
+  abilityHierarchy.querySelectorAll("[data-subtype]").forEach(button=>button.addEventListener("click",event=>{
+    event.stopPropagation();
+    expandedAbilitySubtype=expandedAbilitySubtype===button.dataset.subtype?"":button.dataset.subtype;
     renderAbilityIntelligence();
   }));
 }
+
 
 function countMechanic(players,terms,aliveOnly){
   return players.filter(p=>!aliveOnly||p.alive).reduce((sum,p)=>sum+p.abilities.filter(a=>mechanicMatches(a.type,terms)).length,0);
@@ -949,36 +1051,33 @@ function renderStatistics(){
   const factions=["ACME Defense Force","Warner Syndicate","Independent Wildcard"];
   mechanicsByFaction.innerHTML=factions.map(f=>{
     const players=state.players.filter(p=>p.alive&&p.faction===f);
-    const inv=players.flatMap(p=>p.abilities||[]);
-    const catCount=cat=>inv.filter(a=>abilityCategory(a)===cat).length;
-    const instant=inv.filter(a=>normalizedAbilityName(a)==="Instant Kill").length;
-    const superKills=inv.filter(a=>normalizedAbilityName(a)==="Super Kill").length;
-    const omega=inv.filter(a=>normalizedAbilityName(a)==="Omega Kill").length;
-    const basic=inv.filter(a=>normalizedAbilityName(a)==="Basic Ask").length;
-    const advanced=inv.filter(a=>normalizedAbilityName(a)==="Advanced Ask").length;
+    const abilities=players.flatMap(p=>p.abilities||[]);
+    const categoryCount=name=>abilities.filter(a=>classifyAbility(a).category===name).length;
+    const subtypeCount=name=>abilities.filter(a=>classifyAbility(a).subtype===name).length;
     return `<div class="list-item">
       <strong>${escapeHtml(f)}</strong>
       <div class="role-line">${players.length} alive players</div>
       <div class="faction-counts top-gap">
-        <span class="faction-chip">Investigation <strong>${catCount("Investigation")}</strong></span>
-        <span class="faction-chip">Harmful <strong>${catCount("Harmful")}</strong></span>
-        <span class="faction-chip">Protection <strong>${catCount("Protection")}</strong></span>
-        <span class="faction-chip">Support <strong>${catCount("Support")}</strong></span>
-        <span class="faction-chip">Chaos <strong>${catCount("Chaos")}</strong></span>
-        <span class="faction-chip">Basic Ask <strong>${basic}</strong></span>
-        <span class="faction-chip">Advanced Ask <strong>${advanced}</strong></span>
-        <span class="faction-chip">Instant <strong>${instant}</strong></span>
-        <span class="faction-chip">Super <strong>${superKills}</strong></span>
-        <span class="faction-chip">Omega <strong>${omega}</strong></span>
+        <span class="faction-chip">Investigation <strong>${categoryCount("Investigation")}</strong></span>
+        <span class="faction-chip">Harmful <strong>${categoryCount("Harmful")}</strong></span>
+        <span class="faction-chip">Protection <strong>${categoryCount("Protection")}</strong></span>
+        <span class="faction-chip">Support <strong>${categoryCount("Support")}</strong></span>
+        <span class="faction-chip">Chaos <strong>${categoryCount("Chaos")}</strong></span>
+        <span class="faction-chip">Basic Ask <strong>${subtypeCount("Basic Ask")}</strong></span>
+        <span class="faction-chip">Advanced Ask <strong>${subtypeCount("Advanced Ask")}</strong></span>
+        <span class="faction-chip">Instant <strong>${subtypeCount("Instant Kill")}</strong></span>
+        <span class="faction-chip">Super <strong>${subtypeCount("Super Kill")}</strong></span>
+        <span class="faction-chip">Omega <strong>${subtypeCount("Omega Kill")}</strong></span>
       </div>
     </div>`;
   }).join("");
 
   const living=state.players.filter(p=>p.alive);
   const warnings=[];
-  const protection=countMechanic(state.players,["Protection","Bodyguard","Guard"],true);
-  const intel=countMechanic(state.players,["Intel","Ask","Watcher","Tracker","Role Reveal","Graveyard"],true);
-  const highKills=countMechanic(state.players,["Instant Kill","Super Kill","Omega Kill"],true);
+  const livingAbilities=living.flatMap(p=>p.abilities||[]);
+  const protection=livingAbilities.filter(a=>classifyAbility(a).category==="Protection").length;
+  const intel=livingAbilities.filter(a=>classifyAbility(a).category==="Investigation").length;
+  const highKills=livingAbilities.filter(a=>["Instant Kill","Super Kill","Omega Kill"].includes(classifyAbility(a).subtype)).length;
   if(living.length&&protection===0)warnings.push(["high","No living protection abilities remain."]);
   if(living.length&&intel===0)warnings.push(["high","No living information abilities remain."]);
   if(highKills>Math.max(3,Math.floor(living.length/4)))warnings.push(["high","The living roster contains a high concentration of powerful kills."]);

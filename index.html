@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.4</title>
+  <title>War for ACME — GM Control Panel v2.5</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.4 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.5 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.4</strong>
-  <span>Ability Intelligence Edition • automatic live counts • faction breakdowns • role and player search</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.5</strong>
+  <span>Ability Hierarchy Edition • category → subtype → faction → player • automatic live counts</span>
 </section>
 
 <section class="sync-bar">
@@ -370,23 +370,12 @@
       <div class="section-heading">
         <div>
           <h2>Ability Intelligence Center</h2>
-          <div class="muted">Counts update automatically when players are assigned, die, revive, convert factions, or use abilities.</div>
+          <div class="muted">Category → subtype → faction → alive/dead player. Counts recalculate automatically from the live roster and remaining uses.</div>
         </div>
       </div>
 
       <div class="ability-intel-controls">
-        <input id="abilityIntelSearch" placeholder="Search ability, mechanic, character, role, or player">
-        <select id="abilityIntelCategory">
-          <option value="ALL">All categories</option>
-          <option value="Investigation">Investigation</option>
-          <option value="Harmful">Harmful</option>
-          <option value="Protection">Protection</option>
-          <option value="Support">Support</option>
-          <option value="Chaos">Chaos</option>
-          <option value="Conversion">Conversion</option>
-          <option value="Communication">Communication</option>
-          <option value="Other">Other</option>
-        </select>
+        <input id="abilityIntelSearch" placeholder="Search ability, mechanic, character, role, faction, or player">
         <select id="abilityIntelLife">
           <option value="ALL">Alive and dead</option>
           <option value="ALIVE">Alive only</option>
@@ -400,9 +389,8 @@
         </select>
       </div>
 
-      <div id="abilityCategoryMetrics" class="metrics top-gap"></div>
-      <div id="abilityIntelSummary" class="ability-summary top-gap"></div>
-      <div id="abilityIntelResults" class="ability-intel-table-wrap top-gap"></div>
+      <div id="abilityPowerSummary" class="metrics top-gap"></div>
+      <div id="abilityHierarchy" class="ability-hierarchy top-gap"></div>
     </article>
 
     <div class="grid2 top-gap">
