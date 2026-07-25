@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.5";
+const APP_VERSION = "2.6.1";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -12,17 +12,15 @@ const MECHANICS = [
 ];
 
 const PRIORITY_RULES = [
-  {terms:["Omega Kill"],priority:100,killTier:"Omega Kill"},
-  {terms:["Super Kill"],priority:95,killTier:"Super Kill"},
-  {terms:["Instant Kill"],priority:90,killTier:"Instant Kill"},
-  {terms:["Protection","Bodyguard","Guard"],priority:20,killTier:"None"},
-  {terms:["Redirect","Target Control"],priority:15,killTier:"None"},
-  {terms:["Roleblock","Block"],priority:10,killTier:"None"},
-  {terms:["Watcher","Tracker","Intel","Ask","Role Reveal","Graveyard"],priority:50,killTier:"None"},
-  {terms:["Poison"],priority:60,killTier:"None"},
-  {terms:["Bleed"],priority:60,killTier:"None"},
-  {terms:["Mark","Hunt","Wanted"],priority:55,killTier:"None"},
-  {terms:["Conversion","Faction Change"],priority:65,killTier:"None"}
+  {terms:["Roleblock","Role Block","Block","Silence","Fear"],priority:10,phase:"Blocks",killTier:"None"},
+  {terms:["Redirect","Target Control","Swap","Mirror","Confus","Control"],priority:20,phase:"Role Control / Swaps",killTier:"None"},
+  {terms:["Protection","Protect","Bodyguard","Guard","Intercept","Reflect","Immunity","Escape"],priority:30,phase:"Protects",killTier:"None"},
+  {terms:["Watcher","Watch","Tracker","Track","Intel","Ask","Role Reveal","Faction Reveal","Graveyard","Visitor"],priority:40,phase:"Intel",killTier:"None"},
+  {terms:["Omega Kill"],priority:50,phase:"Kills / Harmful",killTier:"Omega Kill"},
+  {terms:["Super Kill"],priority:50,phase:"Kills / Harmful",killTier:"Super Kill"},
+  {terms:["Instant Kill"],priority:50,phase:"Kills / Harmful",killTier:"Instant Kill"},
+  {terms:["Poison","Bleed","Mark","Hunt","Wanted","Conversion","Faction Change","Kill","Harm"],priority:50,phase:"Kills / Harmful",killTier:"None"},
+  {terms:["Save","Heal","Cleanse","Cure","Restore"],priority:60,phase:"Saves / Heals",killTier:"None"}
 ];
 
 function defaultPriorityFor(type){
@@ -33,6 +31,23 @@ function defaultKillTierFor(type){
   const rule=PRIORITY_RULES.find(r=>r.terms.some(t=>String(type||"").toLowerCase().includes(t.toLowerCase())));
   return rule?.killTier ?? "None";
 }
+
+function resolutionPhaseFor(type){
+  const rule=PRIORITY_RULES.find(r=>r.terms.some(t=>String(type||"").toLowerCase().includes(t.toLowerCase())));
+  return rule?.phase ?? "Intel";
+}
+function actionText(q){
+  return `${q.abilityName||""} ${q.type||""} ${q.note||""}`.toLowerCase();
+}
+function isBlockAction(q){return q.priority===10||/role ?block|silence|fear/.test(actionText(q));}
+function isControlAction(q){return q.priority===20||/redirect|swap|mirror|control|confus/.test(actionText(q));}
+function isProtectionAction(q){return q.priority===30||/protect|guard|bodyguard|intercept|reflect|immun|escape/.test(actionText(q));}
+function isIntelAction(q){return q.priority===40||/basic ask|advanced ask|watch|track|intel|reveal|graveyard|visitor/.test(actionText(q));}
+function isRecoveryAction(q){return q.priority===60||/save|heal|cleanse|cure|restore/.test(actionText(q));}
+function isHarmfulAction(q){
+  return q.priority===50 || q.killTier!=="None" || /poison|bleed|mark|harm|kill|convert|attack/.test(actionText(q));
+}
+function bypassesNormalProtection(q){return q.killTier==="Super Kill"||q.killTier==="Omega Kill";}
 
 
 const SUPABASE_URL = "https://bipjqwemwqivyassibqm.supabase.co";
@@ -318,6 +333,7 @@ function bindEvents(){
   queueActionBtn.addEventListener("click",queueAction);
   sortQueueBtn.addEventListener("click",()=>{state.queue.sort((a,b)=>a.priority-b.priority);save();});
   resolveAllBtn.addEventListener("click",resolveAll);
+  queueDenKillsBtn.addEventListener("click",queueWarnerDenKills);
   clearQueueBtn.addEventListener("click",()=>{if(confirm("Clear every queued action?")){state.queue=[];save();}});
   archiveNightBtn.addEventListener("click",archiveNight);
 
@@ -516,6 +532,53 @@ function updateActionAssistant(){
     ${escapeHtml(ability.description)}
   `;
 }
+
+function queueWarnerDenKills(){
+  const target1=playerById(denKillTarget1.value);
+  const target2=playerById(denKillTarget2.value);
+  if(!target1||!target2)return alert("Choose both Warner den kill targets.");
+  if(target1.id===target2.id)return alert("The two den kills must target two different players.");
+
+  const existing=state.queue.filter(q=>q.denAction&&q.day===state.day);
+  if(existing.length>=2)return alert("Both Warner Syndicate den Instant Kills are already queued for this night.");
+
+  [target1,target2].forEach((target,index)=>{
+    state.queue.push({
+      id:crypto.randomUUID(),
+      actorId:"",
+      actorName:"Warner Syndicate Faction",
+      character:"Faction Resource",
+      abilityIndex:-1,
+      abilityName:`Faction Instant Kill ${index+1}`,
+      type:"Faction Instant Kill",
+      targetIds:[target.id],
+      targetNames:[target.name],
+      priority:50,
+      phase:"Kills / Harmful",
+      killTier:"Instant Kill",
+      result:"Pending",
+      reason:"None",
+      affectedPlayer:"TARGET",
+      sourceId:"",
+      sourceName:"",
+      redirectedTargetId:"",
+      redirectedTargetName:"",
+      statusApplied:"None",
+      statusDuration:0,
+      note:"Faction-owned Warner Syndicate den action. Not tied to any player ability.",
+      resolved:false,
+      denAction:true,
+      actionOwnerType:"FACTION",
+      factionOwner:"Warner Syndicate",
+      resourceKey:"warner_den_instant_kill",
+      consumesPlayerAbility:false,
+      day:state.day
+    });
+  });
+  addLog(`Queued both Warner Syndicate faction Instant Kills for Night ${state.day}: ${target1.name} and ${target2.name}.`);
+  save();
+}
+
 function queueAction(){
   const actor=playerById(actionActor.value);
   if(!actor)return alert("Add players first.");
@@ -539,6 +602,7 @@ function queueAction(){
     targetIds,
     targetNames,
     priority:Number(actionPriority.value)||50,
+    phase:resolutionPhaseFor(ability.type),
     killTier:actionKillTier.value,
     result:actionResult.value,
     reason:actionReason.value,
@@ -560,13 +624,15 @@ function queueAction(){
 function renderQueue(){
   const pending=state.queue.filter(q=>!q.resolved).length;
   queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved`;
+  const denCount=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
+  if(document.getElementById("denKillStatus"))denKillStatus.textContent=`Night ${state.day}: ${denCount}/2 faction Instant Kills queued • ${Math.max(0,2-denCount)} remaining.`;
 
   const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
   queueList.innerHTML=ordered.length?ordered.map(q=>`
     <article class="queue-card ${q.resolved?"resolved":""}" data-action="${q.id}">
       <div class="card-head">
         <strong>${escapeHtml(q.actorName)} — ${escapeHtml(q.abilityName)}</strong>
-        <span class="badge">Priority ${q.priority}</span>
+        <span class="badge">${escapeHtml(q.phase||resolutionPhaseFor(q.type))} • Priority ${q.priority}</span>
       </div>
       <div class="queue-meta">Original targets: ${escapeHtml(q.targetNames.join(", ")||"None")} • ${escapeHtml(q.type)} • ${escapeHtml(q.killTier)}</div>
 
@@ -647,11 +713,142 @@ function resolveAction(id){
 }
 function resolveAll(){
   const pending=[...state.queue].filter(q=>!q.resolved).sort((a,b)=>a.priority-b.priority);
+  if(!pending.length)return alert("There are no pending actions.");
+
+  state.resolutionHistory.push(JSON.stringify({
+    players:state.players,
+    queue:state.queue,
+    log:state.log
+  }));
+
+  const blockedActors=new Set();
+  const protectedTargets=new Map();
+  const redirectedTargets=new Map();
+  const killedThisNight=new Set();
+
   for(const q of pending){
-    if((q.result||"Pending")==="Pending")continue;
-    resolveAction(q.id);
+    const actor=playerById(q.actorId);
+    const originalTargets=q.targetIds.map(playerById).filter(Boolean);
+    let targets=originalTargets;
+
+    if(q.redirectedTargetId){
+      const redirected=playerById(q.redirectedTargetId);
+      if(redirected){
+        redirectedTargets.set(q.id,redirected.id);
+        targets=[redirected];
+        q.redirectedTargetName=redirected.name;
+      }
+    }
+
+    if(actor&&blockedActors.has(actor.id)){
+      q.result="Failed";
+      q.reason="Blocked";
+      q.resolved=true;
+      addLog(`Auto-resolved: ${q.actorName}'s ${q.abilityName} failed because the actor was blocked.`);
+      continue;
+    }
+
+    if(isBlockAction(q)){
+      targets.forEach(target=>{
+        blockedActors.add(target.id);
+        target.statuses.Blocked=true;
+        target.statusDurations=target.statusDurations||{};
+        target.statusDurations.Blocked=1;
+      });
+      q.result="Successful";
+      q.reason="None";
+    } else if(isControlAction(q)){
+      q.result="Successful";
+      q.reason=q.redirectedTargetId?"Redirected":"None";
+    } else if(isProtectionAction(q)){
+      targets.forEach(target=>{
+        if(!protectedTargets.has(target.id))protectedTargets.set(target.id,[]);
+        protectedTargets.get(target.id).push(q);
+        target.statuses.Protected=true;
+        target.statusDurations=target.statusDurations||{};
+        target.statusDurations.Protected=1;
+      });
+      q.result="Successful";
+      q.reason="None";
+    } else if(isIntelAction(q)){
+      q.result="Successful";
+      q.reason="None";
+    } else if(isHarmfulAction(q)){
+      let anyDied=false;
+      let anyProtected=false;
+      let anySucceeded=false;
+
+      targets.forEach(target=>{
+        const normalProtection=protectedTargets.has(target.id);
+        if(normalProtection&&!bypassesNormalProtection(q)){
+          anyProtected=true;
+          return;
+        }
+
+        anySucceeded=true;
+        if(q.killTier!=="None"||/\bkill\b/.test(actionText(q))){
+          target.alive=false;
+          killedThisNight.add(target.id);
+          anyDied=true;
+        }else if(/poison/.test(actionText(q))){
+          target.statuses.Poisoned=true;
+          target.statusDurations=target.statusDurations||{};
+          target.statusDurations.Poisoned=q.statusDuration||1;
+        }else if(q.statusApplied&&q.statusApplied!=="None"){
+          target.statuses[q.statusApplied]=true;
+          target.statusDurations=target.statusDurations||{};
+          target.statusDurations[q.statusApplied]=q.statusDuration||1;
+        }
+      });
+
+      if(anyDied){
+        q.result="Target Died";
+        q.reason="None";
+      }else if(anyProtected&&!anySucceeded){
+        q.result="Failed";
+        q.reason="Protected";
+        q.sourceName=targets.map(t=>(protectedTargets.get(t.id)||[])[0]?.actorName).filter(Boolean).join(", ");
+      }else{
+        q.result="Successful";
+        q.reason=anyProtected?"Protected":"None";
+      }
+    } else if(isRecoveryAction(q)){
+      let recovered=false;
+      targets.forEach(target=>{
+        if(/save/.test(actionText(q))&&killedThisNight.has(target.id)){
+          target.alive=true;
+          killedThisNight.delete(target.id);
+          recovered=true;
+        }
+        if(/heal|cleanse|cure/.test(actionText(q))){
+          ["Poisoned","Bleeding","Marked"].forEach(status=>{
+            if(target.statuses[status]){
+              target.statuses[status]=false;
+              if(target.statusDurations)delete target.statusDurations[status];
+              recovered=true;
+            }
+          });
+        }
+      });
+      q.result=recovered?"Successful":"Failed";
+      q.reason=recovered?"None":"No applicable effect";
+    } else {
+      q.result="Successful";
+      q.reason="None";
+    }
+
+    if(!q.denAction && q.consumesPlayerAbility!==false){
+      const ability=actor?.abilities?.[q.abilityIndex];
+      if(ability&&ability.max>0&&ability.used<ability.max)ability.used++;
+    }
+    q.resolved=true;
+    addLog(`Auto-resolved: ${q.actorName} used ${q.abilityName} on ${q.targetNames.join(", ")||"no target"} — ${q.result}${q.reason&&q.reason!=="None"?` (${q.reason})`:""}.`);
   }
+
+  addLog(`Night ${state.day} auto-resolution completed in the order: Blocks → Role Control/Swaps → Protects → Intel → Kills/Harmful → Saves/Heals.`);
+  save();
 }
+
 function undoLastResolution(){
   const snapshot=state.resolutionHistory.pop();
   if(!snapshot)return alert("There is no resolved action to undo.");
@@ -1429,12 +1626,30 @@ function renderLogAndArchive(){
   nightArchive.innerHTML=state.archive.length?state.archive.map(n=>`<div class="list-item"><strong>Day ${n.day}</strong><div class="role-line">${escapeHtml(n.time)} • ${n.actions.length} actions</div></div>`).join(""):'<div class="empty">No archived nights.</div>';
 }
 
+
+function renderWarnerFactionResources(){
+  const el=document.getElementById("warnerFactionResources");
+  if(!el)return;
+  const used=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
+  const remaining=Math.max(0,2-used);
+  el.innerHTML=`
+    <div class="metrics">
+      <div class="metric"><strong>2</strong><span>Faction Instant Kills per night</span></div>
+      <div class="metric"><strong>${used}</strong><span>Queued this night</span></div>
+      <div class="metric"><strong>${remaining}</strong><span>Remaining this night</span></div>
+    </div>
+    <div class="auto-resolution-note">
+      These kills belong to the Warner Syndicate faction. They are not attached to Brain, Pinky, Yakko, Wakko, Dot, or any other player.
+    </div>`;
+}
+
 function render(){
   renderLiveMode();
   renderDashboard();
   renderPlayers();
   renderActionSelectors();
   renderQueue();
+  renderWarnerFactionResources();
   renderWorldEvents();
   renderDatabase();
   renderStatistics();

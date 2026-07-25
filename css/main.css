@@ -319,3 +319,33 @@ textarea{min-height:70px;resize:vertical}
   .ability-subtype-header .optional-stat{display:none}
   .faction-sections{grid-template-columns:1fr}
 }
+
+.resolution-order-card,.den-action-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px;
+  margin-bottom:12px;
+  background:var(--panel-soft);
+}
+.resolution-order-card ol{margin:8px 0 6px;padding-left:22px}
+.resolution-order-card li{margin:3px 0}
+.den-action-card{display:grid;gap:7px}
+.den-action-card label{margin-top:2px}
+.auto-resolution-note{
+  border-left:4px solid var(--accent);
+  padding:8px 10px;
+  margin-top:8px;
+  background:var(--panel-soft);
+  border-radius:8px;
+}
+
+.faction-resource-note{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  background:var(--panel-soft);
+}
+.faction-resource-note strong{display:block}

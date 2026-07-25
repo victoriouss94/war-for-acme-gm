@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.5</title>
+  <title>War for ACME — GM Control Panel v2.6.1</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.5 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.6.1 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.5</strong>
-  <span>Ability Hierarchy Edition • category → subtype → faction → player • automatic live counts</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.6.1</strong>
+  <span>Automated Night Engine • faction-owned Warner den resources • protection checks</span>
 </section>
 
 <section class="sync-bar">
@@ -181,6 +181,31 @@
     <div class="layout">
       <aside class="panel">
         <h2>Queue Night Action</h2>
+
+        <div class="resolution-order-card">
+          <strong>Night Resolution Order</strong>
+          <ol>
+            <li>Blocks</li>
+            <li>Role Control / Swaps</li>
+            <li>Protects</li>
+            <li>Intel</li>
+            <li>Kills / Harmful Actions</li>
+            <li>Saves / Heals</li>
+          </ol>
+          <small>Super and Omega Kills bypass normal protection.</small>
+        </div>
+
+        <div class="den-action-card">
+          <strong>Warner Syndicate Faction Resources</strong>
+          <small>These are faction-owned actions. They do not belong to any Warner player and never consume a character ability.</small>
+          <label for="denKillTarget1">Den Kill 1</label>
+          <select id="denKillTarget1"></select>
+          <label for="denKillTarget2">Den Kill 2</label>
+          <select id="denKillTarget2"></select>
+          <button id="queueDenKillsBtn" type="button" class="danger full">Queue Two Faction Instant Kills</button>
+          <div id="denKillStatus" class="muted"></div>
+        </div>
+
         <label for="actionActor">Actor</label>
         <select id="actionActor"></select>
         <label for="actionAbility">Ability</label>
@@ -255,7 +280,7 @@
           </div>
           <div class="toolbar">
             <button id="sortQueueBtn" class="secondary">Sort by Priority</button>
-            <button id="resolveAllBtn" class="success">Resolve All</button>
+            <button id="resolveAllBtn" class="success">Auto-Resolve Night</button>
             <button id="archiveNightBtn" class="secondary">Archive Night</button>
             <button id="clearQueueBtn" class="danger">Clear Queue</button>
           </div>
@@ -266,6 +291,11 @@
   </section>
 
   <section id="warnerView" class="view">
+    <article class="panel faction-resource-panel">
+      <h2>Warner Syndicate Faction Resources</h2>
+      <div id="warnerFactionResources"></div>
+    </article>
+
     <div class="warner-private-banner">
       <strong>WARNER SYNDICATE — PRIVATE GM ROOM</strong>
       <span>This section is intended only for the Game Masters. It does not create or manage a real Discord channel.</span>
@@ -390,6 +420,11 @@
       </div>
 
       <div id="abilityPowerSummary" class="metrics top-gap"></div>
+      <div class="faction-resource-note top-gap">
+        <strong>Faction resources are tracked separately from player abilities.</strong>
+        <span>Warner Syndicate den Instant Kills do not appear in player ability counts.</span>
+      </div>
+
       <div id="abilityHierarchy" class="ability-hierarchy top-gap"></div>
     </article>
 

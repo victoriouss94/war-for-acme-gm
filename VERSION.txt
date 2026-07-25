@@ -1,3 +1,3 @@
 War for ACME GM Control Panel
-Version: 2.5
-Build: Ability Category and Subtype Hierarchy Edition
+Version: 2.6.1
+Build: Automated Night Engine with Separate Warner Faction Resources

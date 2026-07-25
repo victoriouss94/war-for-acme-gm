@@ -1,17 +1,18 @@
-WAR FOR ACME GM — VERSION 2.5
+WAR FOR ACME GM — VERSION 2.6.1
+
+This replaces the previous v2.6 package.
 
 1. Extract this ZIP.
-2. Copy every file and folder into the existing GitHub repository.
-3. Choose Replace the files in the destination.
-4. In GitHub Desktop, commit:
-   Publish War for ACME GM v2.5 Ability Hierarchy
-5. Click Push origin.
-6. Wait 1–2 minutes.
-7. Open the site and press Ctrl + F5.
+2. Copy all files and folders into the GitHub repository.
+3. Replace existing files.
+4. Commit:
+   Publish War for ACME GM v2.6.1 Faction Den Actions
+5. Push origin.
+6. Wait 1–2 minutes and press Ctrl + F5.
 
 CHECK:
-- Open Ability Intelligence.
-- Investigation should expand to Basic Ask, Advanced Ask, Watch, Track, and other investigation subtypes.
-- Harmful, Protection, Support, Chaos, Conversion, and Communication should work the same way.
-- Expand a subtype to see separate ACME, Warner, and Neutral player lists.
-- Mark a player dead or convert them and confirm the counts update automatically.
+- Warner faction resources show 2 Instant Kills per night.
+- The actions have no player owner.
+- Queueing them does not reduce any character's ability uses.
+- They do not appear in player Ability Intelligence counts.
+- Moving to a new night shows 2 available again.
