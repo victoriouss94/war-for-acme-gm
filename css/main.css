@@ -176,3 +176,74 @@ textarea{min-height:70px;resize:vertical}
 }
 
 .role-card-thumb{width:100%;max-height:340px;object-fit:contain;border-radius:10px;background:#090d16;cursor:zoom-in;border:1px solid var(--line);margin:8px 0}.role-card-button{width:100%;margin-top:7px}.shared-role-note{padding:8px 10px;border:1px solid #d6a928;border-radius:9px;background:rgba(214,169,40,.12);margin:8px 0}.role-card-modal{display:none;position:fixed;inset:0;z-index:9999}.role-card-modal.open{display:block}.role-card-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.85)}.role-card-modal-dialog{position:relative;width:min(95vw,1100px);height:94vh;margin:3vh auto;background:#111827;border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;padding:10px}.role-card-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 3px 10px}.role-card-modal-dialog img{width:100%;height:calc(100% - 48px);object-fit:contain;background:#05070b;border-radius:9px}.database-card.has-card{display:flex;flex-direction:column}.official-card-badge{background:rgba(34,197,94,.15);border-color:#22c55e}
+
+.ability-intel-controls{
+  display:grid;
+  grid-template-columns:minmax(240px,2fr) repeat(3,minmax(150px,1fr));
+  gap:10px;
+}
+.ability-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+}
+.ability-summary-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  background:var(--panel-soft);
+}
+.ability-summary-card strong{
+  display:block;
+  font-size:1.55rem;
+}
+.ability-intel-table-wrap{overflow-x:auto}
+.ability-intel-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:950px;
+}
+.ability-intel-table th,
+.ability-intel-table td{
+  padding:10px;
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  vertical-align:top;
+}
+.ability-intel-table th{
+  position:sticky;
+  top:0;
+  background:var(--panel);
+  z-index:1;
+}
+.ability-intel-table tr[data-ability-row]{cursor:pointer}
+.ability-intel-table tr[data-ability-row]:hover{background:var(--panel-soft)}
+.ability-name-cell strong{display:block}
+.ability-name-cell small{display:block;color:var(--muted)}
+.faction-counts{display:flex;gap:6px;flex-wrap:wrap}
+.faction-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:.82rem;
+}
+.ability-detail-row td{background:var(--panel-soft)}
+.ability-member-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:8px;
+}
+.ability-member{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:9px;
+}
+@media(max-width:900px){
+  .ability-intel-controls{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .ability-intel-controls{grid-template-columns:1fr}
+}

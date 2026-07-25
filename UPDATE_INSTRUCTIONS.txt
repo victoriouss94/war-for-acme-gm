@@ -1,16 +1,17 @@
-WAR FOR ACME GM — VERSION 2.3 ROLE CARD EDITION
+WAR FOR ACME GM — VERSION 2.4
 
 1. Extract this ZIP.
 2. Copy every file and folder into the existing GitHub repository.
 3. Choose Replace the files in the destination.
-4. In GitHub Desktop, commit: Publish War for ACME GM v2.3 Role Cards
-5. Push origin.
-6. Wait 1–2 minutes and press Ctrl + F5 on the live site.
+4. In GitHub Desktop, commit:
+   Publish War for ACME GM v2.4 Ability Intelligence
+5. Click Push origin.
+6. Wait 1–2 minutes.
+7. Open the site and press Ctrl + F5.
 
 CHECK:
-- The banner says v2.3.
-- Character Database contains 53 official cards.
-- Clicking a card opens the full slide.
-- Audience shows Shared Role: 3 players.
-- Goofy Gophers shows Shared Role: 2 players.
-- Shared Supabase synchronization still connects to ACME54.
+- The navigation contains Ability Intelligence.
+- Assign several players and open that section.
+- Counts should show each ability and its ACME, Warner, and Neutral breakdown.
+- Mark a player dead and confirm the Alive/Dead counts update automatically.
+- Convert a player to Warner and confirm the faction breakdown changes automatically.

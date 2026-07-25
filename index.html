@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.3</title>
+  <title>War for ACME — GM Control Panel v2.4</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.3 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.4 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.3</strong>
-  <span>Shared GM Edition • Supabase live sync • connection status • GM attribution • emergency local fallback</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.4</strong>
+  <span>Ability Intelligence Edition • automatic live counts • faction breakdowns • role and player search</span>
 </section>
 
 <section class="sync-bar">
@@ -50,7 +50,7 @@
   <button class="tab warner-tab" data-view="warnerView">Warner Syndicate</button>
   <button class="tab" data-view="reportsView">Reports</button>
   <button class="tab" data-view="databaseView">Character Database</button>
-  <button class="tab" data-view="statisticsView">Statistics</button>
+  <button class="tab" data-view="statisticsView">Ability Intelligence</button>
   <button class="tab" data-view="timelineView">Timeline</button>
   <button class="tab" data-view="logView">GM Log</button>
 </nav>
@@ -366,9 +366,47 @@
   </section>
 
   <section id="statisticsView" class="view">
-    <div id="mechanicMetrics" class="metrics"></div>
-    <div class="grid2">
-      <article class="panel"><h2>Mechanics by Faction</h2><div id="mechanicsByFaction"></div></article>
+    <article class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Ability Intelligence Center</h2>
+          <div class="muted">Counts update automatically when players are assigned, die, revive, convert factions, or use abilities.</div>
+        </div>
+      </div>
+
+      <div class="ability-intel-controls">
+        <input id="abilityIntelSearch" placeholder="Search ability, mechanic, character, role, or player">
+        <select id="abilityIntelCategory">
+          <option value="ALL">All categories</option>
+          <option value="Investigation">Investigation</option>
+          <option value="Harmful">Harmful</option>
+          <option value="Protection">Protection</option>
+          <option value="Support">Support</option>
+          <option value="Chaos">Chaos</option>
+          <option value="Conversion">Conversion</option>
+          <option value="Communication">Communication</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="abilityIntelLife">
+          <option value="ALL">Alive and dead</option>
+          <option value="ALIVE">Alive only</option>
+          <option value="DEAD">Dead only</option>
+        </select>
+        <select id="abilityIntelFaction">
+          <option value="ALL">All factions</option>
+          <option>ACME Defense Force</option>
+          <option>Warner Syndicate</option>
+          <option>Independent Wildcard</option>
+        </select>
+      </div>
+
+      <div id="abilityCategoryMetrics" class="metrics top-gap"></div>
+      <div id="abilityIntelSummary" class="ability-summary top-gap"></div>
+      <div id="abilityIntelResults" class="ability-intel-table-wrap top-gap"></div>
+    </article>
+
+    <div class="grid2 top-gap">
+      <article class="panel"><h2>Faction Capability Snapshot</h2><div id="mechanicsByFaction"></div></article>
       <article class="panel"><h2>Setup Warnings</h2><div id="setupWarnings"></div></article>
     </div>
   </section>

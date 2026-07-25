@@ -1,5 +1,5 @@
 # War for ACME GM Control Panel
 
-Current release: **v2.3 — Official Role Card Gallery Edition**
+Current release: **v2.4 — Ability Intelligence Edition**
 
-This build preserves the live shared GM system and includes the 53 authoritative role cards uploaded for War for ACME. Open **Character Database** to search, preview, and enlarge the complete cards.
+The Ability Intelligence Center automatically tracks which abilities are in the live game, who holds them, how many holders remain alive, remaining limited uses, and the current distribution across ACME, Warner Syndicate, and Independent Wildcards.
