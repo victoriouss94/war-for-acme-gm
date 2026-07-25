@@ -1,29 +1,16 @@
-WAR FOR ACME GM — VERSION 2.2 SHARED EDITION
+WAR FOR ACME GM — VERSION 2.3 ROLE CARD EDITION
 
-Copy ALL files and folders into the existing GitHub repository.
-Choose REPLACE THE FILES IN THE DESTINATION.
+1. Extract this ZIP.
+2. Copy every file and folder into the existing GitHub repository.
+3. Choose Replace the files in the destination.
+4. In GitHub Desktop, commit: Publish War for ACME GM v2.3 Role Cards
+5. Push origin.
+6. Wait 1–2 minutes and press Ctrl + F5 on the live site.
 
-GitHub Desktop:
-1. Summary: Publish War for ACME GM v2.2 Shared Edition
-2. Commit to main
-3. Push origin
-4. Wait 1–2 minutes
-5. Refresh the website with Ctrl + F5
-
-SUCCESS CHECK:
-- Banner says GAME-NIGHT BUILD v2.2
-- A synchronization bar appears below the banner
-- Enter a GM name and click Connect
-- Status should say Connected to room ACME54
-
-TWO-DEVICE TEST:
-1. Open the website in two different browsers or devices.
-2. Enter different GM names.
-3. Connect both.
-4. Add a test player on device one.
-5. The player should appear automatically on device two.
-
-IMPORTANT:
-If asked whether to use the cloud or local copy:
-- Choose the cloud copy when another GM has already started the shared game.
-- Choose the local copy only when this browser contains the correct master game that should overwrite the empty or older cloud room.
+CHECK:
+- The banner says v2.3.
+- Character Database contains 53 official cards.
+- Clicking a card opens the full slide.
+- Audience shows Shared Role: 3 players.
+- Goofy Gophers shows Shared Role: 2 players.
+- Shared Supabase synchronization still connects to ACME54.

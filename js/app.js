@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.2";
+const APP_VERSION = "2.3";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -355,6 +355,10 @@ function bindEvents(){
   connectSyncBtn.addEventListener("click",connectSharedRoom);
   forceSyncBtn.addEventListener("click",()=>pushStateToCloud(true));
   gmNameInput.addEventListener("keydown",event=>{if(event.key==="Enter")connectSharedRoom();});
+  closeRoleCardBtn.addEventListener("click",closeRoleCard);
+  roleCardModal.querySelector("[data-close-role-card]").addEventListener("click",closeRoleCard);
+  document.addEventListener("click",event=>{const trigger=event.target.closest("[data-open-role-card]");if(trigger)openRoleCard(trigger.dataset.openRoleCard);});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeRoleCard();});
 }
 
 function activateView(viewId){
@@ -362,6 +366,21 @@ function activateView(viewId){
   const tab=[...document.querySelectorAll(".tab")].find(t=>t.dataset.view===viewId);
   if(tab)tab.classList.add("active");
   document.getElementById(viewId)?.classList.add("active");
+}
+
+function openRoleCard(characterId){
+  const c=characterById(characterId);
+  if(!c?.card_image)return;
+  roleCardModalTitle.textContent=`${c.character} — Official Role Card`;
+  roleCardModalImage.src=c.card_image;
+  roleCardModalImage.alt=`${c.character} official role card`;
+  roleCardModal.classList.add("open");
+  roleCardModal.setAttribute("aria-hidden","false");
+}
+function closeRoleCard(){
+  roleCardModal.classList.remove("open");
+  roleCardModal.setAttribute("aria-hidden","true");
+  roleCardModalImage.removeAttribute("src");
 }
 
 function renderCharacterOptions(){
@@ -375,6 +394,8 @@ function renderCharacterPreview(){
   characterPreview.innerHTML=c?`
     <strong>${escapeHtml(c.character)}</strong><div class="role-line">${escapeHtml(c.faction)} • ${escapeHtml(c.role)}</div>
     <p>${escapeHtml(c.purpose)}</p>
+    ${c.shared_role?.enabled?`<div class="shared-role-note"><strong>Shared Role:</strong> ${escapeHtml(c.shared_role.description)}</div>`:""}
+    ${c.card_image?`<img class="role-card-thumb" src="${escapeHtml(c.card_image)}" alt="${escapeHtml(c.character)} official card" data-open-role-card="${escapeHtml(c.id)}"><button type="button" class="secondary role-card-button" data-open-role-card="${escapeHtml(c.id)}">Open Full Role Card</button>`:""}
     ${c.passive_name||c.passive_description?`<div><strong>Passive:</strong> ${escapeHtml(c.passive_name)} — ${escapeHtml(c.passive_description)}</div>`:""}
     ${c.signature_name?`<div><strong>Signature:</strong> ${escapeHtml(c.signature_name)} — ${escapeHtml(c.signature_description)}</div>`:""}
   `:'<div class="empty">No character available.</div>';
@@ -712,8 +733,10 @@ function renderDatabase(){
   });
   databaseResults.innerHTML=list.length?list.map(c=>{
     const abilities=characterAbilities(c.character);
-    return `<article class="database-card">
-      <div class="card-head"><div><strong>${escapeHtml(c.character)}</strong><div class="role-line">${escapeHtml(c.faction)} • ${escapeHtml(c.role)}</div></div><span class="badge">${escapeHtml(c.review||"")}</span></div>
+    return `<article class="database-card ${c.card_image?"has-card":""}">
+      <div class="card-head"><div><strong>${escapeHtml(c.character)}</strong><div class="role-line">${escapeHtml(c.faction)} • ${escapeHtml(c.role)}</div></div><span class="badge ${c.official_card?"official-card-badge":""}">${c.official_card?"Official Card":escapeHtml(c.review||"")}</span></div>
+      ${c.shared_role?.enabled?`<div class="shared-role-note"><strong>Shared Role:</strong> ${escapeHtml(c.shared_role.description)}</div>`:""}
+      ${c.card_image?`<img class="role-card-thumb" loading="lazy" src="${escapeHtml(c.card_image)}" alt="${escapeHtml(c.character)} official card" data-open-role-card="${escapeHtml(c.id)}"><button type="button" class="secondary role-card-button" data-open-role-card="${escapeHtml(c.id)}">Open Full Role Card</button>`:""}
       <p>${escapeHtml(c.purpose)}</p>
       ${c.passive_name||c.passive_description?`<div class="info-box"><strong>Passive:</strong> ${escapeHtml(c.passive_name)} — ${escapeHtml(c.passive_description)}</div>`:""}
       ${c.signature_name?`<div class="info-box"><strong>Signature:</strong> ${escapeHtml(c.signature_name)} — ${escapeHtml(c.signature_description)}</div>`:""}

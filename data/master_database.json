@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "2.3",
   "game": "War for ACME",
   "factions": [
     {
@@ -19,646 +19,6 @@
     }
   ],
   "characters": [
-    {
-      "id": "tweety",
-      "character": "Tweety",
-      "faction": "ACME Defense Force",
-      "role": "Seer",
-      "purpose": "Investigate hidden roles and faction information.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "Basic Ask each night.",
-      "advanced_ask": "One Advanced Ask per game.",
-      "signature_name": "Exact Reveal",
-      "signature_description": "Reveals a chosen player's exact role and faction.",
-      "tags": [
-        "Intel",
-        "Investigator",
-        "Basic Ask",
-        "Advanced Ask"
-      ],
-      "source": "tweety(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "barnyard_dawg",
-      "character": "Barnyard Dawg",
-      "faction": "ACME Defense Force",
-      "role": "Sting",
-      "purpose": "Detect danger and protect a chosen ally.",
-      "passive_name": "Danger Sense",
-      "passive_description": "Detects nearby danger or hostile activity.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Guard Duty",
-      "signature_description": "Blocks the first harmful ability used against the protected player.",
-      "tags": [
-        "Protection",
-        "Detection",
-        "Guardian"
-      ],
-      "source": "barnyard dog(4).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "beaky_buzzard",
-      "character": "Beaky Buzzard",
-      "faction": "ACME Defense Force",
-      "role": "Scavenger",
-      "purpose": "Replace his weak starting role by inheriting a dead role.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Scavenge",
-      "signature_description": "Once per game, permanently copies a dead player's role, faction, abilities, and win condition.",
-      "tags": [
-        "Copy",
-        "Dead Player",
-        "Role Change"
-      ],
-      "source": "beaky buzzard(3).png",
-      "review": "Reviewed"
-    },
-    {
-      "id": "bertie",
-      "character": "Bertie",
-      "faction": "ACME Defense Force",
-      "role": "Sober",
-      "purpose": "Restrict communication to plain text.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "No Reactions",
-      "signature_description": "Chosen player may only use text; reactions, GIFs, images, and similar replies are forbidden under the card's penalty.",
-      "tags": [
-        "Communication Control",
-        "Restriction"
-      ],
-      "source": "bertie(sober)(4).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "bugs_bunny",
-      "character": "Bugs Bunny",
-      "faction": "ACME Defense Force",
-      "role": "Master Strategist",
-      "purpose": "Avoid danger, gather hostile-action intel, and redirect threats.",
-      "passive_name": "What's Up, Doc?",
-      "passive_description": "Avoids the first harmful effect that would affect him.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Ain't I a Stinker?",
-      "signature_description": "Redirects a selected player's next action.",
-      "tags": [
-        "Protection",
-        "Intel",
-        "Redirect"
-      ],
-      "source": "bugs bunny(6).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "cecil_turtle",
-      "character": "Cecil Turtle",
-      "faction": "ACME Defense Force",
-      "role": "Map",
-      "purpose": "Provide board-position and movement information to ACME.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "",
-      "signature_description": "Pending exact transcription from the finalized slide.",
-      "tags": [
-        "Map",
-        "Movement Intel"
-      ],
-      "source": "cecil (map)(3).png",
-      "review": "Transcription required"
-    },
-    {
-      "id": "wile_e_coyote",
-      "character": "Wile E. Coyote",
-      "faction": "ACME Defense Force",
-      "role": "Inventor",
-      "purpose": "Use ACME inventions to create tactical effects.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "",
-      "signature_description": "Pending exact transcription from the finalized slide.",
-      "tags": [
-        "Inventor",
-        "Utility",
-        "ACME"
-      ],
-      "source": "coyote(2).png",
-      "review": "Transcription required"
-    },
-    {
-      "id": "daffy_duck",
-      "character": "Daffy Duck",
-      "faction": "ACME Defense Force",
-      "role": "Pending verification",
-      "purpose": "Pending exact transcription from the finalized slide.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "",
-      "signature_description": "",
-      "tags": [
-        "Pending"
-      ],
-      "source": "daffy duck(5).png",
-      "review": "Transcription required"
-    },
-    {
-      "id": "egghead",
-      "character": "Egghead",
-      "faction": "ACME Defense Force",
-      "role": "ACME Inventor",
-      "purpose": "Build or deploy ACME technology for the team.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "",
-      "signature_description": "Pending exact transcription from the finalized slide.",
-      "tags": [
-        "Inventor",
-        "Technology",
-        "Support"
-      ],
-      "source": "egghead(3).png",
-      "review": "Transcription required"
-    },
-    {
-      "id": "road_runner",
-      "character": "Road Runner",
-      "faction": "ACME Defense Force",
-      "role": "Escape Artist",
-      "purpose": "Avoid direct harm and track movement.",
-      "passive_name": "Too Fast",
-      "passive_description": "Dodges the first direct harmful ability used against him once per game.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Speed Rescue",
-      "signature_description": "Protects another player from the first direct harmful ability used against them.",
-      "tags": [
-        "Protection",
-        "Tracking",
-        "Escape"
-      ],
-      "source": "road runner(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "sam_sheepdog",
-      "character": "Sam Sheepdog",
-      "faction": "ACME Defense Force",
-      "role": "Sentinel",
-      "purpose": "Intercept attacks and stop dangerous actors.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Clock Out",
-      "signature_description": "Prevents a chosen player from acting for one night.",
-      "tags": [
-        "Protection",
-        "Intercept",
-        "Roleblock"
-      ],
-      "source": "sam sheepdog(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "sarge",
-      "character": "Sarge",
-      "faction": "ACME Defense Force",
-      "role": "Sheriff",
-      "purpose": "Mark proven threats as Wanted and execute them.",
-      "passive_name": "Law of ACME",
-      "passive_description": "Cannot be converted or killed by the Den's standard faction kill.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Serve the Warrant",
-      "signature_description": "Uses an Instant Kill against a Wanted player.",
-      "tags": [
-        "Instant Kill",
-        "Mark",
-        "Wanted",
-        "Immunity"
-      ],
-      "source": "sarge(sheriff)(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "slowpoke_rodriguez",
-      "character": "Slowpoke Rodriguez",
-      "faction": "ACME Defense Force",
-      "role": "Timekeeper",
-      "purpose": "Delay actions and punish attackers.",
-      "passive_name": "Slow but Deadly",
-      "passive_description": "If attacked and he survives, retaliates with an Instant Kill under the card's conditions.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Delayed Delivery",
-      "signature_description": "Delays a chosen player's Night Ability until the following night.",
-      "tags": [
-        "Delay",
-        "Instant Kill",
-        "Retaliation"
-      ],
-      "source": "slowpoke(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "speedy_gonzales",
-      "character": "Speedy Gonzales",
-      "faction": "ACME Defense Force",
-      "role": "Courier",
-      "purpose": "Guarantee allied actions and improve successful abilities.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Super-Speed Delivery",
-      "signature_description": "After helping enough players, upgrades another player's Night Ability.",
-      "tags": [
-        "Guarantee",
-        "Support",
-        "Upgrade"
-      ],
-      "source": "speedy gonzales(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "sylvester",
-      "character": "Sylvester",
-      "faction": "ACME Defense Force / Warner Syndicate",
-      "role": "Traitor",
-      "purpose": "Begin with ACME and potentially betray them after finding Tweety.",
-      "passive_name": "Hidden Betrayal",
-      "passive_description": "Starts aligned with ACME and can change allegiance when the card's condition is met.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Betrayal Kit",
-      "signature_description": "His abilities change after joining the Warner Syndicate.",
-      "tags": [
-        "Traitor",
-        "Faction Change",
-        "Conditional"
-      ],
-      "source": "sylvester(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "taz",
-      "character": "Taz",
-      "faction": "ACME Defense Force",
-      "role": "Berserker",
-      "purpose": "Mark targets and escalate into lethal attacks.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Frenzy",
-      "signature_description": "Upgrades Savage Bite into a Super Kill under the card's conditions.",
-      "tags": [
-        "Mark",
-        "Instant Kill",
-        "Super Kill",
-        "Offense"
-      ],
-      "source": "taz(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "elmer_fudd",
-      "character": "Elmer Fudd",
-      "faction": "ACME Defense Force",
-      "role": "Hunter",
-      "purpose": "Choose prey, track them, and build toward an execution.",
-      "passive_name": "Prey",
-      "passive_description": "Designates and follows a chosen prey target.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "The Hunt Ends",
-      "signature_description": "A committed hunter payoff that eliminates the prey when its conditions are satisfied.",
-      "tags": [
-        "Hunter",
-        "Mark",
-        "Tracking",
-        "Kill"
-      ],
-      "source": "elmer fudd(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "foghorn_leghorn",
-      "character": "Foghorn Leghorn",
-      "faction": "ACME Defense Force",
-      "role": "Ability Booster",
-      "purpose": "Strengthen allied Night Abilities.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Strongest Possible Version",
-      "signature_description": "Causes an allied ability to resolve with all optional bonuses or its strongest valid form.",
-      "tags": [
-        "Support",
-        "Ability Boost",
-        "Guarantee"
-      ],
-      "source": "foghorn leghorn(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "witch_hazel",
-      "character": "Witch Hazel",
-      "faction": "ACME Defense Force",
-      "role": "Poisoner",
-      "purpose": "Spread poison through visiting chains.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Hexing Brew",
-      "signature_description": "Poisons a chosen player; anyone visiting a poisoned player also becomes poisoned, and the same spread rule applies to them.",
-      "tags": [
-        "Poison",
-        "Spread",
-        "Damage Over Time"
-      ],
-      "source": "witch hazel (poison)(1).png",
-      "review": "Reviewed"
-    },
-    {
-      "id": "yosemite_sam",
-      "character": "Yosemite Sam",
-      "faction": "ACME Defense Force",
-      "role": "Duelist",
-      "purpose": "Force enemies into direct confrontations.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Unavoidable Duel",
-      "signature_description": "Forces a duel that cannot be avoided under the card's rules.",
-      "tags": [
-        "Duel",
-        "Offense",
-        "Challenge"
-      ],
-      "source": "yosemite sam(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "goofy_gophers",
-      "character": "Goofy Gophers",
-      "faction": "ACME Defense Force",
-      "role": "Intel Scrambler",
-      "purpose": "Disrupt and falsify enemy investigations.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Total Blackout",
-      "signature_description": "Causes investigations to fail or return false information according to the card.",
-      "tags": [
-        "False Intel",
-        "Investigation Block",
-        "Control"
-      ],
-      "source": "goofy gophers(2).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "gossamer",
-      "character": "Gossamer",
-      "faction": "ACME Defense Force",
-      "role": "Gravedigger",
-      "purpose": "Learn information from dead players.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Graveyard Ledger",
-      "signature_description": "Reveals role information from the graveyard under the card's limits.",
-      "tags": [
-        "Dead Player",
-        "Intel",
-        "Graveyard"
-      ],
-      "source": "gossamer(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "granny",
-      "character": "Granny",
-      "faction": "ACME Defense Force",
-      "role": "Watcher",
-      "purpose": "Observe who visits a chosen player and in what order.",
-      "passive_name": "Everybody Knows Granny",
-      "passive_description": "Publicly recognizable or treated as known according to the card.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "I've Seen Enough",
-      "signature_description": "Provides an enhanced visitor report after meeting its condition.",
-      "tags": [
-        "Watcher",
-        "Visitor Intel",
-        "Order"
-      ],
-      "source": "granny(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "hector",
-      "character": "Hector",
-      "faction": "ACME Defense Force",
-      "role": "Guardian",
-      "purpose": "Protect one ally from the first harmful ability.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Nobody Gets Past Me",
-      "signature_description": "Enhanced protection that stops the first harmful ability against the chosen player.",
-      "tags": [
-        "Protection",
-        "Guardian"
-      ],
-      "source": "hector(5).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "henery_hawk",
-      "character": "Henery Hawk",
-      "faction": "ACME Defense Force",
-      "role": "Executioner",
-      "purpose": "Provide limited direct elimination power.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "I Found a Chicken!",
-      "signature_description": "Has two Instant Kill uses according to the current card.",
-      "tags": [
-        "Instant Kill",
-        "Executioner",
-        "Offense"
-      ],
-      "source": "henery hawk(3).png",
-      "review": "Reviewed"
-    },
-    {
-      "id": "hubie",
-      "character": "Hubie",
-      "faction": "ACME Defense Force",
-      "role": "Drunk",
-      "purpose": "Create communication chaos around a selected player.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Mouse Mayhem!",
-      "signature_description": "Restricts selected players to emojis, GIFs, and pictures under the card's communication rules.",
-      "tags": [
-        "Communication Control",
-        "Chaos",
-        "Restriction"
-      ],
-      "source": "hubie(drunk)(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "lola_bunny",
-      "character": "Lola Bunny",
-      "faction": "Current Allegiance",
-      "role": "Tactician",
-      "purpose": "Guarantee the success of allied abilities for her current side.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Full Court Press",
-      "signature_description": "Once per game, protected allied Night Abilities cannot be blocked, redirected, silenced, or fail because of control effects.",
-      "tags": [
-        "Guarantee",
-        "Faction Support",
-        "Unblockable"
-      ],
-      "source": "lola bunny(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "marvin",
-      "character": "Marvin the Martian",
-      "faction": "ACME Defense Force",
-      "role": "Commander",
-      "purpose": "Provide strategic intelligence and a precision elimination.",
-      "passive_name": "Commander of ACME",
-      "passive_description": "Leadership passive with protection from the Den's standard kill under the current design.",
-      "basic_ask": "",
-      "advanced_ask": "Military Intelligence: one Advanced Ask per game.",
-      "signature_name": "Illudium Q-36",
-      "signature_description": "One Super Kill.",
-      "tags": [
-        "Commander",
-        "Advanced Ask",
-        "Super Kill",
-        "Immunity"
-      ],
-      "source": "marvin(4).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "miss_prissy",
-      "character": "Miss Prissy",
-      "faction": "ACME Defense Force",
-      "role": "Lawyer",
-      "purpose": "Protect players from voting elimination.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Order in the Court!",
-      "signature_description": "Prevents one player from being eliminated by voting for the day.",
-      "tags": [
-        "Vote Protection",
-        "Hidden Vote",
-        "Support"
-      ],
-      "source": "miss prissy(4).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "pete_puma",
-      "character": "Pete Puma",
-      "faction": "ACME Defense Force",
-      "role": "Confuser",
-      "purpose": "Randomly distribute protection and redirection effects.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "I Meant the Other One!",
-      "signature_description": "Randomly assigns protection, redirection, and no effect among selected players.",
-      "tags": [
-        "Protection",
-        "Redirect",
-        "Random"
-      ],
-      "source": "pete(3).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "porky_pig",
-      "character": "Porky Pig",
-      "faction": "ACME Defense Force",
-      "role": "Medic",
-      "purpose": "Protect teammates from harmful effects and unlock stronger protection.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "That's All, Folks!",
-      "signature_description": "After saving three different players, gains full protection for a chosen target until morning under the card's limits.",
-      "tags": [
-        "Medic",
-        "Protection",
-        "Unlock Progress"
-      ],
-      "source": "porky pig(4).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "ralph_wolf",
-      "character": "Ralph Wolf",
-      "faction": "ACME Defense Force",
-      "role": "Tracker",
-      "purpose": "Track whom a selected player visits.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Fresh Tracks",
-      "signature_description": "Enhanced tracking reveals both whom the target visited and who visited them.",
-      "tags": [
-        "Tracker",
-        "Movement Intel",
-        "Visitor Intel"
-      ],
-      "source": "ralph wolf(2).png",
-      "review": "Needs exact wording check"
-    },
     {
       "id": "brain",
       "character": "Brain",
@@ -681,30 +41,10 @@
         "Super Kill",
         "Omega Kill"
       ],
-      "source": "brain(1).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "pinky",
-      "character": "Pinky",
-      "faction": "Warner Syndicate",
-      "role": "Chaotic Assistant",
-      "purpose": "Support Brain and create unpredictable disruptions.",
-      "passive_name": "Pinky Logic",
-      "passive_description": "His actions may behave unpredictably under the card's rules.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Chaos Amplifier",
-      "signature_description": "Expands or strengthens Pinky's chaotic effects after World Domination.",
-      "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized Pinky card.",
-      "tags": [
-        "Chaos",
-        "Random",
-        "World Domination"
-      ],
-      "source": "pinky.png",
-      "review": "Needs exact wording check"
+      "source": "e062054e-4888-4e03-8076-aca6b5a752ba.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/brain.png",
+      "official_card": true
     },
     {
       "id": "yakko",
@@ -725,8 +65,10 @@
         "Vote Control",
         "Chaos"
       ],
-      "source": "yakko.png",
-      "review": "Needs exact wording check"
+      "source": "4b2c9491-6784-4474-9cec-0d7075f42963.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/yakko.png",
+      "official_card": true
     },
     {
       "id": "wakko",
@@ -748,31 +90,58 @@
         "Ability Failure",
         "Chaos"
       ],
-      "source": "wakko.png",
-      "review": "Needs exact wording check"
+      "source": "99c2f16a-2300-4574-83cd-7f5fca951415.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/wakko.png",
+      "official_card": true
     },
     {
-      "id": "dot",
-      "character": "Dot",
+      "id": "pinky",
+      "character": "Pinky",
       "faction": "Warner Syndicate",
-      "role": "Social Manipulator",
-      "purpose": "Control votes, influence players, and recruit allies.",
-      "passive_name": "",
-      "passive_description": "",
+      "role": "Chaotic Assistant",
+      "purpose": "Support Brain and create unpredictable disruptions.",
+      "passive_name": "Pinky Logic",
+      "passive_description": "His actions may behave unpredictably under the card's rules.",
       "basic_ask": "",
       "advanced_ask": "",
-      "signature_name": "Queen of Influence",
-      "signature_description": "Strengthens Dot's recruitment and social-control effects after activation.",
+      "signature_name": "Chaos Amplifier",
+      "signature_description": "Expands or strengthens Pinky's chaotic effects after World Domination.",
       "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized Dot card.",
+      "investigation_result": "Appears according to the finalized Pinky card.",
       "tags": [
-        "Conversion",
-        "Vote Control",
-        "Instant Kill",
-        "Social Control"
+        "Chaos",
+        "Random",
+        "World Domination"
       ],
-      "source": "dot.png",
-      "review": "Needs exact wording check"
+      "source": "5ea1d5c9-1fc8-42f9-9cb5-50766a86f4e9.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/pinky.png",
+      "official_card": true
+    },
+    {
+      "id": "mindy",
+      "character": "Mindy",
+      "faction": "Warner Syndicate",
+      "role": "Chaos Catalyst",
+      "purpose": "Generate random effects while relying on Buttons for protection.",
+      "passive_name": "Buttons!",
+      "passive_description": "Has special interactions with Buttons.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Happy Accident",
+      "signature_description": "Triggers a larger chaotic effect under the card's conditions.",
+      "win_condition": "Win with the Warner Syndicate.",
+      "investigation_result": "Appears according to the finalized Mindy card.",
+      "tags": [
+        "Random",
+        "Chaos",
+        "Protection Synergy"
+      ],
+      "source": "c3097740-d003-4095-9dc3-c6903d4f8a71.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/mindy.png",
+      "official_card": true
     },
     {
       "id": "buttons",
@@ -793,8 +162,10 @@
         "Bodyguard",
         "Sacrifice"
       ],
-      "source": "buttons.png",
-      "review": "Needs exact wording check"
+      "source": "1be9be57-aef9-4f5c-ada7-efc0bb659477.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/buttons.png",
+      "official_card": true
     },
     {
       "id": "dr_scratchansniff",
@@ -816,30 +187,10 @@
         "Support",
         "Random"
       ],
-      "source": "dr.scratchansniff.png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "hello_nurse",
-      "character": "Hello Nurse",
-      "faction": "Warner Syndicate",
-      "role": "Enchanter",
-      "purpose": "Disable or distract dangerous players.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Heartbreaker",
-      "signature_description": "Prevents a chosen player from attacking the Syndicate under the card's conditions.",
-      "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized Hello Nurse card.",
-      "tags": [
-        "Roleblock",
-        "Vote Control",
-        "Attack Prevention"
-      ],
-      "source": "hello nurse.png",
-      "review": "Needs exact wording check"
+      "source": "51b726da-a9e0-4a04-9d37-1d82691f7035.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/dr_scratchansniff.png",
+      "official_card": true
     },
     {
       "id": "chicken_boo",
@@ -861,52 +212,10 @@
         "Roleblock",
         "Impersonation"
       ],
-      "source": "chicken boo(1).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "mindy",
-      "character": "Mindy",
-      "faction": "Warner Syndicate",
-      "role": "Chaos Catalyst",
-      "purpose": "Generate random effects while relying on Buttons for protection.",
-      "passive_name": "Buttons!",
-      "passive_description": "Has special interactions with Buttons.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Happy Accident",
-      "signature_description": "Triggers a larger chaotic effect under the card's conditions.",
-      "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized Mindy card.",
-      "tags": [
-        "Random",
-        "Chaos",
-        "Protection Synergy"
-      ],
-      "source": "mindy.png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "skippy_squirrel",
-      "character": "Skippy Squirrel",
-      "faction": "Warner Syndicate",
-      "role": "Field Scout",
-      "purpose": "Track movement and deliver intelligence to Brain.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Deliver Message",
-      "signature_description": "Provides gathered movement intelligence to Brain or the Syndicate.",
-      "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized Skippy card.",
-      "tags": [
-        "Tracker",
-        "Movement Intel",
-        "Support"
-      ],
-      "source": "skippy.png",
-      "review": "Needs exact wording check"
+      "source": "a54f902b-c4d6-42a8-9a07-595fcf3fa84b.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/chicken_boo.png",
+      "official_card": true
     },
     {
       "id": "slappy_squirrel",
@@ -928,121 +237,34 @@
         "Trap Detection",
         "Block"
       ],
-      "source": "slappy squirrel.png",
-      "review": "Needs exact wording check"
+      "source": "c81e3aa1-fa17-4072-af0d-8b53237646b0.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/slappy_squirrel.png",
+      "official_card": true
     },
     {
-      "id": "night_squirrel",
-      "character": "Night Squirrel",
+      "id": "hello_nurse",
+      "character": "Hello Nurse",
       "faction": "Warner Syndicate",
-      "role": "Covert Operative",
-      "purpose": "Perform hidden intelligence or disruption work for the Syndicate.",
+      "role": "Enchanter",
+      "purpose": "Disable or distract dangerous players.",
       "passive_name": "",
       "passive_description": "",
       "basic_ask": "",
       "advanced_ask": "",
-      "signature_name": "",
-      "signature_description": "Pending exact transcription from the finalized Night Squirrel card.",
+      "signature_name": "Heartbreaker",
+      "signature_description": "Prevents a chosen player from attacking the Syndicate under the card's conditions.",
       "win_condition": "Win with the Warner Syndicate.",
-      "investigation_result": "Appears according to the finalized card.",
+      "investigation_result": "Appears according to the finalized Hello Nurse card.",
       "tags": [
-        "Covert",
-        "Intel",
-        "Pending"
+        "Roleblock",
+        "Vote Control",
+        "Attack Prevention"
       ],
-      "source": "night squirrel.png",
-      "review": "Transcription required"
-    },
-    {
-      "id": "death",
-      "character": "Death",
-      "faction": "Independent Wildcard",
-      "role": "Legendary Neutral",
-      "purpose": "Reap souls and complete a personal elimination objective.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Final Destination",
-      "signature_description": "Binds players by fate under the card's rules.",
-      "win_condition": "Eliminate the required iconic targets or Warner siblings according to the finalized card.",
-      "investigation_result": "Appears according to the finalized Death card.",
-      "tags": [
-        "Instant Kill",
-        "Mark",
-        "Challenge",
-        "Personal Win Condition"
-      ],
-      "source": "death(1).png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "gabby_goat",
-      "character": "Gabby Goat",
-      "faction": "Independent Wildcard",
-      "role": "Rumor Monger",
-      "purpose": "Create false deaths and misinformation.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Fake News Broadcast",
-      "signature_description": "Makes GM information false for a Day under the card's rules.",
-      "win_condition": "Successfully use the required rumor abilities and survive to the required Day.",
-      "investigation_result": "Appears according to the finalized Gabby Goat card.",
-      "tags": [
-        "False Death",
-        "False Intel",
-        "Announcement Control"
-      ],
-      "source": "gabby goat.png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "michigan_j_frog",
-      "character": "Michigan J. Frog",
-      "faction": "Independent Wildcard",
-      "role": "Master Shapeshifter",
-      "purpose": "Copy identities and abilities without being exposed.",
-      "passive_name": "Perfect Disguise",
-      "passive_description": "Alters investigation results while disguised.",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Slip Away",
-      "signature_description": "Escapes death once under the card's conditions.",
-      "win_condition": "Complete three successful disguises.",
-      "investigation_result": "Matches the active disguise.",
-      "tags": [
-        "Copy",
-        "Disguise",
-        "Death Escape",
-        "Personal Win Condition"
-      ],
-      "source": "michigan.png",
-      "review": "Needs exact wording check"
-    },
-    {
-      "id": "pepe_le_pew",
-      "character": "Pepé Le Pew",
-      "faction": "Independent Wildcard",
-      "role": "Cupid",
-      "purpose": "Control targets and bind players into linked pairs.",
-      "passive_name": "",
-      "passive_description": "",
-      "basic_ask": "",
-      "advanced_ask": "",
-      "signature_name": "Bind",
-      "signature_description": "Links two players together under the card's consequences.",
-      "win_condition": "Successfully bind two pairs twice, with at least one pair surviving to the end.",
-      "investigation_result": "Appears as himself according to the finalized card.",
-      "tags": [
-        "Target Control",
-        "Bind",
-        "Linked Fate",
-        "Personal Win Condition"
-      ],
-      "source": "pepe le pew(1).png",
-      "review": "Needs exact wording check"
+      "source": "9eec8602-1f04-4c5b-beca-571b76633496.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/hello_nurse.png",
+      "official_card": true
     },
     {
       "id": "petunia_pig",
@@ -1064,8 +286,60 @@
         "Punishment",
         "Personal Win Condition"
       ],
-      "source": "petunia.png",
-      "review": "Needs exact wording check"
+      "source": "382d4956-6bae-4fa4-949d-de87ee9822a6.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/petunia_pig.png",
+      "official_card": true
+    },
+    {
+      "id": "blacque_jacque_shellacque",
+      "character": "Blacque Jacque Shellacque",
+      "faction": "Independent Wildcard",
+      "role": "Wildcard",
+      "purpose": "Independent role governed by the official uploaded card.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "",
+      "signature_description": "",
+      "tags": [
+        "Wildcard"
+      ],
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/blacque_jacque_shellacque.png",
+      "source": "c457cd7a-526a-470b-bb6c-56fe3fb73648.png",
+      "official_card": true
+    },
+    {
+      "id": "audience",
+      "character": "The Audience",
+      "faction": "Independent Wildcard",
+      "role": "Linked Audience",
+      "purpose": "Three linked players use secret audience reactions and share the role mechanics.",
+      "passive_name": "Shared Role",
+      "passive_description": "The Audience consists of 3 different players.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Encore",
+      "signature_description": "Tracks the Audience reaction mechanics shown on the official card.",
+      "tags": [
+        "Wildcard",
+        "Shared Role",
+        "3 Players",
+        "Linked Players"
+      ],
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/audience.png",
+      "source": "bfdcea66-1aa7-41c8-ae1d-0a49c837409a.png",
+      "official_card": true,
+      "shared_role": {
+        "enabled": true,
+        "players": 3,
+        "shared_abilities": true,
+        "shared_win_condition": true,
+        "description": "The Audience consists of 3 different players who share the same role and its mechanics."
+      }
     },
     {
       "id": "playboy_penguin",
@@ -1087,8 +361,60 @@
         "Execution Survival",
         "Personal Win Condition"
       ],
-      "source": "playboy penguin.png",
-      "review": "Reviewed"
+      "source": "9fc7597a-f8c3-47d5-9966-9360f6a5506e.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/playboy_penguin.png",
+      "official_card": true
+    },
+    {
+      "id": "pepe_le_pew",
+      "character": "Pepé Le Pew",
+      "faction": "Independent Wildcard",
+      "role": "Cupid",
+      "purpose": "Control targets and bind players into linked pairs.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Bind",
+      "signature_description": "Links two players together under the card's consequences.",
+      "win_condition": "Successfully bind two pairs twice, with at least one pair surviving to the end.",
+      "investigation_result": "Appears as himself according to the finalized card.",
+      "tags": [
+        "Target Control",
+        "Bind",
+        "Linked Fate",
+        "Personal Win Condition"
+      ],
+      "source": "f7a1f651-5820-4e79-8782-f1e26bcad66f.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/pepe_le_pew.png",
+      "official_card": true
+    },
+    {
+      "id": "michigan_j_frog",
+      "character": "Michigan J. Frog",
+      "faction": "Independent Wildcard",
+      "role": "Master Shapeshifter",
+      "purpose": "Copy identities and abilities without being exposed.",
+      "passive_name": "Perfect Disguise",
+      "passive_description": "Alters investigation results while disguised.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Slip Away",
+      "signature_description": "Escapes death once under the card's conditions.",
+      "win_condition": "Complete three successful disguises.",
+      "investigation_result": "Matches the active disguise.",
+      "tags": [
+        "Copy",
+        "Disguise",
+        "Death Escape",
+        "Personal Win Condition"
+      ],
+      "source": "091314a7-77bf-4d60-b7ca-4549a2d7a375.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/michigan_j_frog.png",
+      "official_card": true
     },
     {
       "id": "yoyo_dodo",
@@ -1110,8 +436,819 @@
         "Self-Death",
         "Personal Win Condition"
       ],
-      "source": "yoyo dodo.png",
-      "review": "Needs exact wording check"
+      "source": "33118edc-21b4-4da0-b69b-2e795d37b58b.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/yoyo_dodo.png",
+      "official_card": true
+    },
+    {
+      "id": "gabby_goat",
+      "character": "Gabby Goat",
+      "faction": "Independent Wildcard",
+      "role": "Rumor Monger",
+      "purpose": "Create false deaths and misinformation.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Fake News Broadcast",
+      "signature_description": "Makes GM information false for a Day under the card's rules.",
+      "win_condition": "Successfully use the required rumor abilities and survive to the required Day.",
+      "investigation_result": "Appears according to the finalized Gabby Goat card.",
+      "tags": [
+        "False Death",
+        "False Intel",
+        "Announcement Control"
+      ],
+      "source": "f7ca84d7-a2b3-4561-a90c-7091b69c5048.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/gabby_goat.png",
+      "official_card": true
+    },
+    {
+      "id": "wile_e_coyote",
+      "character": "Wile E. Coyote",
+      "faction": "ACME Defense Force",
+      "role": "Inventor",
+      "purpose": "Use ACME inventions to create tactical effects.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "",
+      "signature_description": "Pending exact transcription from the finalized slide.",
+      "tags": [
+        "Inventor",
+        "Utility",
+        "ACME"
+      ],
+      "source": "630fff1d-c83c-4f5b-ab96-8936dc4dcaf5.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/wile_e_coyote.png",
+      "official_card": true
+    },
+    {
+      "id": "granny",
+      "character": "Granny",
+      "faction": "ACME Defense Force",
+      "role": "Watcher",
+      "purpose": "Observe who visits a chosen player and in what order.",
+      "passive_name": "Everybody Knows Granny",
+      "passive_description": "Publicly recognizable or treated as known according to the card.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "I've Seen Enough",
+      "signature_description": "Provides an enhanced visitor report after meeting its condition.",
+      "tags": [
+        "Watcher",
+        "Visitor Intel",
+        "Order"
+      ],
+      "source": "a0f96f59-37b7-426a-abee-8332ce2b7dc6.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/granny.png",
+      "official_card": true
+    },
+    {
+      "id": "skippy_squirrel",
+      "character": "Skippy",
+      "faction": "ACME Defense Force",
+      "role": "Field Scout",
+      "purpose": "Track movement and deliver intelligence to Brain.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Deliver Message",
+      "signature_description": "Provides gathered movement intelligence to Brain or the Syndicate.",
+      "win_condition": "Win with the Warner Syndicate.",
+      "investigation_result": "Appears according to the finalized Skippy card.",
+      "tags": [
+        "Tracker",
+        "Movement Intel",
+        "Support"
+      ],
+      "source": "dff9ee39-f7ec-4fde-ab80-02f2ea4c6cf5.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/skippy_squirrel.png",
+      "official_card": true
+    },
+    {
+      "id": "lola_bunny",
+      "character": "Lola Bunny",
+      "faction": "ACME Defense Force",
+      "role": "Tactician",
+      "purpose": "Guarantee the success of allied abilities for her current side.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Full Court Press",
+      "signature_description": "Once per game, protected allied Night Abilities cannot be blocked, redirected, silenced, or fail because of control effects.",
+      "tags": [
+        "Guarantee",
+        "Faction Support",
+        "Unblockable"
+      ],
+      "source": "9e206281-7404-4776-a294-6cc64209854e.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/lola_bunny.png",
+      "official_card": true
+    },
+    {
+      "id": "bugs_bunny",
+      "character": "Bugs Bunny",
+      "faction": "ACME Defense Force",
+      "role": "Master Strategist",
+      "purpose": "Avoid danger, gather hostile-action intel, and redirect threats.",
+      "passive_name": "What's Up, Doc?",
+      "passive_description": "Avoids the first harmful effect that would affect him.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Ain't I a Stinker?",
+      "signature_description": "Redirects a selected player's next action.",
+      "tags": [
+        "Protection",
+        "Intel",
+        "Redirect"
+      ],
+      "source": "1aab6be3-648d-4278-812d-498085c3471c.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/bugs_bunny.png",
+      "official_card": true
+    },
+    {
+      "id": "yosemite_sam",
+      "character": "Yosemite Sam",
+      "faction": "ACME Defense Force",
+      "role": "Duelist",
+      "purpose": "Force enemies into direct confrontations.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Unavoidable Duel",
+      "signature_description": "Forces a duel that cannot be avoided under the card's rules.",
+      "tags": [
+        "Duel",
+        "Offense",
+        "Challenge"
+      ],
+      "source": "45f69dc2-a0a4-4b01-a5b1-08b413f7831a.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/yosemite_sam.png",
+      "official_card": true
+    },
+    {
+      "id": "sylvester",
+      "character": "Sylvester",
+      "faction": "ACME Defense Force",
+      "role": "Traitor",
+      "purpose": "Begin with ACME and potentially betray them after finding Tweety.",
+      "passive_name": "Hidden Betrayal",
+      "passive_description": "Starts aligned with ACME and can change allegiance when the card's condition is met.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Betrayal Kit",
+      "signature_description": "His abilities change after joining the Warner Syndicate.",
+      "tags": [
+        "Traitor",
+        "Faction Change",
+        "Conditional"
+      ],
+      "source": "46b5755c-8849-4484-8ca5-0d02bbe2d560.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/sylvester.png",
+      "official_card": true
+    },
+    {
+      "id": "road_runner",
+      "character": "Road Runner",
+      "faction": "ACME Defense Force",
+      "role": "Escape Artist",
+      "purpose": "Avoid direct harm and track movement.",
+      "passive_name": "Too Fast",
+      "passive_description": "Dodges the first direct harmful ability used against him once per game.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Speed Rescue",
+      "signature_description": "Protects another player from the first direct harmful ability used against them.",
+      "tags": [
+        "Protection",
+        "Tracking",
+        "Escape"
+      ],
+      "source": "62e77414-cba0-43b5-989c-4fdac31b12fb.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/road_runner.png",
+      "official_card": true
+    },
+    {
+      "id": "porky_pig",
+      "character": "Porky Pig",
+      "faction": "ACME Defense Force",
+      "role": "Medic",
+      "purpose": "Protect teammates from harmful effects and unlock stronger protection.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "That's All, Folks!",
+      "signature_description": "After saving three different players, gains full protection for a chosen target until morning under the card's limits.",
+      "tags": [
+        "Medic",
+        "Protection",
+        "Unlock Progress"
+      ],
+      "source": "640967ba-ed03-4728-87ee-bda914ecdfbc.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/porky_pig.png",
+      "official_card": true
+    },
+    {
+      "id": "beaky_buzzard",
+      "character": "Beaky Buzzard",
+      "faction": "ACME Defense Force",
+      "role": "Scavenger",
+      "purpose": "Replace his weak starting role by inheriting a dead role.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Scavenge",
+      "signature_description": "Once per game, permanently copies a dead player's role, faction, abilities, and win condition.",
+      "tags": [
+        "Copy",
+        "Dead Player",
+        "Role Change"
+      ],
+      "source": "3c187f19-3bc2-41d8-b8f7-6dbb3a568ba2.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/beaky_buzzard.png",
+      "official_card": true
+    },
+    {
+      "id": "sarge",
+      "character": "Sarge",
+      "faction": "ACME Defense Force",
+      "role": "Sheriff",
+      "purpose": "Mark proven threats as Wanted and execute them.",
+      "passive_name": "Law of ACME",
+      "passive_description": "Cannot be converted or killed by the Den's standard faction kill.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Serve the Warrant",
+      "signature_description": "Uses an Instant Kill against a Wanted player.",
+      "tags": [
+        "Instant Kill",
+        "Mark",
+        "Wanted",
+        "Immunity"
+      ],
+      "source": "4f78ad35-310a-48ee-8444-529029f66282.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/sarge.png",
+      "official_card": true
+    },
+    {
+      "id": "barnyard_dawg",
+      "character": "Barnyard Dawg",
+      "faction": "ACME Defense Force",
+      "role": "Sting",
+      "purpose": "Detect danger and protect a chosen ally.",
+      "passive_name": "Danger Sense",
+      "passive_description": "Detects nearby danger or hostile activity.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Guard Duty",
+      "signature_description": "Blocks the first harmful ability used against the protected player.",
+      "tags": [
+        "Protection",
+        "Detection",
+        "Guardian"
+      ],
+      "source": "14a20334-383e-4c59-959a-a602e0640f8b.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/barnyard_dawg.png",
+      "official_card": true
+    },
+    {
+      "id": "sam_sheepdog",
+      "character": "Sam Sheepdog",
+      "faction": "ACME Defense Force",
+      "role": "Sentinel",
+      "purpose": "Intercept attacks and stop dangerous actors.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Clock Out",
+      "signature_description": "Prevents a chosen player from acting for one night.",
+      "tags": [
+        "Protection",
+        "Intercept",
+        "Roleblock"
+      ],
+      "source": "f0fb9c88-ef8c-4a60-bc4c-5b9541577b08.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/sam_sheepdog.png",
+      "official_card": true
+    },
+    {
+      "id": "miss_prissy",
+      "character": "Miss Prissy",
+      "faction": "ACME Defense Force",
+      "role": "Lawyer",
+      "purpose": "Protect players from voting elimination.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Order in the Court!",
+      "signature_description": "Prevents one player from being eliminated by voting for the day.",
+      "tags": [
+        "Vote Protection",
+        "Hidden Vote",
+        "Support"
+      ],
+      "source": "b7a00a14-fafc-426e-a742-e859c839a0a2.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/miss_prissy.png",
+      "official_card": true
+    },
+    {
+      "id": "marvin",
+      "character": "Marvin the Martian",
+      "faction": "ACME Defense Force",
+      "role": "Commander",
+      "purpose": "Provide strategic intelligence and a precision elimination.",
+      "passive_name": "Commander of ACME",
+      "passive_description": "Leadership passive with protection from the Den's standard kill under the current design.",
+      "basic_ask": "",
+      "advanced_ask": "Military Intelligence: one Advanced Ask per game.",
+      "signature_name": "Illudium Q-36",
+      "signature_description": "One Super Kill.",
+      "tags": [
+        "Commander",
+        "Advanced Ask",
+        "Super Kill",
+        "Immunity"
+      ],
+      "source": "a1e6fde1-dee8-48c9-98a9-0286e2a07901.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/marvin.png",
+      "official_card": true
+    },
+    {
+      "id": "foghorn_leghorn",
+      "character": "Foghorn Leghorn",
+      "faction": "ACME Defense Force",
+      "role": "Ability Booster",
+      "purpose": "Strengthen allied Night Abilities.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Strongest Possible Version",
+      "signature_description": "Causes an allied ability to resolve with all optional bonuses or its strongest valid form.",
+      "tags": [
+        "Support",
+        "Ability Boost",
+        "Guarantee"
+      ],
+      "source": "eebb91fe-b497-48d7-933c-c4fba3bd87d8.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/foghorn_leghorn.png",
+      "official_card": true
+    },
+    {
+      "id": "goofy_gophers",
+      "character": "Goofy Gophers",
+      "faction": "ACME Defense Force",
+      "role": "Intel Scrambler",
+      "purpose": "Disrupt and falsify enemy investigations.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Total Blackout",
+      "signature_description": "Causes investigations to fail or return false information according to the card.",
+      "tags": [
+        "False Intel",
+        "Investigation Block",
+        "Control"
+      ],
+      "source": "9954b9bd-4db6-4e6a-a237-97bcfa25fe8d.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/goofy_gophers.png",
+      "official_card": true,
+      "shared_role": {
+        "enabled": true,
+        "players": 2,
+        "shared_abilities": true,
+        "shared_win_condition": true,
+        "description": "The Goofy Gophers consist of 2 different players who share the same role and its mechanics."
+      }
+    },
+    {
+      "id": "elmer_fudd",
+      "character": "Elmer Fudd",
+      "faction": "ACME Defense Force",
+      "role": "Hunter",
+      "purpose": "Choose prey, track them, and build toward an execution.",
+      "passive_name": "Prey",
+      "passive_description": "Designates and follows a chosen prey target.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "The Hunt Ends",
+      "signature_description": "A committed hunter payoff that eliminates the prey when its conditions are satisfied.",
+      "tags": [
+        "Hunter",
+        "Mark",
+        "Tracking",
+        "Kill"
+      ],
+      "source": "ec6e6fb9-6657-4295-855a-10914439e9fa.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/elmer_fudd.png",
+      "official_card": true
+    },
+    {
+      "id": "tweety",
+      "character": "Tweety",
+      "faction": "ACME Defense Force",
+      "role": "Seer",
+      "purpose": "Investigate hidden roles and faction information.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "Basic Ask each night.",
+      "advanced_ask": "One Advanced Ask per game.",
+      "signature_name": "Exact Reveal",
+      "signature_description": "Reveals a chosen player's exact role and faction.",
+      "tags": [
+        "Intel",
+        "Investigator",
+        "Basic Ask",
+        "Advanced Ask"
+      ],
+      "source": "436f5529-9a2b-4cec-902f-7bce82624733.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/tweety.png",
+      "official_card": true
+    },
+    {
+      "id": "daffy_duck",
+      "character": "Daffy Duck",
+      "faction": "ACME Defense Force",
+      "role": "Pending verification",
+      "purpose": "Pending exact transcription from the finalized slide.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "",
+      "signature_description": "",
+      "tags": [
+        "Pending"
+      ],
+      "source": "c74c5a38-39c7-4863-a393-052e9259f287.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/daffy_duck.png",
+      "official_card": true
+    },
+    {
+      "id": "ralph_wolf",
+      "character": "Ralph Wolf",
+      "faction": "ACME Defense Force",
+      "role": "Tracker",
+      "purpose": "Track whom a selected player visits.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Fresh Tracks",
+      "signature_description": "Enhanced tracking reveals both whom the target visited and who visited them.",
+      "tags": [
+        "Tracker",
+        "Movement Intel",
+        "Visitor Intel"
+      ],
+      "source": "54d7f6e1-f5b6-4b68-a1f3-976b8cea9246.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/ralph_wolf.png",
+      "official_card": true
+    },
+    {
+      "id": "speedy_gonzales",
+      "character": "Speedy Gonzales",
+      "faction": "ACME Defense Force",
+      "role": "Courier",
+      "purpose": "Guarantee allied actions and improve successful abilities.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Super-Speed Delivery",
+      "signature_description": "After helping enough players, upgrades another player's Night Ability.",
+      "tags": [
+        "Guarantee",
+        "Support",
+        "Upgrade"
+      ],
+      "source": "52680d30-f061-4cb0-b08f-0fce9bf8b43f.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/speedy_gonzales.png",
+      "official_card": true
+    },
+    {
+      "id": "hector",
+      "character": "Hector",
+      "faction": "ACME Defense Force",
+      "role": "Guardian",
+      "purpose": "Protect one ally from the first harmful ability.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Nobody Gets Past Me",
+      "signature_description": "Enhanced protection that stops the first harmful ability against the chosen player.",
+      "tags": [
+        "Protection",
+        "Guardian"
+      ],
+      "source": "e20ab4a0-dd91-4625-a1bb-a2e588dd8d48.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/hector.png",
+      "official_card": true
+    },
+    {
+      "id": "pete_puma",
+      "character": "Pete Puma",
+      "faction": "ACME Defense Force",
+      "role": "Confuser",
+      "purpose": "Randomly distribute protection and redirection effects.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "I Meant the Other One!",
+      "signature_description": "Randomly assigns protection, redirection, and no effect among selected players.",
+      "tags": [
+        "Protection",
+        "Redirect",
+        "Random"
+      ],
+      "source": "6acbd686-0dbe-4c43-9a2d-d96d4de43462.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/pete_puma.png",
+      "official_card": true
+    },
+    {
+      "id": "witch_hazel",
+      "character": "Witch Hazel",
+      "faction": "ACME Defense Force",
+      "role": "Poisoner",
+      "purpose": "Spread poison through visiting chains.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Hexing Brew",
+      "signature_description": "Poisons a chosen player; anyone visiting a poisoned player also becomes poisoned, and the same spread rule applies to them.",
+      "tags": [
+        "Poison",
+        "Spread",
+        "Damage Over Time"
+      ],
+      "source": "b93041c5-da2b-48a6-ad22-518b0736e6d8.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/witch_hazel.png",
+      "official_card": true
+    },
+    {
+      "id": "hubie",
+      "character": "Hubie",
+      "faction": "ACME Defense Force",
+      "role": "Drunk",
+      "purpose": "Create communication chaos around a selected player.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Mouse Mayhem!",
+      "signature_description": "Restricts selected players to emojis, GIFs, and pictures under the card's communication rules.",
+      "tags": [
+        "Communication Control",
+        "Chaos",
+        "Restriction"
+      ],
+      "source": "41755f7a-251c-4655-b80f-d3b5a11f8ea5.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/hubie.png",
+      "official_card": true
+    },
+    {
+      "id": "cecil_turtle",
+      "character": "Cecil Turtle",
+      "faction": "ACME Defense Force",
+      "role": "Map",
+      "purpose": "Provide board-position and movement information to ACME.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "",
+      "signature_description": "Pending exact transcription from the finalized slide.",
+      "tags": [
+        "Map",
+        "Movement Intel"
+      ],
+      "source": "922c4af9-1728-47cd-8be2-b91cbadea661.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/cecil_turtle.png",
+      "official_card": true
+    },
+    {
+      "id": "gossamer",
+      "character": "Gossamer",
+      "faction": "ACME Defense Force",
+      "role": "Gravedigger",
+      "purpose": "Learn information from dead players.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Graveyard Ledger",
+      "signature_description": "Reveals role information from the graveyard under the card's limits.",
+      "tags": [
+        "Dead Player",
+        "Intel",
+        "Graveyard"
+      ],
+      "source": "fcb47992-2718-4ba3-9072-a6fadbc7fdce.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/gossamer.png",
+      "official_card": true
+    },
+    {
+      "id": "henery_hawk",
+      "character": "Henery Hawk",
+      "faction": "ACME Defense Force",
+      "role": "Executioner",
+      "purpose": "Provide limited direct elimination power.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "I Found a Chicken!",
+      "signature_description": "Has two Instant Kill uses according to the current card.",
+      "tags": [
+        "Instant Kill",
+        "Executioner",
+        "Offense"
+      ],
+      "source": "d4cda8b9-326c-44ec-9963-0232ef2df039.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/henery_hawk.png",
+      "official_card": true
+    },
+    {
+      "id": "egghead",
+      "character": "Egghead",
+      "faction": "ACME Defense Force",
+      "role": "ACME Inventor",
+      "purpose": "Build or deploy ACME technology for the team.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "",
+      "signature_description": "Pending exact transcription from the finalized slide.",
+      "tags": [
+        "Inventor",
+        "Technology",
+        "Support"
+      ],
+      "source": "ff3d55d6-617e-490b-81cf-c548cba7003e.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/egghead.png",
+      "official_card": true
+    },
+    {
+      "id": "bertie",
+      "character": "Bertie",
+      "faction": "ACME Defense Force",
+      "role": "Sober",
+      "purpose": "Restrict communication to plain text.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "No Reactions",
+      "signature_description": "Chosen player may only use text; reactions, GIFs, images, and similar replies are forbidden under the card's penalty.",
+      "tags": [
+        "Communication Control",
+        "Restriction"
+      ],
+      "source": "42432aaf-3e40-4260-a022-95c2367ec4b0.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/bertie.png",
+      "official_card": true
+    },
+    {
+      "id": "slowpoke_rodriguez",
+      "character": "Slowpoke Rodriguez",
+      "faction": "ACME Defense Force",
+      "role": "Timekeeper",
+      "purpose": "Delay actions and punish attackers.",
+      "passive_name": "Slow but Deadly",
+      "passive_description": "If attacked and he survives, retaliates with an Instant Kill under the card's conditions.",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Delayed Delivery",
+      "signature_description": "Delays a chosen player's Night Ability until the following night.",
+      "tags": [
+        "Delay",
+        "Instant Kill",
+        "Retaliation"
+      ],
+      "source": "16a90c0d-9f39-40a3-a984-fa0a0d032046.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/slowpoke_rodriguez.png",
+      "official_card": true
+    },
+    {
+      "id": "taz",
+      "character": "Taz",
+      "faction": "ACME Defense Force",
+      "role": "Berserker",
+      "purpose": "Mark targets and escalate into lethal attacks.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Frenzy",
+      "signature_description": "Upgrades Savage Bite into a Super Kill under the card's conditions.",
+      "tags": [
+        "Mark",
+        "Instant Kill",
+        "Super Kill",
+        "Offense"
+      ],
+      "source": "688675f6-a5da-4c6e-9375-3f0469ebced9.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/taz.png",
+      "official_card": true
+    },
+    {
+      "id": "dot",
+      "character": "Dot",
+      "faction": "Warner Syndicate",
+      "role": "Social Manipulator",
+      "purpose": "Control votes, influence players, and recruit allies.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Queen of Influence",
+      "signature_description": "Strengthens Dot's recruitment and social-control effects after activation.",
+      "win_condition": "Win with the Warner Syndicate.",
+      "investigation_result": "Appears according to the finalized Dot card.",
+      "tags": [
+        "Conversion",
+        "Vote Control",
+        "Instant Kill",
+        "Social Control"
+      ],
+      "source": "62eb6e4f-6269-411b-bbfe-b2609ae6bc15.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/dot.png",
+      "official_card": true
+    },
+    {
+      "id": "death",
+      "character": "Death",
+      "faction": "Independent Wildcard",
+      "role": "Legendary Neutral",
+      "purpose": "Reap souls and complete a personal elimination objective.",
+      "passive_name": "",
+      "passive_description": "",
+      "basic_ask": "",
+      "advanced_ask": "",
+      "signature_name": "Final Destination",
+      "signature_description": "Binds players by fate under the card's rules.",
+      "win_condition": "Eliminate the required iconic targets or Warner siblings according to the finalized card.",
+      "investigation_result": "Appears according to the finalized Death card.",
+      "tags": [
+        "Instant Kill",
+        "Mark",
+        "Challenge",
+        "Personal Win Condition"
+      ],
+      "source": "d2e551ef-4fa0-467e-ba4c-9f8a9b46e12a.png",
+      "review": "Official card uploaded",
+      "card_image": "assets/role-cards/death.png",
+      "official_card": true
     }
   ],
   "abilities": [
@@ -2073,5 +2210,6 @@
       "definition": "A Wildcard objective that is evaluated independently from faction victory.",
       "group": "Victory"
     }
-  ]
+  ],
+  "official_role_card_count": 53
 }
