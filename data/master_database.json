@@ -2209,6 +2209,18 @@
       "category": "Victory",
       "definition": "A Wildcard objective that is evaluated independently from faction victory.",
       "group": "Victory"
+    },
+    {
+      "id": "warner_den_instant_kill",
+      "name": "Warner Den Instant Kill",
+      "category": "Faction Resource",
+      "ownerType": "FACTION",
+      "faction": "Warner Syndicate",
+      "usesPerNight": 2,
+      "killTier": "Instant Kill",
+      "stoppedByNormalProtection": true,
+      "countsAsRegularDenKill": true,
+      "description": "One of the Warner Syndicate's two faction-owned den Instant Kills. It does not belong to any Warner player and does not consume a character ability."
     }
   ],
   "official_role_card_count": 53

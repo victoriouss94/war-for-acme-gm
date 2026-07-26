@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.6.1</title>
+  <title>War for ACME — GM Control Panel v2.6.2</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.6.1 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.6.2 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.6.1</strong>
-  <span>Automated Night Engine • faction-owned Warner den resources • protection checks</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.6.2</strong>
+  <span>Automated Night Engine • Warner Den Instant Kill definition • faction-action triggers</span>
 </section>
 
 <section class="sync-bar">
@@ -195,14 +195,21 @@
           <small>Super and Omega Kills bypass normal protection.</small>
         </div>
 
+        
+        <div class="den-definition-card">
+          <strong>Definition: Regular Den Kill</strong>
+          <p>A regular den kill means one of the Warner Syndicate's two faction-owned Warner Den Instant Kills.</p>
+          <small>It is not an ability belonging to Brain, Pinky, Yakko, Wakko, Dot, or any other Warner player.</small>
+        </div>
+
         <div class="den-action-card">
-          <strong>Warner Syndicate Faction Resources</strong>
+          <strong>Warner Syndicate Den Resources</strong>
           <small>These are faction-owned actions. They do not belong to any Warner player and never consume a character ability.</small>
           <label for="denKillTarget1">Den Kill 1</label>
           <select id="denKillTarget1"></select>
           <label for="denKillTarget2">Den Kill 2</label>
           <select id="denKillTarget2"></select>
-          <button id="queueDenKillsBtn" type="button" class="danger full">Queue Two Faction Instant Kills</button>
+          <button id="queueDenKillsBtn" type="button" class="danger full">Queue Two Warner Den Instant Kills</button>
           <div id="denKillStatus" class="muted"></div>
         </div>
 
@@ -292,7 +299,7 @@
 
   <section id="warnerView" class="view">
     <article class="panel faction-resource-panel">
-      <h2>Warner Syndicate Faction Resources</h2>
+      <h2>Warner Syndicate Den Resources</h2>
       <div id="warnerFactionResources"></div>
     </article>
 

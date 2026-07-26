@@ -1,18 +1,18 @@
-WAR FOR ACME GM — VERSION 2.6.1
+WAR FOR ACME GM — VERSION 2.6.2
 
-This replaces the previous v2.6 package.
+This replaces v2.6.1.
 
 1. Extract this ZIP.
-2. Copy all files and folders into the GitHub repository.
+2. Copy all files and folders into the existing GitHub repository.
 3. Replace existing files.
 4. Commit:
-   Publish War for ACME GM v2.6.1 Faction Den Actions
+   Publish War for ACME GM v2.6.2 Warner Den Kill Definition
 5. Push origin.
 6. Wait 1–2 minutes and press Ctrl + F5.
 
-CHECK:
-- Warner faction resources show 2 Instant Kills per night.
-- The actions have no player owner.
-- Queueing them does not reduce any character's ability uses.
-- They do not appear in player Ability Intelligence counts.
-- Moving to a new night shows 2 available again.
+TEST SARGE:
+1. Assign Sarge/Sheriff to a living player.
+2. Queue one Warner Den Instant Kill targeting Sarge.
+3. Auto-resolve the night.
+4. Sarge should counterattack a random living Warner player.
+5. A personal Instant Kill from an individual Warner role should not count as the regular den kill.

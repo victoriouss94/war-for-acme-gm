@@ -349,3 +349,12 @@ textarea{min-height:70px;resize:vertical}
   background:var(--panel-soft);
 }
 .faction-resource-note strong{display:block}
+
+.den-definition-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px;
+  margin-bottom:12px;
+  background:var(--panel-soft);
+}
+.den-definition-card p{margin:7px 0}

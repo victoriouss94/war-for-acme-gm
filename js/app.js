@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.6.1";
+const APP_VERSION = "2.6.2";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -48,6 +48,18 @@ function isHarmfulAction(q){
   return q.priority===50 || q.killTier!=="None" || /poison|bleed|mark|harm|kill|convert|attack/.test(actionText(q));
 }
 function bypassesNormalProtection(q){return q.killTier==="Super Kill"||q.killTier==="Omega Kill";}
+
+function isWarnerDenInstantKill(action){
+  return Boolean(
+    action &&
+    action.actionOwnerType==="FACTION" &&
+    action.factionOwner==="Warner Syndicate" &&
+    action.resourceKey==="warner_den_instant_kill"
+  );
+}
+function isRegularDenKill(action){
+  return isWarnerDenInstantKill(action);
+}
 
 
 const SUPABASE_URL = "https://bipjqwemwqivyassibqm.supabase.co";
@@ -549,8 +561,8 @@ function queueWarnerDenKills(){
       actorName:"Warner Syndicate Faction",
       character:"Faction Resource",
       abilityIndex:-1,
-      abilityName:`Faction Instant Kill ${index+1}`,
-      type:"Faction Instant Kill",
+      abilityName:`Warner Den Instant Kill ${index+1}`,
+      type:"Warner Den Instant Kill",
       targetIds:[target.id],
       targetNames:[target.name],
       priority:50,
@@ -565,7 +577,7 @@ function queueWarnerDenKills(){
       redirectedTargetName:"",
       statusApplied:"None",
       statusDuration:0,
-      note:"Faction-owned Warner Syndicate den action. Not tied to any player ability.",
+      note:"Regular Den Kill: one of the Warner Syndicate faction-owned Warner Den Instant Kills. Not tied to any player ability.",
       resolved:false,
       denAction:true,
       actionOwnerType:"FACTION",
@@ -575,7 +587,7 @@ function queueWarnerDenKills(){
       day:state.day
     });
   });
-  addLog(`Queued both Warner Syndicate faction Instant Kills for Night ${state.day}: ${target1.name} and ${target2.name}.`);
+  addLog(`Queued both Warner Syndicate Warner Den Instant Kills for Night ${state.day}: ${target1.name} and ${target2.name}.`);
   save();
 }
 
@@ -625,7 +637,7 @@ function renderQueue(){
   const pending=state.queue.filter(q=>!q.resolved).length;
   queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved`;
   const denCount=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
-  if(document.getElementById("denKillStatus"))denKillStatus.textContent=`Night ${state.day}: ${denCount}/2 faction Instant Kills queued • ${Math.max(0,2-denCount)} remaining.`;
+  if(document.getElementById("denKillStatus"))denKillStatus.textContent=`Night ${state.day}: ${denCount}/2 Warner Den Instant Kills queued • ${Math.max(0,2-denCount)} remaining.`;
 
   const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
   queueList.innerHTML=ordered.length?ordered.map(q=>`
@@ -779,6 +791,20 @@ function resolveAll(){
       let anySucceeded=false;
 
       targets.forEach(target=>{
+        const targetText=`${target.character||""} ${target.role||""}`.toLowerCase();
+        const targetsSarge=targetText.includes("sarge")||targetText.includes("sheriff");
+        const isConversion=/conversion|convert|recruit/.test(actionText(q));
+        if(targetsSarge && (isRegularDenKill(q)||isConversion)){
+          const livingWarner=state.players.filter(p=>p.alive&&p.faction==="Warner Syndicate"&&p.id!==target.id);
+          if(livingWarner.length){
+            const counterTarget=livingWarner[Math.floor(Math.random()*livingWarner.length)];
+            counterTarget.alive=false;
+            killedThisNight.add(counterTarget.id);
+            addLog(`Sarge counterattacked ${counterTarget.name} with an Instant Kill after being targeted by ${isRegularDenKill(q)?"a Warner Den Instant Kill":"a conversion"}.`);
+          }else{
+            addLog("Sarge's counterattack triggered, but no living Warner Syndicate player was available.");
+          }
+        }
         const normalProtection=protectedTargets.has(target.id);
         if(normalProtection&&!bypassesNormalProtection(q)){
           anyProtected=true;
@@ -1634,7 +1660,7 @@ function renderWarnerFactionResources(){
   const remaining=Math.max(0,2-used);
   el.innerHTML=`
     <div class="metrics">
-      <div class="metric"><strong>2</strong><span>Faction Instant Kills per night</span></div>
+      <div class="metric"><strong>2</strong><span>Warner Den Instant Kills per night</span></div>
       <div class="metric"><strong>${used}</strong><span>Queued this night</span></div>
       <div class="metric"><strong>${remaining}</strong><span>Remaining this night</span></div>
     </div>
