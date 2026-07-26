@@ -1,3 +1,3 @@
 War for ACME GM Control Panel
-Version: 2.8.1
-Build: Dedicated GM Statistics Page Fix
+Version: 2.8.2
+Build: Sarge Passive Recognition Fix

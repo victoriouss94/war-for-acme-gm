@@ -1,18 +1,20 @@
-WAR FOR ACME GM — VERSION 2.8.1
+WAR FOR ACME GM — VERSION 2.8.2
 
-This replaces v2.8.
+This replaces v2.8.1.
 
-1. Extract this ZIP.
-2. Copy every file and folder into the existing GitHub repository.
-3. Replace all existing files.
-4. In GitHub Desktop, commit:
-   Publish War for ACME GM v2.8.1 Dedicated GM Statistics
-5. Click Push origin.
+1. Extract the ZIP.
+2. Copy every file and folder into the GitHub repository.
+3. Replace existing files.
+4. Commit:
+   Publish War for ACME GM v2.8.2 Sarge Passive Fix
+5. Push origin.
 6. Wait 1–2 minutes.
-7. Open the live site and press Ctrl + F5.
+7. Open the site and press Ctrl + F5.
 
-CHECK:
-- A new GM Statistics tab appears in the navigation.
-- The page works even with zero players added.
-- Search for Instant Kill, Basic Ask, Protect, or a character name.
-- Ability Intelligence remains available as a separate tab.
+TEST:
+1. Assign Sarge/Sheriff to a living player.
+2. Target Sarge with a Warner Den Instant Kill.
+3. Auto-resolve.
+4. Sarge survives and the action says Immune to Den Faction Kill.
+5. A random living Warner player is Instant Killed by the counterattack.
+6. Repeat with a conversion; Sarge remains unconverted and counterattacks.

@@ -1,5 +1,5 @@
 # War for ACME GM Control Panel
 
-Current release: **v2.8.1 — Dedicated GM Statistics Page**
+Current release: **v2.8.2 — Sarge Passive Fix**
 
-Use **GM Statistics** for setup-wide analysis without assigning players. Use **Ability Intelligence** for live statistics based on assigned players.
+The engine now recognizes Sarge's exact rule: he cannot be converted or killed by the Den's standard faction kill. Both attempts trigger his Instant Kill counterattack.

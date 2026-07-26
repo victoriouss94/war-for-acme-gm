@@ -1,14 +1,16 @@
 # War for ACME GM — Changelog
 
-## Version 2.8.1 — Dedicated GM Statistics Page
+## Version 2.8.2 — Sarge Passive Fix
 
-- Fixes the missing Roster Statistics page.
-- Adds **GM Statistics** as its own navigation tab.
-- Moves setup-wide role and ability analysis out of Ability Intelligence.
-- Works without adding or assigning players.
-- Reads directly from the official character and ability database.
-- Shows role counts, ability-entry counts, faction breakdowns, and matching characters.
-- Keeps Ability Intelligence as a separate live-player page.
-- Uses explicit element lookups so the page works reliably across browsers.
-- Adds explanatory notes for role counts, ability entries, shared roles, and faction terminology.
-- Preserves all previous role cards, Night Engine, Rules Engine, faction resources, and Supabase synchronization.
+- Fixes recognition of Sarge's exact passive wording:
+  **Cannot be converted or killed by the Den's standard faction kill.**
+- Defines the Den's standard faction kill as a Warner Den Instant Kill.
+- Sarge is now immune to:
+  - Warner Den Instant Kills
+  - Conversion
+- Both immune actions still trigger Sarge's counterattack.
+- Sarge counterattacks with an Instant Kill against a random living Warner Syndicate player.
+- Personal abilities belonging to individual Warner roles do not count as the Den's standard faction kill.
+- Strengthens role recognition using character name, role name, and database text.
+- Improves the resolution explanation to state whether Sarge was immune to the Den kill or conversion.
+- Preserves GM Statistics, Ability Intelligence, the Rules Engine, phased queue, role cards, and Supabase synchronization.

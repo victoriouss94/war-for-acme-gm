@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.8.1";
+const APP_VERSION = "2.8.2";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -61,6 +61,10 @@ function isRegularDenKill(action){
   return isWarnerDenInstantKill(action);
 }
 
+function isDensStandardFactionKill(action){
+  return isWarnerDenInstantKill(action);
+}
+
 
 const SUPABASE_URL = "https://bipjqwemwqivyassibqm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5fOm-lKPZBxmd6LAMDiGSw_SvVCCsk4";
@@ -83,14 +87,36 @@ const FACTION_ALIASES = {
 const ROLE_RULES = {
   sarge: {
     match(player){
-      const text=`${player.character||""} ${player.role||""}`.toLowerCase();
-      return text.includes("sarge") || text.includes("sheriff");
+      const directText=`${player.character||""} ${player.role||""}`.toLowerCase();
+      if(directText.includes("sarge") || directText.includes("sheriff"))return true;
+
+      const databaseEntry=(database.characters||[]).find(
+        c=>String(c.character||"").toLowerCase()===String(player.character||"").toLowerCase()
+      );
+      const databaseText=[
+        databaseEntry?.character,
+        databaseEntry?.role,
+        databaseEntry?.passive,
+        databaseEntry?.description,
+        databaseEntry?.rules_text,
+        ...(databaseEntry?.abilities||[]).map(a=>`${a.name||""} ${a.description||""}`)
+      ].join(" ").toLowerCase();
+
+      return databaseText.includes("sarge") ||
+             databaseText.includes("sheriff") ||
+             databaseText.includes("cannot be converted or killed by the den") ||
+             databaseText.includes("den's standard faction kill");
     },
     immunities:[
       {
         id:"warner_den_kill_immunity",
-        label:"Immune to Warner Den Instant Kills",
+        label:"Cannot be killed by the Den's standard faction kill",
         matches(action){ return isWarnerDenInstantKill(action); }
+      },
+      {
+        id:"conversion_immunity",
+        label:"Cannot be converted",
+        matches(action){ return /conversion|convert|recruit/.test(actionText(action)); }
       }
     ],
     triggers:[
@@ -99,7 +125,7 @@ const ROLE_RULES = {
         label:"Sheriff Counterattack",
         event:"TARGETED",
         matches(action){
-          return isWarnerDenInstantKill(action) || /conversion|convert|recruit/.test(actionText(action));
+          return isDensStandardFactionKill(action) || /conversion|convert|recruit/.test(actionText(action));
         },
         execute(context){
           const livingWarner=context.state.players.filter(
@@ -987,9 +1013,9 @@ function resolveAll(){
         });
 
         if(ruleResult.immune){
-          q.reason="Immune";
+          q.reason=isWarnerDenInstantKill(q)?"Immune to Den Faction Kill":"Immune to Conversion";
           anyProtected=true;
-          addResolutionTrace(q,"Immunity",`${target.name} is immune because: ${ruleResult.immunityLabel}.`);
+          addResolutionTrace(q,"Immunity",`${target.name} is immune: ${ruleResult.immunityLabel}. The action does not affect Sarge.`);
           return;
         }
 

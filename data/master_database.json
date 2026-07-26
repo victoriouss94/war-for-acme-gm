@@ -711,8 +711,13 @@
       "official_card": true,
       "rules": {
         "immunities": [
-          "warner_den_instant_kill"
+          "warner_den_instant_kill",
+          "conversion"
         ],
+        "aliases": {
+          "den": "Warner Syndicate",
+          "standard_faction_kill": "warner_den_instant_kill"
+        },
         "triggers": [
           {
             "event": "TARGETED",
@@ -729,7 +734,8 @@
             ]
           }
         ]
-      }
+      },
+      "passive_rule": "Cannot be converted or killed by the Den's standard faction kill."
     },
     {
       "id": "barnyard_dawg",
@@ -2251,8 +2257,11 @@
       "implementedRules": [
         {
           "role": "Sarge",
-          "immunity": "Warner Den Instant Kill",
-          "trigger": "Targeted by Warner Den Instant Kill or Conversion",
+          "immunities": [
+            "Den's standard faction kill",
+            "Conversion"
+          ],
+          "trigger": "Targeted by either immune action",
           "effect": "Instant Kill a random living Warner Syndicate player"
         }
       ]
