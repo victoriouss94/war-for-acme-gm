@@ -1,18 +1,24 @@
-WAR FOR ACME GM — VERSION 2.6.2
+WAR FOR ACME GM — VERSION 2.6.3
 
-This replaces v2.6.1.
+This replaces v2.6.2.
 
 1. Extract this ZIP.
-2. Copy all files and folders into the existing GitHub repository.
-3. Replace existing files.
+2. Copy every file and folder into the existing GitHub repository.
+3. Replace the existing files.
 4. Commit:
-   Publish War for ACME GM v2.6.2 Warner Den Kill Definition
-5. Push origin.
-6. Wait 1–2 minutes and press Ctrl + F5.
+   Publish War for ACME GM v2.6.3 56 Player Queue
+5. Click Push origin.
+6. Wait 1–2 minutes.
+7. Open the site and press Ctrl + F5.
 
-TEST SARGE:
-1. Assign Sarge/Sheriff to a living player.
-2. Queue one Warner Den Instant Kill targeting Sarge.
-3. Auto-resolve the night.
-4. Sarge should counterattack a random living Warner player.
-5. A personal Instant Kill from an individual Warner role should not count as the regular den kill.
+DEN TARGET TEST:
+1. Add or load players.
+2. Open Night Queue.
+3. The two Warner Den target lists should contain living ACME and Wildcard players.
+4. Warner players and dead players should not appear.
+5. Select two different targets and queue the faction kills.
+
+QUEUE TEST:
+1. Queue actions from several categories.
+2. Confirm the queue is grouped under the six resolution phases.
+3. Resolve actions and confirm each phase's progress counter updates.

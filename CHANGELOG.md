@@ -1,19 +1,29 @@
 # War for ACME GM — Changelog
 
-## Version 2.6.2 — Warner Den Instant Kill Definition
+## Version 2.6.3 — 56-Player Queue Edition
 
-- Standardizes the term **Warner Den Instant Kill**.
-- Defines **regular den kill** as one of the Warner Syndicate's two faction-owned Warner Den Instant Kills.
-- Regular den kill does not include any personal ability belonging to Brain, Pinky, Yakko, Wakko, Dot, or another Warner player.
-- Adds explicit faction-action metadata:
-  - owner type: FACTION
-  - faction owner: Warner Syndicate
-  - resource: warner_den_instant_kill
-- Adds engine helpers to distinguish faction den kills from player actions.
-- Updates Sarge's passive trigger:
-  - triggers when Sarge is targeted by a Warner Den Instant Kill,
-  - triggers when Sarge is targeted by a conversion,
-  - does not trigger from an individual Warner player's personal kill ability.
-- Sarge's counterattack automatically Instant Kills a random living Warner Syndicate player.
-- Updates database wording and the faction-resource panel.
-- Preserves all prior role cards, Ability Intelligence, Supabase sync, and automated night-resolution features.
+- Sets the official game size to 56 players.
+- Tracks the intended setup:
+  - 34 ACME Defense Force / Villagers
+  - 11 Warner Syndicate / Den
+  - 11 Wildcards / Neutrals
+- Adds roster-size and faction-count setup warnings.
+- Fixes the empty Warner Den Instant Kill target dropdowns.
+- Den target lists now update automatically after:
+  - roster changes,
+  - death or revival,
+  - conversion,
+  - backup loading,
+  - Supabase updates,
+  - and phase/day changes.
+- Den target lists include only living non-Warner players.
+- Prevents dead targets, Warner targets, duplicate targets, and more than two Den kills.
+- Groups the Night Queue into collapsible resolution phases:
+  1. Blocks
+  2. Role Control / Swaps
+  3. Protects
+  4. Intel
+  5. Kills / Harmful Actions
+  6. Saves / Heals
+- Each phase displays its action count and resolved progress.
+- Preserves all role cards, Ability Intelligence, automated results, faction resources, and Supabase synchronization.

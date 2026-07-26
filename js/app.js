@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.6.2";
+const APP_VERSION = "2.6.3";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -66,6 +66,13 @@ const SUPABASE_URL = "https://bipjqwemwqivyassibqm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5fOm-lKPZBxmd6LAMDiGSw_SvVCCsk4";
 const SHARED_ROOM_CODE = "ACME54";
 const SHARED_GAME_NAME = "War for ACME";
+const OFFICIAL_PLAYER_COUNT = 56;
+const OFFICIAL_FACTION_COUNTS = {
+  "ACME Defense Force":34,
+  "Warner Syndicate":11,
+  "Independent Wildcard":11
+};
+
 
 const CLOUD_CLIENT_ID = crypto.randomUUID();
 let cloud = null;
@@ -511,12 +518,42 @@ function useAbility(player,index,change){
 }
 
 function renderActionSelectors(){
+  const previousActor=actionActor.value;
+  const previousTargets=[...actionTargets.selectedOptions].map(o=>o.value);
+  const previousProtection=protectionSource.value;
+  const previousRedirect=redirectedTarget.value;
+  const previousDen1=denKillTarget1.value;
+  const previousDen2=denKillTarget2.value;
+
   const alive=state.players.filter(p=>p.alive);
   const options=alive.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)}</option>`).join("");
   actionActor.innerHTML=options;
   actionTargets.innerHTML=options;
   protectionSource.innerHTML='<option value="">None / unknown</option>'+options;
   redirectedTarget.innerHTML='<option value="">None</option>'+options;
+
+  const legalDenTargets=alive.filter(p=>p.faction!=="Warner Syndicate");
+  const denOptions='<option value="">Select a living Villager or Neutral</option>'+
+    legalDenTargets.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(p.character)} — ${escapeHtml(p.faction)}</option>`).join("");
+  denKillTarget1.innerHTML=denOptions;
+  denKillTarget2.innerHTML=denOptions;
+
+  if(alive.some(p=>p.id===previousActor))actionActor.value=previousActor;
+  previousTargets.forEach(id=>{
+    const option=[...actionTargets.options].find(o=>o.value===id);
+    if(option)option.selected=true;
+  });
+  if(alive.some(p=>p.id===previousProtection))protectionSource.value=previousProtection;
+  if(alive.some(p=>p.id===previousRedirect))redirectedTarget.value=previousRedirect;
+  if(legalDenTargets.some(p=>p.id===previousDen1))denKillTarget1.value=previousDen1;
+  if(legalDenTargets.some(p=>p.id===previousDen2))denKillTarget2.value=previousDen2;
+
+  const denCount=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
+  const locked=denCount>=2;
+  denKillTarget1.disabled=locked;
+  denKillTarget2.disabled=locked;
+  queueDenKillsBtn.disabled=locked||legalDenTargets.length<2;
+
   renderAbilityOptions();
 }
 function renderAbilityOptions(){
@@ -548,11 +585,16 @@ function updateActionAssistant(){
 function queueWarnerDenKills(){
   const target1=playerById(denKillTarget1.value);
   const target2=playerById(denKillTarget2.value);
-  if(!target1||!target2)return alert("Choose both Warner den kill targets.");
-  if(target1.id===target2.id)return alert("The two den kills must target two different players.");
+  if(!target1||!target2)return alert("Choose both Warner Den Instant Kill targets.");
+  if(!target1.alive||!target2.alive)return alert("Warner Den Instant Kills can only target living players.");
+  if(target1.faction==="Warner Syndicate"||target2.faction==="Warner Syndicate"){
+    return alert("The Den cannot target a Warner Syndicate player.");
+  }
+  if(target1.id===target2.id)return alert("The two Den kills must target two different players.");
 
   const existing=state.queue.filter(q=>q.denAction&&q.day===state.day);
-  if(existing.length>=2)return alert("Both Warner Syndicate den Instant Kills are already queued for this night.");
+  if(existing.length>=2)return alert("Both Warner Den Instant Kills are already queued for this night.");
+  if(existing.length>0)return alert("A partial Den resource already exists in the queue. Remove it before queueing the standard pair.");
 
   [target1,target2].forEach((target,index)=>{
     state.queue.push({
@@ -587,7 +629,7 @@ function queueWarnerDenKills(){
       day:state.day
     });
   });
-  addLog(`Queued both Warner Syndicate Warner Den Instant Kills for Night ${state.day}: ${target1.name} and ${target2.name}.`);
+  addLog(`Queued both Warner Den Instant Kills for Night ${state.day}: ${target1.name} and ${target2.name}.`);
   save();
 }
 
@@ -633,14 +675,19 @@ function queueAction(){
   actionNote.value="";
   save();
 }
-function renderQueue(){
-  const pending=state.queue.filter(q=>!q.resolved).length;
-  queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved`;
-  const denCount=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
-  if(document.getElementById("denKillStatus"))denKillStatus.textContent=`Night ${state.day}: ${denCount}/2 Warner Den Instant Kills queued • ${Math.max(0,2-denCount)} remaining.`;
 
-  const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
-  queueList.innerHTML=ordered.length?ordered.map(q=>`
+const QUEUE_PHASES = [
+  {key:"Blocks",label:"1. Blocks"},
+  {key:"Role Control / Swaps",label:"2. Role Control / Swaps"},
+  {key:"Protects",label:"3. Protects"},
+  {key:"Intel",label:"4. Intel"},
+  {key:"Kills / Harmful",label:"5. Kills / Harmful Actions"},
+  {key:"Saves / Heals",label:"6. Saves / Heals"}
+];
+const collapsedQueuePhases=new Set();
+
+function queueActionCard(q){
+  return `
     <article class="queue-card ${q.resolved?"resolved":""}" data-action="${q.id}">
       <div class="card-head">
         <strong>${escapeHtml(q.actorName)} — ${escapeHtml(q.abilityName)}</strong>
@@ -664,7 +711,54 @@ function renderQueue(){
         <button data-delete class="danger">Remove</button>
       </div>
     </article>
-  `).join(""):'<div class="empty">No actions queued.</div>';
+  `;
+}
+
+function renderQueue(){
+  const pending=state.queue.filter(q=>!q.resolved).length;
+  queueSummary.textContent=`${state.queue.length} actions • ${pending} pending • ${state.queue.length-pending} resolved • 56-player game`;
+  const denCount=state.queue.filter(q=>q.denAction&&q.day===state.day).length;
+  if(document.getElementById("denKillStatus")){
+    const legalCount=state.players.filter(p=>p.alive&&p.faction!=="Warner Syndicate").length;
+    denKillStatus.innerHTML=`Night ${state.day}: <strong>${denCount}/2</strong> Warner Den Instant Kills queued • <strong>${Math.max(0,2-denCount)}</strong> remaining.<div class="den-target-warning">${legalCount} legal living targets currently available.</div>`;
+  }
+
+  const ordered=[...state.queue].sort((a,b)=>a.priority-b.priority);
+  const knownKeys=new Set(QUEUE_PHASES.map(p=>p.key));
+  const phaseGroups=QUEUE_PHASES.map(phase=>({
+    ...phase,
+    actions:ordered.filter(q=>(q.phase||resolutionPhaseFor(q.type))===phase.key)
+  }));
+  const unmatched=ordered.filter(q=>!knownKeys.has(q.phase||resolutionPhaseFor(q.type)));
+  if(unmatched.length)phaseGroups.push({key:"Other",label:"Other / Manual Review",actions:unmatched});
+
+  queueList.innerHTML=phaseGroups.map(group=>{
+    const resolved=group.actions.filter(q=>q.resolved).length;
+    const total=group.actions.length;
+    const percent=total?Math.round((resolved/total)*100):0;
+    const collapsed=collapsedQueuePhases.has(group.key);
+    return `<section class="queue-phase ${total?"":"empty-phase"}">
+      <button type="button" class="queue-phase-header" data-queue-phase="${escapeHtml(group.key)}">
+        <span class="queue-phase-title">
+          <strong>${escapeHtml(group.label)}</strong>
+          <span class="badge">${total}</span>
+          <span class="queue-phase-progress">${resolved}/${total} resolved</span>
+        </span>
+        <span class="queue-progress-track" aria-label="${resolved} of ${total} resolved">
+          <span class="queue-progress-fill" style="width:${percent}%"></span>
+        </span>
+        <span>${collapsed?"▸":"▾"}</span>
+      </button>
+      ${collapsed?"":`<div class="queue-phase-body">${total?group.actions.map(queueActionCard).join(""):'<div class="empty">No actions in this phase.</div>'}</div>`}
+    </section>`;
+  }).join("");
+
+  queueList.querySelectorAll("[data-queue-phase]").forEach(button=>button.addEventListener("click",()=>{
+    const key=button.dataset.queuePhase;
+    if(collapsedQueuePhases.has(key))collapsedQueuePhases.delete(key);
+    else collapsedQueuePhases.add(key);
+    renderQueue();
+  }));
 
   queueList.querySelectorAll("[data-action]").forEach(card=>{
     const action=state.queue.find(q=>q.id===card.dataset.action);

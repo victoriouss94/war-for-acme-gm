@@ -358,3 +358,57 @@ textarea{min-height:70px;resize:vertical}
   background:var(--panel-soft);
 }
 .den-definition-card p{margin:7px 0}
+
+.setup-size-banner{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px 12px;
+  margin:0 0 12px;
+  background:var(--panel-soft);
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.queue-phase{
+  border:1px solid var(--line);
+  border-radius:13px;
+  overflow:hidden;
+  margin-bottom:11px;
+}
+.queue-phase-header{
+  width:100%;
+  border:0;
+  background:var(--panel-soft);
+  color:inherit;
+  padding:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  text-align:left;
+}
+.queue-phase-header:hover{filter:brightness(1.04)}
+.queue-phase-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.queue-phase-progress{font-size:.9rem;color:var(--muted)}
+.queue-phase-body{padding:10px;display:grid;gap:10px}
+.queue-phase.empty-phase .queue-phase-body{display:none}
+.queue-progress-track{
+  height:10px;
+  background:var(--line);
+  border-radius:999px;
+  overflow:hidden;
+  min-width:100px;
+}
+.queue-progress-fill{
+  height:100%;
+  background:var(--accent);
+}
+.den-target-warning{
+  border-left:4px solid var(--accent);
+  padding:8px 10px;
+  border-radius:8px;
+  background:var(--panel-soft);
+  margin-top:7px;
+}

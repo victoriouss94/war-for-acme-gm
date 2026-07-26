@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.6.2</title>
+  <title>War for ACME — GM Control Panel v2.6.3</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.6.2 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.6.3 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.6.2</strong>
-  <span>Automated Night Engine • Warner Den Instant Kill definition • faction-action triggers</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.6.3</strong>
+  <span>56-Player Queue Edition • phased night review • fixed Warner Den targeting</span>
 </section>
 
 <section class="sync-bar">
@@ -96,6 +96,11 @@
 
   <section id="dashboardView" class="view">
     <div id="dashboardMetrics" class="metrics"></div>
+    <div class="setup-size-banner">
+      <strong>Official Game Setup: 56 Players</strong>
+      <span>34 ACME Defense Force (Villagers) • 11 Warner Syndicate (Den) • 11 Wildcards (Neutrals)</span>
+    </div>
+
     <div class="grid2">
       <article class="panel">
         <h2>Faction Snapshot</h2>
@@ -204,7 +209,7 @@
 
         <div class="den-action-card">
           <strong>Warner Syndicate Den Resources</strong>
-          <small>These are faction-owned actions. They do not belong to any Warner player and never consume a character ability.</small>
+          <small>These are faction-owned actions. Legal targets are living Villagers or Neutrals; Warner Syndicate players and dead players are excluded.</small>
           <label for="denKillTarget1">Den Kill 1</label>
           <select id="denKillTarget1"></select>
           <label for="denKillTarget2">Den Kill 2</label>
