@@ -44,7 +44,13 @@
       "source": "e062054e-4888-4e03-8076-aca6b5a752ba.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/brain.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Coordinates World Domination and the Syndicate's prototype progress."
+      }
     },
     {
       "id": "yakko",
@@ -68,7 +74,13 @@
       "source": "4b2c9491-6784-4474-9cec-0d7075f42963.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/yakko.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "wakko",
@@ -93,7 +105,13 @@
       "source": "99c2f16a-2300-4574-83cd-7f5fca951415.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/wakko.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "pinky",
@@ -117,7 +135,13 @@
       "source": "5ea1d5c9-1fc8-42f9-9cb5-50766a86f4e9.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/pinky.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "His actions may behave unpredictably under the card's rules."
+      }
     },
     {
       "id": "mindy",
@@ -141,7 +165,13 @@
       "source": "c3097740-d003-4095-9dc3-c6903d4f8a71.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/mindy.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Has special interactions with Buttons."
+      }
     },
     {
       "id": "buttons",
@@ -165,7 +195,13 @@
       "source": "1be9be57-aef9-4f5c-ada7-efc0bb659477.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/buttons.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Has special protective interactions with Mindy."
+      }
     },
     {
       "id": "dr_scratchansniff",
@@ -190,7 +226,13 @@
       "source": "51b726da-a9e0-4a04-9d37-1d82691f7035.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/dr_scratchansniff.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "chicken_boo",
@@ -215,7 +257,13 @@
       "source": "a54f902b-c4d6-42a8-9a07-595fcf3fa84b.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/chicken_boo.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Can appear as another player or role under investigation."
+      }
     },
     {
       "id": "slappy_squirrel",
@@ -240,7 +288,13 @@
       "source": "c81e3aa1-fa17-4072-af0d-8b53237646b0.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/slappy_squirrel.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "hello_nurse",
@@ -264,7 +318,13 @@
       "source": "9eec8602-1f04-4c5b-beca-571b76633496.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/hello_nurse.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "petunia_pig",
@@ -289,7 +349,13 @@
       "source": "382d4956-6bae-4fa4-949d-de87ee9822a6.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/petunia_pig.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Can force or strengthen a rejected deal under the card's rules."
+      }
     },
     {
       "id": "blacque_jacque_shellacque",
@@ -309,7 +375,13 @@
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/blacque_jacque_shellacque.png",
       "source": "c457cd7a-526a-470b-bb6c-56fe3fb73648.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "audience",
@@ -339,6 +411,12 @@
         "shared_abilities": true,
         "shared_win_condition": true,
         "description": "The Audience consists of 3 different players who share the same role and its mechanics."
+      },
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "The Audience consists of 3 different players."
       }
     },
     {
@@ -364,7 +442,13 @@
       "source": "9fc7597a-f8c3-47d5-9966-9360f6a5506e.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/playboy_penguin.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Can only be targeted by Omega and Instant Kills under the finalized design."
+      }
     },
     {
       "id": "pepe_le_pew",
@@ -389,7 +473,13 @@
       "source": "f7a1f651-5820-4e79-8782-f1e26bcad66f.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/pepe_le_pew.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "michigan_j_frog",
@@ -414,7 +504,13 @@
       "source": "091314a7-77bf-4d60-b7ca-4549a2d7a375.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/michigan_j_frog.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Alters investigation results while disguised."
+      }
     },
     {
       "id": "yoyo_dodo",
@@ -439,7 +535,13 @@
       "source": "33118edc-21b4-4da0-b69b-2e795d37b58b.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/yoyo_dodo.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "gabby_goat",
@@ -463,7 +565,13 @@
       "source": "f7ca84d7-a2b3-4561-a90c-7091b69c5048.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/gabby_goat.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "wile_e_coyote",
@@ -485,7 +593,13 @@
       "source": "630fff1d-c83c-4f5b-ab96-8936dc4dcaf5.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/wile_e_coyote.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "granny",
@@ -507,7 +621,13 @@
       "source": "a0f96f59-37b7-426a-abee-8332ce2b7dc6.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/granny.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Publicly recognizable or treated as known according to the card."
+      }
     },
     {
       "id": "skippy_squirrel",
@@ -531,7 +651,13 @@
       "source": "dff9ee39-f7ec-4fde-ab80-02f2ea4c6cf5.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/skippy_squirrel.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "lola_bunny",
@@ -553,7 +679,13 @@
       "source": "9e206281-7404-4776-a294-6cc64209854e.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/lola_bunny.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "bugs_bunny",
@@ -575,7 +707,13 @@
       "source": "1aab6be3-648d-4278-812d-498085c3471c.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/bugs_bunny.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Avoids the first harmful effect that would affect him."
+      }
     },
     {
       "id": "yosemite_sam",
@@ -597,7 +735,13 @@
       "source": "45f69dc2-a0a4-4b01-a5b1-08b413f7831a.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/yosemite_sam.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "sylvester",
@@ -619,7 +763,13 @@
       "source": "46b5755c-8849-4484-8ca5-0d02bbe2d560.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/sylvester.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Starts aligned with ACME and can change allegiance when the card's condition is met."
+      }
     },
     {
       "id": "road_runner",
@@ -641,7 +791,13 @@
       "source": "62e77414-cba0-43b5-989c-4fdac31b12fb.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/road_runner.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Dodges the first direct harmful ability used against him once per game."
+      }
     },
     {
       "id": "porky_pig",
@@ -663,7 +819,13 @@
       "source": "640967ba-ed03-4728-87ee-bda914ecdfbc.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/porky_pig.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "beaky_buzzard",
@@ -685,7 +847,13 @@
       "source": "3c187f19-3bc2-41d8-b8f7-6dbb3a568ba2.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/beaky_buzzard.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "sarge",
@@ -735,7 +903,16 @@
           }
         ]
       },
-      "passive_rule": "Cannot be converted or killed by the Den's standard faction kill."
+      "passive_rule": "Cannot be converted or killed by the Den's standard faction kill.",
+      "parsed_passive_rules": {
+        "immunities": [
+          "conversion",
+          "warner_den_instant_kill"
+        ],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Cannot be converted or killed by the Den's standard faction kill."
+      }
     },
     {
       "id": "barnyard_dawg",
@@ -757,7 +934,13 @@
       "source": "14a20334-383e-4c59-959a-a602e0640f8b.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/barnyard_dawg.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Detects nearby danger or hostile activity."
+      }
     },
     {
       "id": "sam_sheepdog",
@@ -779,7 +962,13 @@
       "source": "f0fb9c88-ef8c-4a60-bc4c-5b9541577b08.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/sam_sheepdog.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "miss_prissy",
@@ -801,7 +990,13 @@
       "source": "b7a00a14-fafc-426e-a742-e859c839a0a2.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/miss_prissy.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "marvin",
@@ -824,7 +1019,13 @@
       "source": "a1e6fde1-dee8-48c9-98a9-0286e2a07901.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/marvin.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Leadership passive with protection from the Den's standard kill under the current design."
+      }
     },
     {
       "id": "foghorn_leghorn",
@@ -846,7 +1047,13 @@
       "source": "eebb91fe-b497-48d7-933c-c4fba3bd87d8.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/foghorn_leghorn.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "goofy_gophers",
@@ -875,6 +1082,12 @@
         "shared_abilities": true,
         "shared_win_condition": true,
         "description": "The Goofy Gophers consist of 2 different players who share the same role and its mechanics."
+      },
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
       }
     },
     {
@@ -898,7 +1111,13 @@
       "source": "ec6e6fb9-6657-4295-855a-10914439e9fa.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/elmer_fudd.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "Designates and follows a chosen prey target."
+      }
     },
     {
       "id": "tweety",
@@ -921,7 +1140,13 @@
       "source": "436f5529-9a2b-4cec-902f-7bce82624733.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/tweety.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "daffy_duck",
@@ -941,7 +1166,13 @@
       "source": "c74c5a38-39c7-4863-a393-052e9259f287.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/daffy_duck.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "ralph_wolf",
@@ -963,7 +1194,13 @@
       "source": "54d7f6e1-f5b6-4b68-a1f3-976b8cea9246.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/ralph_wolf.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "speedy_gonzales",
@@ -985,7 +1222,13 @@
       "source": "52680d30-f061-4cb0-b08f-0fce9bf8b43f.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/speedy_gonzales.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "hector",
@@ -1006,7 +1249,13 @@
       "source": "e20ab4a0-dd91-4625-a1bb-a2e588dd8d48.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/hector.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "pete_puma",
@@ -1028,7 +1277,13 @@
       "source": "6acbd686-0dbe-4c43-9a2d-d96d4de43462.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/pete_puma.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "witch_hazel",
@@ -1050,7 +1305,13 @@
       "source": "b93041c5-da2b-48a6-ad22-518b0736e6d8.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/witch_hazel.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "hubie",
@@ -1072,7 +1333,13 @@
       "source": "41755f7a-251c-4655-b80f-d3b5a11f8ea5.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/hubie.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "cecil_turtle",
@@ -1093,7 +1360,13 @@
       "source": "922c4af9-1728-47cd-8be2-b91cbadea661.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/cecil_turtle.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "gossamer",
@@ -1115,7 +1388,13 @@
       "source": "fcb47992-2718-4ba3-9072-a6fadbc7fdce.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/gossamer.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "henery_hawk",
@@ -1137,7 +1416,13 @@
       "source": "d4cda8b9-326c-44ec-9963-0232ef2df039.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/henery_hawk.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "egghead",
@@ -1159,7 +1444,13 @@
       "source": "ff3d55d6-617e-490b-81cf-c548cba7003e.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/egghead.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "bertie",
@@ -1180,7 +1471,13 @@
       "source": "42432aaf-3e40-4260-a022-95c2367ec4b0.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/bertie.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "slowpoke_rodriguez",
@@ -1202,7 +1499,13 @@
       "source": "16a90c0d-9f39-40a3-a984-fa0a0d032046.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/slowpoke_rodriguez.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": "If attacked and he survives, retaliates with an Instant Kill under the card's conditions."
+      }
     },
     {
       "id": "taz",
@@ -1225,7 +1528,13 @@
       "source": "688675f6-a5da-4c6e-9375-3f0469ebced9.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/taz.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "dot",
@@ -1250,7 +1559,13 @@
       "source": "62eb6e4f-6269-411b-bbfe-b2609ae6bc15.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/dot.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     },
     {
       "id": "death",
@@ -1275,7 +1590,13 @@
       "source": "d2e551ef-4fa0-467e-ba4c-9f8a9b46e12a.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/death.png",
-      "official_card": true
+      "official_card": true,
+      "parsed_passive_rules": {
+        "immunities": [],
+        "triggers": [],
+        "restrictions": [],
+        "source_text": ""
+      }
     }
   ],
   "abilities": [
@@ -2265,6 +2586,25 @@
           "effect": "Instant Kill a random living Warner Syndicate player"
         }
       ]
+    },
+    {
+      "id": "passive_reader",
+      "name": "Passive Reader",
+      "category": "Engine",
+      "description": "Reads standardized passive wording and converts recognized immunities, triggers, and restrictions into executable rules.",
+      "recognizedPatterns": [
+        "conversion immunity",
+        "Den standard faction kill immunity",
+        "roleblock immunity",
+        "silence immunity",
+        "fear immunity",
+        "hanging survival",
+        "first-two-days death immunity",
+        "one-time death escape",
+        "kill-tier targeting restrictions",
+        "Den/conversion counterattack"
+      ],
+      "fallback": "Unrecognized passive text is displayed with a GM review warning instead of being guessed."
     }
   ],
   "official_role_card_count": 53

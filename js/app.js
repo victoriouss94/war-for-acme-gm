@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.8.2";
+const APP_VERSION = "2.9";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -84,6 +84,151 @@ const FACTION_ALIASES = {
   wildcards:"Independent Wildcard"
 };
 
+
+function normalizeRuleText(value){
+  return String(value||"")
+    .toLowerCase()
+    .replace(/[’‘]/g,"'")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function parsePassiveRulesFromText(passiveText,passiveName=""){
+  const text=normalizeRuleText(`${passiveName} ${passiveText}`);
+  const rules={
+    sourceText:passiveText||"",
+    immunities:[],
+    triggers:[],
+    restrictions:[],
+    recognizedPhrases:[],
+    unparsed:Boolean(text)
+  };
+
+  const addImmunity=(id,label,matcher)=>{
+    if(!rules.immunities.some(x=>x.id===id)){
+      rules.immunities.push({id,label,matcher});
+    }
+  };
+  const recognize=phrase=>{
+    if(!rules.recognizedPhrases.includes(phrase))rules.recognizedPhrases.push(phrase);
+    rules.unparsed=false;
+  };
+
+  if(/cannot be converted|immune to conversion|conversion immune|unconvertable/.test(text)){
+    addImmunity("conversion","Cannot be converted","conversion");
+    recognize("conversion immunity");
+  }
+
+  if(
+    /cannot be .*killed by the den'?s? standard faction kill/.test(text) ||
+    /immune to .*den .*kill/.test(text) ||
+    /cannot be killed by .*regular den kill/.test(text)
+  ){
+    addImmunity("warner_den_instant_kill","Cannot be killed by the Den's standard faction kill","warner_den_instant_kill");
+    recognize("Den faction-kill immunity");
+  }
+
+  if(/cannot be role ?blocked|immune to role ?block/.test(text)){
+    addImmunity("roleblock","Immune to roleblocks","roleblock");
+    recognize("roleblock immunity");
+  }
+  if(/cannot be silenced|immune to silence/.test(text)){
+    addImmunity("silence","Immune to silence","silence");
+    recognize("silence immunity");
+  }
+  if(/cannot be feared|immune to fear/.test(text)){
+    addImmunity("fear","Immune to fear","fear");
+    recognize("fear immunity");
+  }
+  if(/survives? hanging|immune to hanging|cannot be hanged/.test(text)){
+    addImmunity("hanging","Survives hanging","hanging");
+    recognize("hanging immunity");
+  }
+  if(/immune to death for the first 2 days\/?nights|immune to death for the first two days\/?nights/.test(text)){
+    rules.immunities.push({
+      id:"early_death_immunity",
+      label:"Immune to death for the first 2 days/nights",
+      matcher:"death",
+      untilDay:2
+    });
+    recognize("early death immunity");
+  }
+  if(/only .*omega.*instant.*kill|only .*instant.*omega.*kill/.test(text)){
+    rules.restrictions.push({
+      id:"kill_tier_targeting",
+      label:"Only Instant and Omega Kills may target this role",
+      allowedKillTiers:["Instant Kill","Omega Kill"]
+    });
+    recognize("kill-tier targeting restriction");
+  }
+  if(/first .*action.*death.*escape|evade.*1 time|escape.*1 time|first .*death.*survive/.test(text)){
+    rules.triggers.push({
+      id:"one_time_death_escape",
+      event:"BEFORE_DEATH",
+      label:"One-time escape from death",
+      maxUses:1
+    });
+    recognize("one-time death escape");
+  }
+
+  const counterattackPattern =
+    /targeted by (?:a )?(?:regular )?den kill|targeted by .*conversion|counterattacks? .*instant kill/;
+  if(counterattackPattern.test(text)){
+    rules.triggers.push({
+      id:"den_or_conversion_counterattack",
+      event:"TARGETED",
+      label:"Counterattacks a random Den player with an Instant Kill",
+      when:["warner_den_instant_kill","conversion"],
+      effect:{
+        type:"counterattack",
+        killTier:"Instant Kill",
+        target:"random_living_warner"
+      }
+    });
+    recognize("Den/conversion counterattack");
+  }
+
+  return rules;
+}
+
+function passiveRuleMatchesAction(rule,action,currentDay){
+  if(rule.id==="conversion")return /conversion|convert|recruit/.test(actionText(action));
+  if(rule.id==="warner_den_instant_kill")return isWarnerDenInstantKill(action);
+  if(rule.id==="roleblock")return isBlockAction(action)&&/role ?block/.test(actionText(action));
+  if(rule.id==="silence")return /silence/.test(actionText(action));
+  if(rule.id==="fear")return /fear/.test(actionText(action));
+  if(rule.id==="early_death_immunity"){
+    return currentDay<=Number(rule.untilDay||0) && (
+      action.killTier!=="None" || /\bkill\b|death/.test(actionText(action))
+    );
+  }
+  return false;
+}
+
+function parsedPassiveRulesForPlayer(player){
+  if(player.passiveRules&&Array.isArray(player.passiveRules.immunities))return player.passiveRules;
+  const parsed=parsePassiveRulesFromText(player.passive,player.passiveName);
+  player.passiveRules=parsed;
+  return parsed;
+}
+
+function passiveRulesSummaryHtml(player){
+  const rules=parsedPassiveRulesForPlayer(player);
+  const labels=[
+    ...(rules.immunities||[]).map(r=>r.label),
+    ...(rules.triggers||[]).map(r=>r.label),
+    ...(rules.restrictions||[]).map(r=>r.label)
+  ];
+  if(!labels.length){
+    return player.passive
+      ? '<div class="passive-reader-warning">Passive text is stored, but no automatic rule has been recognized yet. GM review is required.</div>'
+      : "";
+  }
+  return `<div class="passive-rules-list">${
+    labels.map(label=>`<span class="passive-rule-chip">${escapeHtml(label)}</span>`).join("")
+  }</div>`;
+}
+
 const ROLE_RULES = {
   sarge: {
     match(player){
@@ -151,22 +296,74 @@ function ruleForPlayer(player){
   return Object.values(ROLE_RULES).find(rule=>rule.match(player))||null;
 }
 function evaluateTargetRules(action,target,context){
-  const rule=ruleForPlayer(target);
+  const explicitRule=ruleForPlayer(target);
+  const passiveRules=parsedPassiveRulesForPlayer(target);
   const result={immune:false,immunityLabel:"",triggered:[]};
-  if(!rule)return result;
-  for(const immunity of rule.immunities||[]){
-    if(immunity.matches(action,target,context)){
+
+  for(const immunity of passiveRules.immunities||[]){
+    if(passiveRuleMatchesAction(immunity,action,context.state.day)){
       result.immune=true;
       result.immunityLabel=immunity.label;
     }
   }
-  for(const trigger of rule.triggers||[]){
-    if(trigger.event==="TARGETED"&&trigger.matches(action,target,context)){
-      result.triggered.push({label:trigger.label,...trigger.execute({...context,action,target})});
+
+  for(const restriction of passiveRules.restrictions||[]){
+    if(
+      restriction.id==="kill_tier_targeting" &&
+      isHarmfulAction(action) &&
+      !restriction.allowedKillTiers.includes(action.killTier)
+    ){
+      result.immune=true;
+      result.immunityLabel=restriction.label;
     }
   }
+
+  for(const trigger of passiveRules.triggers||[]){
+    if(
+      trigger.event==="TARGETED" &&
+      trigger.id==="den_or_conversion_counterattack" &&
+      (isWarnerDenInstantKill(action)||/conversion|convert|recruit/.test(actionText(action)))
+    ){
+      const livingWarner=context.state.players.filter(
+        p=>p.alive&&p.faction==="Warner Syndicate"&&p.id!==target.id
+      );
+      if(livingWarner.length){
+        const chosen=livingWarner[Math.floor(Math.random()*livingWarner.length)];
+        chosen.alive=false;
+        context.killedThisNight.add(chosen.id);
+        result.triggered.push({
+          label:trigger.label,
+          log:`${target.character} counterattacked ${chosen.name} with an Instant Kill.`,
+          counterTargetName:chosen.name
+        });
+      }else{
+        result.triggered.push({
+          label:trigger.label,
+          log:`${target.character}'s counterattack triggered, but no living Den player was available.`
+        });
+      }
+    }
+  }
+
+  // Explicit role rules remain available for mechanics that cannot be safely inferred from prose.
+  if(explicitRule){
+    for(const immunity of explicitRule.immunities||[]){
+      if(immunity.matches(action,target,context)){
+        result.immune=true;
+        result.immunityLabel=result.immunityLabel||immunity.label;
+      }
+    }
+    for(const trigger of explicitRule.triggers||[]){
+      const alreadyTriggered=result.triggered.some(t=>t.label===trigger.label);
+      if(!alreadyTriggered&&trigger.event==="TARGETED"&&trigger.matches(action,target,context)){
+        result.triggered.push({label:trigger.label,...trigger.execute({...context,action,target})});
+      }
+    }
+  }
+
   return result;
 }
+
 function ensureResolutionTrace(action){
   if(!Array.isArray(action.resolutionTrace))action.resolutionTrace=[];
   return action.resolutionTrace;
@@ -234,7 +431,8 @@ function normalizeRemoteState(remote){
     convertedToWarner:Boolean(p.convertedToWarner),
     statuses:p.statuses||{},
     statusDurations:p.statusDurations||{},
-    abilities:p.abilities||[]
+    abilities:p.abilities||[],
+    passiveRules:p.passiveRules||parsePassiveRulesFromText(p.passive||"",p.passiveName||"")
   }));
   return merged;
 }
@@ -562,6 +760,7 @@ function addPlayer(){
   state.players.push({
     id:crypto.randomUUID(),name,characterId:c.id,character:c.character,role:c.role,faction:c.faction,originalFaction:c.faction,convertedToWarner:false,conversionNote:"",
     purpose:c.purpose,passiveName:c.passive_name||"",passive:c.passive_description||"",
+    passiveRules:parsePassiveRulesFromText(c.passive_description||"",c.passive_name||""),
     signatureName:c.signature_name||"",signature:c.signature_description||"",
     winCondition:c.win_condition||"Win with faction.",alive:true,statuses:{},statusDurations:{},
     abilities,wildcardProgress:0,wildcardGoal:3
@@ -590,7 +789,7 @@ function renderPlayers(){
       </div>
       <div class="info-box">
         <strong>Purpose:</strong> ${escapeHtml(p.purpose)}
-        ${p.passive?`<br><strong>Passive:</strong> ${escapeHtml(p.passiveName)} — ${escapeHtml(p.passive)}`:""}
+        ${p.passive?`<br><strong>Passive:</strong> ${escapeHtml(p.passiveName)} — ${escapeHtml(p.passive)}${passiveRulesSummaryHtml(p)}`:""}
         ${p.signature?`<br><strong>Signature:</strong> ${escapeHtml(p.signatureName)} — ${escapeHtml(p.signature)}`:""}
         ${p.faction==="Independent Wildcard"?`<br><strong>Win condition:</strong> ${escapeHtml(p.winCondition)}`:""}
       </div>

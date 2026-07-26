@@ -1,20 +1,22 @@
-WAR FOR ACME GM — VERSION 2.8.2
+WAR FOR ACME GM — VERSION 2.9
 
-This replaces v2.8.1.
+This replaces v2.8.2.
 
 1. Extract the ZIP.
 2. Copy every file and folder into the GitHub repository.
 3. Replace existing files.
 4. Commit:
-   Publish War for ACME GM v2.8.2 Sarge Passive Fix
+   Publish War for ACME GM v2.9 Passive Reader
 5. Push origin.
 6. Wait 1–2 minutes.
 7. Open the site and press Ctrl + F5.
 
 TEST:
-1. Assign Sarge/Sheriff to a living player.
-2. Target Sarge with a Warner Den Instant Kill.
-3. Auto-resolve.
-4. Sarge survives and the action says Immune to Den Faction Kill.
-5. A random living Warner player is Instant Killed by the counterattack.
-6. Repeat with a conversion; Sarge remains unconverted and counterattacks.
+1. Assign Sarge.
+2. Open Sarge's player card and confirm the recognized passive chips show:
+   - Cannot be converted
+   - Cannot be killed by the Den's standard faction kill
+3. Target Sarge with a Warner Den Instant Kill.
+4. Auto-resolve: Sarge survives and counterattacks.
+5. Target Sarge with conversion.
+6. Auto-resolve: Sarge remains unconverted and counterattacks.
