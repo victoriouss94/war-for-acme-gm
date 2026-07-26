@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.7";
+const APP_VERSION = "2.8";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -447,6 +447,8 @@ function bindEvents(){
   abilityIntelSearch.addEventListener("input",renderAbilityIntelligence);
   abilityIntelLife.addEventListener("change",renderAbilityIntelligence);
   abilityIntelFaction.addEventListener("change",renderAbilityIntelligence);
+  rosterStatSearch.addEventListener("input",renderRosterStatistics);
+  rosterStatFaction.addEventListener("change",renderRosterStatistics);
 
   addManualLogBtn.addEventListener("click",()=>{
     const text=manualLogText.value.trim();
@@ -1279,6 +1281,164 @@ function abilityLimitInfo(ability){
   return {limited:true,remaining:Math.max(0,max-used)};
 }
 
+
+function rosterCharacterFaction(characterName){
+  const character=database.characters.find(
+    c=>String(c.character||"").toLowerCase()===String(characterName||"").toLowerCase()
+  );
+  return character?.faction||"Unknown";
+}
+
+function officialPlayerSlotsForCharacter(character){
+  const name=String(character.character||"").toLowerCase();
+  if(name.includes("audience"))return 3;
+  if(name.includes("goofy gophers"))return 2;
+  return 1;
+}
+
+function buildRosterStatistics(){
+  const rows=[];
+  (database.abilities||[]).forEach(ability=>{
+    const character=(database.characters||[]).find(
+      c=>String(c.character||"").toLowerCase()===String(ability.character||"").toLowerCase()
+    );
+    const cls=classifyAbility({
+      name:ability.ability_name,
+      type:ability.mechanic_type,
+      description:ability.description
+    });
+    rows.push({
+      category:cls.category,
+      subtype:cls.subtype,
+      character:ability.character,
+      role:character?.role||"",
+      faction:character?.faction||"Unknown",
+      abilityName:ability.ability_name||ability.mechanic_type||"Ability",
+      description:ability.description||"",
+      uses:ability.uses||"Not specified"
+    });
+  });
+
+  // Character-level tags can capture mechanics not represented as a separate ability record.
+  (database.characters||[]).forEach(character=>{
+    (character.tags||[]).forEach(tag=>{
+      const cls=classifyAbility({name:tag,type:tag,description:tag});
+      const exists=rows.some(row=>
+        row.character===character.character &&
+        row.subtype===cls.subtype &&
+        row.abilityName.toLowerCase()===String(tag).toLowerCase()
+      );
+      if(!exists && cls.category!=="Other"){
+        rows.push({
+          category:cls.category,
+          subtype:cls.subtype,
+          character:character.character,
+          role:character.role||"",
+          faction:character.faction||"Unknown",
+          abilityName:tag,
+          description:"Character tag from the official role database.",
+          uses:"See role card"
+        });
+      }
+    });
+  });
+  return rows;
+}
+
+function renderRosterStatistics(){
+  const summary=document.getElementById("rosterSetupSummary");
+  const categoriesEl=document.getElementById("rosterCategorySummary");
+  const results=document.getElementById("rosterStatisticsResults");
+  if(!summary||!categoriesEl||!results)return;
+
+  const allCharacters=(database.characters||[]).filter(c=>c.official_card!==false);
+  const officialSlots=allCharacters.reduce((sum,c)=>sum+officialPlayerSlotsForCharacter(c),0);
+  const factionSlots=faction=>allCharacters
+    .filter(c=>c.faction===faction)
+    .reduce((sum,c)=>sum+officialPlayerSlotsForCharacter(c),0);
+
+  const rows=buildRosterStatistics();
+  const search=(rosterStatSearch.value||"").trim().toLowerCase();
+  const factionFilter=rosterStatFaction.value;
+
+  const filtered=rows.filter(row=>{
+    if(factionFilter!=="ALL"&&row.faction!==factionFilter)return false;
+    if(!search)return true;
+    return [
+      row.category,row.subtype,row.character,row.role,row.faction,
+      row.abilityName,row.description,row.uses
+    ].join(" ").toLowerCase().includes(search);
+  });
+
+  summary.innerHTML=`
+    <div class="metric"><strong>${officialSlots}</strong><span>Player slots represented</span></div>
+    <div class="metric"><strong>${allCharacters.length}</strong><span>Official role cards</span></div>
+    <div class="metric"><strong>${factionSlots("ACME Defense Force")}</strong><span>Villager slots</span></div>
+    <div class="metric"><strong>${factionSlots("Warner Syndicate")}</strong><span>Den slots</span></div>
+    <div class="metric"><strong>${factionSlots("Independent Wildcard")}</strong><span>Neutral slots</span></div>
+  `;
+
+  const categoryOrder=["Investigation","Harmful","Protection","Support","Chaos","Conversion","Communication","Other"];
+  categoriesEl.innerHTML=categoryOrder.map(category=>{
+    const categoryRows=filtered.filter(row=>row.category===category);
+    const uniqueRoles=new Set(categoryRows.map(row=>row.character)).size;
+    return `<div class="metric">
+      <strong>${uniqueRoles}</strong>
+      <span>${escapeHtml(category)} roles</span>
+      <small>${categoryRows.length} ability entries</small>
+    </div>`;
+  }).join("");
+
+  const blocks=categoryOrder.map(category=>{
+    const categoryRows=filtered.filter(row=>row.category===category);
+    if(!categoryRows.length)return "";
+    const subtypes=[...new Set(categoryRows.map(row=>row.subtype))].sort();
+    const uniqueRoles=new Set(categoryRows.map(row=>row.character)).size;
+
+    const subtypeRows=subtypes.map(subtype=>{
+      const entries=categoryRows.filter(row=>row.subtype===subtype);
+      const roleNames=[...new Set(entries.map(row=>row.character))].sort();
+      const countByFaction=faction=>new Set(
+        entries.filter(row=>row.faction===faction).map(row=>row.character)
+      ).size;
+      const abilities=[...new Set(entries.map(row=>row.abilityName))].sort();
+
+      return `<tr>
+        <td><strong>${escapeHtml(subtype)}</strong><div class="muted">${abilities.map(escapeHtml).join(", ")}</div></td>
+        <td><strong>${roleNames.length}</strong></td>
+        <td>${countByFaction("ACME Defense Force")}</td>
+        <td>${countByFaction("Warner Syndicate")}</td>
+        <td>${countByFaction("Independent Wildcard")}</td>
+        <td><div class="roster-role-list">${
+          roleNames.map(name=>`<span class="roster-role-chip">${escapeHtml(name)}</span>`).join("")
+        }</div></td>
+      </tr>`;
+    }).join("");
+
+    return `<section class="roster-category-block">
+      <div class="roster-category-head">
+        <strong>${escapeHtml(category)}</strong>
+        <span>${uniqueRoles} roles • ${categoryRows.length} ability entries</span>
+      </div>
+      <div class="ability-intel-table-wrap">
+        <table class="roster-subtype-table">
+          <thead><tr>
+            <th>Ability subtype</th>
+            <th>Total roles</th>
+            <th>Villagers</th>
+            <th>Den</th>
+            <th>Neutrals</th>
+            <th>Characters</th>
+          </tr></thead>
+          <tbody>${subtypeRows}</tbody>
+        </table>
+      </div>
+    </section>`;
+  }).filter(Boolean);
+
+  results.innerHTML=blocks.join("")||'<div class="empty">No matching roster abilities.</div>';
+}
+
 function buildAbilityHierarchy(){
   const categories=new Map();
   ABILITY_CATEGORY_DEFINITIONS.forEach(def=>categories.set(def.name,new Map()));
@@ -1457,6 +1617,7 @@ function countMechanic(players,terms,aliveOnly){
   return players.filter(p=>!aliveOnly||p.alive).reduce((sum,p)=>sum+p.abilities.filter(a=>mechanicMatches(a.type,terms)).length,0);
 }
 function renderStatistics(){
+  renderRosterStatistics();
   renderAbilityIntelligence();
 
   const factions=["ACME Defense Force","Warner Syndicate","Independent Wildcard"];

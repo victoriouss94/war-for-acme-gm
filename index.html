@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.7</title>
+  <title>War for ACME — GM Control Panel v2.8</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.7 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.8 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.7</strong>
-  <span>Role Rules Engine • passives, immunities, triggers, and explained outcomes</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.8</strong>
+  <span>Roster Statistics • full setup analysis without assigning players • live Ability Intelligence</span>
 </section>
 
 <section class="sync-bar">
@@ -417,7 +417,31 @@
   </section>
 
   <section id="statisticsView" class="view">
-    <article class="panel">
+    <article class="panel roster-statistics-panel">
+      <div class="section-heading">
+        <div>
+          <h2>Roster Statistics — No Players Required</h2>
+          <div class="muted">Analyzes all official role cards directly from the database. This gives a general balance overview before any player is added or assigned.</div>
+        </div>
+      </div>
+
+      <div id="rosterSetupSummary" class="metrics"></div>
+
+      <div class="roster-stat-controls top-gap">
+        <input id="rosterStatSearch" placeholder="Search category, ability, character, role, or faction">
+        <select id="rosterStatFaction">
+          <option value="ALL">All factions</option>
+          <option>ACME Defense Force</option>
+          <option>Warner Syndicate</option>
+          <option>Independent Wildcard</option>
+        </select>
+      </div>
+
+      <div id="rosterCategorySummary" class="metrics top-gap"></div>
+      <div id="rosterStatisticsResults" class="roster-statistics-results top-gap"></div>
+    </article>
+
+    <article class="panel top-gap">
       <div class="section-heading">
         <div>
           <h2>Ability Intelligence Center</h2>

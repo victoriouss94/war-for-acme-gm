@@ -1,14 +1,23 @@
 # War for ACME GM — Changelog
 
-## Version 2.7 — Role Rules Engine Foundation
+## Version 2.8 — Roster Statistics
 
-- Adds structured role immunities and passive triggers.
-- Adds explained outcomes to resolved queue actions.
-- Implements Sarge correctly:
-  - immune to Warner Den Instant Kills,
-  - survives the Den action,
-  - counterattacks when targeted by a Warner Den Instant Kill,
-  - counterattacks when targeted by a conversion,
-  - Instant Kills a random living Warner Syndicate player,
-  - does not trigger from a Warner player's personal kill ability.
-- Preserves all prior 56-player setup checks, role cards, Ability Intelligence, phased queue, faction resources, automated resolution, and Supabase synchronization.
+- Adds a separate **Roster Statistics — No Players Required** channel inside Statistics.
+- Analyzes the official role database without adding or assigning any players.
+- Shows:
+  - official role-card count,
+  - represented player slots,
+  - Villager / Den / Neutral slot totals,
+  - number of roles in each ability category,
+  - number of ability entries in each category,
+  - subtype counts,
+  - faction breakdowns,
+  - and matching character names.
+- Includes Investigation, Harmful, Protection, Support, Chaos, Conversion, Communication, and Other.
+- Search works by category, ability, character, role, description, or faction.
+- Adds a faction filter.
+- Keeps the existing live Ability Intelligence section for assigned players.
+- Shared roles count correctly:
+  - The Audience represents 3 player slots.
+  - Goofy Gophers represents 2 player slots.
+- Preserves the Rules Engine, automated night queue, role cards, faction resources, and Supabase synchronization.

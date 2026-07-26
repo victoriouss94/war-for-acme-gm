@@ -1,5 +1,8 @@
 # War for ACME GM Control Panel
 
-Current release: **v2.7 — Role Rules Engine**
+Current release: **v2.8 — Roster Statistics**
 
-The Night Engine now supports structured role immunities and passive triggers. Sarge's Warner Den immunity and counterattack are automated, and results explain why they succeeded or failed.
+Statistics now has two independent views:
+
+1. **Roster Statistics — No Players Required:** analyzes all official role cards for a general setup overview.
+2. **Live Ability Intelligence:** updates from the players currently assigned in the active game.
