@@ -1,5 +1,5 @@
 # War for ACME GM Control Panel
 
-Current release: **v2.6.3 — 56-Player Queue Edition**
+Current release: **v2.7 — Role Rules Engine**
 
-The official setup is 56 players: 34 Villagers, 11 Den, and 11 Neutrals. The Night Queue is grouped by resolution phase, and Warner Den Instant Kill target lists now populate automatically with living legal targets.
+The Night Engine now supports structured role immunities and passive triggers. Sarge's Warner Den immunity and counterattack are automated, and results explain why they succeeded or failed.

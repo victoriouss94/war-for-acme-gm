@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.6.3";
+const APP_VERSION = "2.7";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -72,6 +72,89 @@ const OFFICIAL_FACTION_COUNTS = {
   "Warner Syndicate":11,
   "Independent Wildcard":11
 };
+
+const FACTION_ALIASES = {
+  den:"Warner Syndicate",
+  villager:"ACME Defense Force",
+  neutral:"Independent Wildcard",
+  wildcards:"Independent Wildcard"
+};
+
+const ROLE_RULES = {
+  sarge: {
+    match(player){
+      const text=`${player.character||""} ${player.role||""}`.toLowerCase();
+      return text.includes("sarge") || text.includes("sheriff");
+    },
+    immunities:[
+      {
+        id:"warner_den_kill_immunity",
+        label:"Immune to Warner Den Instant Kills",
+        matches(action){ return isWarnerDenInstantKill(action); }
+      }
+    ],
+    triggers:[
+      {
+        id:"sheriff_counterattack",
+        label:"Sheriff Counterattack",
+        event:"TARGETED",
+        matches(action){
+          return isWarnerDenInstantKill(action) || /conversion|convert|recruit/.test(actionText(action));
+        },
+        execute(context){
+          const livingWarner=context.state.players.filter(
+            p=>p.alive && p.faction==="Warner Syndicate" && p.id!==context.target.id
+          );
+          if(!livingWarner.length){
+            return {log:"Sarge's counterattack triggered, but no living Warner Syndicate player was available."};
+          }
+          const chosen=livingWarner[Math.floor(Math.random()*livingWarner.length)];
+          chosen.alive=false;
+          context.killedThisNight.add(chosen.id);
+          return {
+            log:`Sarge counterattacked ${chosen.name} with an Instant Kill.`,
+            counterTargetName:chosen.name
+          };
+        }
+      }
+    ]
+  }
+};
+
+function ruleForPlayer(player){
+  return Object.values(ROLE_RULES).find(rule=>rule.match(player))||null;
+}
+function evaluateTargetRules(action,target,context){
+  const rule=ruleForPlayer(target);
+  const result={immune:false,immunityLabel:"",triggered:[]};
+  if(!rule)return result;
+  for(const immunity of rule.immunities||[]){
+    if(immunity.matches(action,target,context)){
+      result.immune=true;
+      result.immunityLabel=immunity.label;
+    }
+  }
+  for(const trigger of rule.triggers||[]){
+    if(trigger.event==="TARGETED"&&trigger.matches(action,target,context)){
+      result.triggered.push({label:trigger.label,...trigger.execute({...context,action,target})});
+    }
+  }
+  return result;
+}
+function ensureResolutionTrace(action){
+  if(!Array.isArray(action.resolutionTrace))action.resolutionTrace=[];
+  return action.resolutionTrace;
+}
+function addResolutionTrace(action,step,detail){
+  ensureResolutionTrace(action).push({step,detail});
+}
+function resolutionExplanationHtml(action){
+  const trace=action.resolutionTrace||[];
+  if(!trace.length)return "";
+  return `<div class="rule-explanation"><strong>Why:</strong><ul>${
+    trace.map(item=>`<li><strong>${escapeHtml(item.step)}:</strong> ${escapeHtml(item.detail)}</li>`).join("")
+  }</ul></div>`;
+}
 
 
 const CLOUD_CLIENT_ID = crypto.randomUUID();
@@ -705,6 +788,7 @@ function queueActionCard(q){
       </div>
 
       ${q.note?`<div class="queue-meta">GM note: ${escapeHtml(q.note)}</div>`:""}
+      ${resolutionExplanationHtml(q)}
 
       <div class="actions">
         <button data-resolve class="${q.resolved?"secondary":"success"}">${q.resolved?"Resolved":"Resolve"}</button>
@@ -849,6 +933,7 @@ function resolveAll(){
     if(actor&&blockedActors.has(actor.id)){
       q.result="Failed";
       q.reason="Blocked";
+      addResolutionTrace(q,"Block","The actor was blocked before this action resolved.");
       q.resolved=true;
       addLog(`Auto-resolved: ${q.actorName}'s ${q.abilityName} failed because the actor was blocked.`);
       continue;
@@ -885,24 +970,33 @@ function resolveAll(){
       let anySucceeded=false;
 
       targets.forEach(target=>{
-        const targetText=`${target.character||""} ${target.role||""}`.toLowerCase();
-        const targetsSarge=targetText.includes("sarge")||targetText.includes("sheriff");
-        const isConversion=/conversion|convert|recruit/.test(actionText(q));
-        if(targetsSarge && (isRegularDenKill(q)||isConversion)){
-          const livingWarner=state.players.filter(p=>p.alive&&p.faction==="Warner Syndicate"&&p.id!==target.id);
-          if(livingWarner.length){
-            const counterTarget=livingWarner[Math.floor(Math.random()*livingWarner.length)];
-            counterTarget.alive=false;
-            killedThisNight.add(counterTarget.id);
-            addLog(`Sarge counterattacked ${counterTarget.name} with an Instant Kill after being targeted by ${isRegularDenKill(q)?"a Warner Den Instant Kill":"a conversion"}.`);
-          }else{
-            addLog("Sarge's counterattack triggered, but no living Warner Syndicate player was available.");
-          }
+        const ruleResult=evaluateTargetRules(q,target,{
+          state,
+          killedThisNight,
+          protectedTargets,
+          blockedActors
+        });
+
+        ruleResult.triggered.forEach(trigger=>{
+          if(trigger.log)addLog(trigger.log);
+          addResolutionTrace(q,"Passive Trigger",`${trigger.label}${trigger.counterTargetName?`: ${trigger.counterTargetName} was hit by an Instant Kill.`:""}`);
+        });
+
+        if(ruleResult.immune){
+          q.reason="Immune";
+          anyProtected=true;
+          addResolutionTrace(q,"Immunity",`${target.name} is immune because: ${ruleResult.immunityLabel}.`);
+          return;
         }
+
         const normalProtection=protectedTargets.has(target.id);
         if(normalProtection&&!bypassesNormalProtection(q)){
           anyProtected=true;
+          addResolutionTrace(q,"Protection",`${target.name} was protected from ${q.killTier||q.type}.`);
           return;
+        }
+        if(normalProtection&&bypassesNormalProtection(q)){
+          addResolutionTrace(q,"Protection Bypassed",`${q.killTier} bypassed normal protection on ${target.name}.`);
         }
 
         anySucceeded=true;
@@ -926,7 +1020,7 @@ function resolveAll(){
         q.reason="None";
       }else if(anyProtected&&!anySucceeded){
         q.result="Failed";
-        q.reason="Protected";
+        if(q.reason!=="Immune")q.reason="Protected";
         q.sourceName=targets.map(t=>(protectedTargets.get(t.id)||[])[0]?.actorName).filter(Boolean).join(", ");
       }else{
         q.result="Successful";

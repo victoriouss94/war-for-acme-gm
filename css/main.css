@@ -412,3 +412,21 @@ textarea{min-height:70px;resize:vertical}
   background:var(--panel-soft);
   margin-top:7px;
 }
+
+.rules-engine-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px;
+  margin-bottom:12px;
+  background:var(--panel-soft);
+  display:grid;
+  gap:7px;
+}
+.rule-status-row{display:flex;gap:6px;flex-wrap:wrap}
+.rule-explanation{
+  margin-top:8px;
+  border-left:4px solid var(--accent);
+  padding:8px 10px;
+  background:var(--panel-soft);
+  border-radius:8px;
+}

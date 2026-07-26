@@ -708,7 +708,28 @@
       "source": "4f78ad35-310a-48ee-8444-529029f66282.png",
       "review": "Official card uploaded",
       "card_image": "assets/role-cards/sarge.png",
-      "official_card": true
+      "official_card": true,
+      "rules": {
+        "immunities": [
+          "warner_den_instant_kill"
+        ],
+        "triggers": [
+          {
+            "event": "TARGETED",
+            "when": [
+              "warner_den_instant_kill",
+              "conversion"
+            ],
+            "effects": [
+              {
+                "type": "counterattack",
+                "killTier": "Instant Kill",
+                "target": "random_living_warner"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "barnyard_dawg",
@@ -2221,6 +2242,20 @@
       "stoppedByNormalProtection": true,
       "countsAsRegularDenKill": true,
       "description": "One of the Warner Syndicate's two faction-owned den Instant Kills. It does not belong to any Warner player and does not consume a character ability."
+    },
+    {
+      "id": "role_rules_engine",
+      "name": "Role Rules Engine",
+      "category": "Engine",
+      "description": "Structured engine for role immunities, passive triggers, explained outcomes, and faction-specific action rules.",
+      "implementedRules": [
+        {
+          "role": "Sarge",
+          "immunity": "Warner Den Instant Kill",
+          "trigger": "Targeted by Warner Den Instant Kill or Conversion",
+          "effect": "Instant Kill a random living Warner Syndicate player"
+        }
+      ]
     }
   ],
   "official_role_card_count": 53
