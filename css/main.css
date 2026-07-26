@@ -477,3 +477,8 @@ textarea{min-height:70px;resize:vertical}
 @media(max-width:650px){
   .roster-stat-controls{grid-template-columns:1fr}
 }
+
+#gmStatisticsView .roster-statistics-panel{margin-bottom:0}
+nav.tabs .tab[data-view="gmStatisticsView"]{
+  border-color:var(--accent);
+}

@@ -1,5 +1,5 @@
 
-const APP_VERSION = "2.8";
+const APP_VERSION = "2.8.1";
 const PHASES = ["Day Discussion","Voting","Night Actions","Resolution","Morning Announcement"];
 const STATUSES = ["Protected","Blocked","Poisoned","Bleeding","Marked","Silenced","Redirected","Controlled","Wanted","Delayed","Converted","Immune"];
 const TEMP_STATUSES = ["Protected","Blocked","Silenced","Redirected","Controlled","Delayed"];
@@ -447,8 +447,10 @@ function bindEvents(){
   abilityIntelSearch.addEventListener("input",renderAbilityIntelligence);
   abilityIntelLife.addEventListener("change",renderAbilityIntelligence);
   abilityIntelFaction.addEventListener("change",renderAbilityIntelligence);
-  rosterStatSearch.addEventListener("input",renderRosterStatistics);
-  rosterStatFaction.addEventListener("change",renderRosterStatistics);
+  const rosterSearchEl=document.getElementById("rosterStatSearch");
+  const rosterFactionEl=document.getElementById("rosterStatFaction");
+  if(rosterSearchEl)rosterSearchEl.addEventListener("input",renderRosterStatistics);
+  if(rosterFactionEl)rosterFactionEl.addEventListener("change",renderRosterStatistics);
 
   addManualLogBtn.addEventListener("click",()=>{
     const text=manualLogText.value.trim();
@@ -1358,8 +1360,16 @@ function renderRosterStatistics(){
     .reduce((sum,c)=>sum+officialPlayerSlotsForCharacter(c),0);
 
   const rows=buildRosterStatistics();
-  const search=(rosterStatSearch.value||"").trim().toLowerCase();
-  const factionFilter=rosterStatFaction.value;
+  if(!(database.characters||[]).length){
+    summary.innerHTML='<div class="warning high">The role database has not loaded yet. Refresh the page.</div>';
+    categoriesEl.innerHTML="";
+    results.innerHTML="";
+    return;
+  }
+  const searchEl=document.getElementById("rosterStatSearch");
+  const factionEl=document.getElementById("rosterStatFaction");
+  const search=(searchEl?.value||"").trim().toLowerCase();
+  const factionFilter=factionEl?.value||"ALL";
 
   const filtered=rows.filter(row=>{
     if(factionFilter!=="ALL"&&row.faction!==factionFilter)return false;

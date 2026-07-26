@@ -1,19 +1,18 @@
-WAR FOR ACME GM — VERSION 2.8
+WAR FOR ACME GM — VERSION 2.8.1
 
-This replaces v2.7.
+This replaces v2.8.
 
-1. Extract the ZIP.
+1. Extract this ZIP.
 2. Copy every file and folder into the existing GitHub repository.
-3. Replace existing files.
-4. Commit:
-   Publish War for ACME GM v2.8 Roster Statistics
-5. Push origin.
+3. Replace all existing files.
+4. In GitHub Desktop, commit:
+   Publish War for ACME GM v2.8.1 Dedicated GM Statistics
+5. Click Push origin.
 6. Wait 1–2 minutes.
-7. Open the site and press Ctrl + F5.
+7. Open the live site and press Ctrl + F5.
 
 CHECK:
-1. Open Ability Intelligence / Statistics.
-2. The first section should be Roster Statistics — No Players Required.
-3. It should display data even when the player roster is empty.
-4. Search for Instant Kill, Basic Ask, Protection, or a character name.
-5. Confirm the Villager / Den / Neutral breakdown appears.
+- A new GM Statistics tab appears in the navigation.
+- The page works even with zero players added.
+- Search for Instant Kill, Basic Ask, Protect, or a character name.
+- Ability Intelligence remains available as a separate tab.

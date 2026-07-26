@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.8</title>
+  <title>War for ACME — GM Control Panel v2.8.1</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
     <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.8 • Wednesday-ready GM operations center</div>
+    <div class="subtitle">GAME-NIGHT BUILD v2.8.1 • Wednesday-ready GM operations center</div>
   </div>
   <div class="toolbar">
     <button id="advancePhaseBtn">Advance Phase</button>
@@ -24,8 +24,8 @@
 </header>
 
 <section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.8</strong>
-  <span>Roster Statistics • full setup analysis without assigning players • live Ability Intelligence</span>
+  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.8.1</strong>
+  <span>Dedicated GM Statistics page • roster analysis without assigning players</span>
 </section>
 
 <section class="sync-bar">
@@ -50,6 +50,7 @@
   <button class="tab warner-tab" data-view="warnerView">Warner Syndicate</button>
   <button class="tab" data-view="reportsView">Reports</button>
   <button class="tab" data-view="databaseView">Character Database</button>
+  <button class="tab" data-view="gmStatisticsView">GM Statistics</button>
   <button class="tab" data-view="statisticsView">Ability Intelligence</button>
   <button class="tab" data-view="timelineView">Timeline</button>
   <button class="tab" data-view="logView">GM Log</button>
@@ -416,7 +417,9 @@
     </article>
   </section>
 
-  <section id="statisticsView" class="view">
+
+  <section id="gmStatisticsView" class="view">
+    
     <article class="panel roster-statistics-panel">
       <div class="section-heading">
         <div>
@@ -441,7 +444,34 @@
       <div id="rosterStatisticsResults" class="roster-statistics-results top-gap"></div>
     </article>
 
-    <article class="panel top-gap">
+    
+    <div class="grid2 top-gap">
+      <article class="panel">
+        <h2>How to Read These Numbers</h2>
+        <div class="list-item">
+          <strong>Roles</strong>
+          <div class="role-line">Unique character cards that contain at least one matching mechanic.</div>
+        </div>
+        <div class="list-item">
+          <strong>Ability entries</strong>
+          <div class="role-line">Every separate database ability or mechanic entry. One role may contribute more than one entry.</div>
+        </div>
+        <div class="list-item">
+          <strong>Faction breakdown</strong>
+          <div class="role-line">Villager = ACME Defense Force • Den = Warner Syndicate • Neutral = Wildcards.</div>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>Shared Role Slot Rules</h2>
+        <div class="list-item"><strong>The Audience</strong><div class="role-line">Counts as 3 player slots.</div></div>
+        <div class="list-item"><strong>Goofy Gophers</strong><div class="role-line">Counts as 2 player slots.</div></div>
+        <div class="list-item"><strong>Warner Den Kills</strong><div class="role-line">Faction resources; excluded from player-role ability counts.</div></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="statisticsView" class="view">
+<article class="panel top-gap">
       <div class="section-heading">
         <div>
           <h2>Ability Intelligence Center</h2>

@@ -1,23 +1,14 @@
 # War for ACME GM — Changelog
 
-## Version 2.8 — Roster Statistics
+## Version 2.8.1 — Dedicated GM Statistics Page
 
-- Adds a separate **Roster Statistics — No Players Required** channel inside Statistics.
-- Analyzes the official role database without adding or assigning any players.
-- Shows:
-  - official role-card count,
-  - represented player slots,
-  - Villager / Den / Neutral slot totals,
-  - number of roles in each ability category,
-  - number of ability entries in each category,
-  - subtype counts,
-  - faction breakdowns,
-  - and matching character names.
-- Includes Investigation, Harmful, Protection, Support, Chaos, Conversion, Communication, and Other.
-- Search works by category, ability, character, role, description, or faction.
-- Adds a faction filter.
-- Keeps the existing live Ability Intelligence section for assigned players.
-- Shared roles count correctly:
-  - The Audience represents 3 player slots.
-  - Goofy Gophers represents 2 player slots.
-- Preserves the Rules Engine, automated night queue, role cards, faction resources, and Supabase synchronization.
+- Fixes the missing Roster Statistics page.
+- Adds **GM Statistics** as its own navigation tab.
+- Moves setup-wide role and ability analysis out of Ability Intelligence.
+- Works without adding or assigning players.
+- Reads directly from the official character and ability database.
+- Shows role counts, ability-entry counts, faction breakdowns, and matching characters.
+- Keeps Ability Intelligence as a separate live-player page.
+- Uses explicit element lookups so the page works reliably across browsers.
+- Adds explanatory notes for role counts, ability entries, shared roles, and faction terminology.
+- Preserves all previous role cards, Night Engine, Rules Engine, faction resources, and Supabase synchronization.
