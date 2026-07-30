@@ -23,7 +23,6 @@
 <nav class="tabs">
   <button class="tab active" data-view="dashboardView">Dashboard</button>
   <button class="tab" data-view="factionsView">Factions</button>
-  <button class="tab" data-view="rolesView">Roles</button>
   <button class="tab" data-view="playersView">Players</button>
   <button class="tab" data-view="queueView">Action Queue</button>
   <button class="tab" data-view="statisticsView">Statistics</button>
@@ -64,23 +63,6 @@
       <div class="panel">
         <div class="section-heading"><div><h2>Faction Instances</h2><p class="muted">Names are customizable; the internal class remains Villager, Den, or Neutral.</p></div></div>
         <div id="factionList" class="card-grid"></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="rolesView" class="view">
-    <div class="layout">
-      <aside class="panel">
-        <h2>Add Role</h2>
-        <label>Role name<input id="roleName" placeholder="Example: Guardian"></label>
-        <label>Faction<select id="roleFaction"></select></label>
-        <label>Ability tags<input id="roleTags" placeholder="protect, basic ask, instant kill"></label>
-        <label>Notes<textarea id="roleNotes" rows="4"></textarea></label>
-        <button id="addRoleBtn" class="full">Add Role</button>
-      </aside>
-      <div class="panel">
-        <div class="filters"><input id="roleSearch" placeholder="Search roles or ability tags"><select id="roleFactionFilter"></select></div>
-        <div id="roleList" class="card-grid"></div>
       </div>
     </div>
   </section>
@@ -127,6 +109,37 @@
   </section>
 
   <section id="encyclopediaView" class="view">
+    <div class="section-heading encyclopedia-main-heading">
+      <div><h2>Game Encyclopedia</h2><p class="muted">Manage both roles and abilities in one place.</p></div>
+    </div>
+
+    <div class="layout encyclopedia-layout role-encyclopedia-section">
+      <aside class="panel">
+        <h2 id="roleFormTitle">Add Role</h2>
+        <p id="roleEditNotice" class="muted form-notice" hidden>Editing an existing role.</p>
+        <label>Role name<input id="roleName" placeholder="Example: Guardian"></label>
+        <label>Faction<select id="roleFaction"></select></label>
+        <label>Abilities
+          <input id="roleAbilitySearch" placeholder="Search the Ability Encyclopedia" autocomplete="off">
+        </label>
+        <div id="roleAbilityPicker" class="role-ability-picker" aria-label="Select abilities from the Encyclopedia"></div>
+        <div id="selectedRoleAbilities" class="selected-role-abilities" aria-live="polite"></div>
+        <label>Notes<textarea id="roleNotes" rows="4"></textarea></label>
+        <div class="form-actions">
+          <button id="addRoleBtn" class="full">Add Role</button>
+          <button id="cancelRoleEditBtn" class="secondary full" hidden>Cancel Edit</button>
+        </div>
+      </aside>
+      <div class="panel">
+        <div class="section-heading encyclopedia-heading">
+          <div><h2>Role Encyclopedia</h2><p class="muted">Every role in the game. Open a role to review, edit, duplicate, or delete it.</p></div>
+          <span id="roleCount" class="count-pill"></span>
+        </div>
+        <div class="filters encyclopedia-filters"><input id="roleSearch" placeholder="Search roles, notes, or abilities"><select id="roleFactionFilter"></select></div>
+        <div id="roleList" class="encyclopedia-list"></div>
+      </div>
+    </div>
+
     <div class="layout encyclopedia-layout">
       <aside class="panel">
         <h2 id="abilityFormTitle">Add Ability</h2>
