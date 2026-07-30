@@ -2,138 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>War for ACME — GM Control Panel v2.9</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GM Command Center — Generic Social Deduction Engine</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="topbar">
   <div>
-    <h1>War for ACME — GM Control Panel</h1>
-    <div class="subtitle">GAME-NIGHT BUILD v2.9 • Wednesday-ready GM operations center</div>
+    <h1>GM Command Center</h1>
+    <p>Generic social-deduction engine</p>
   </div>
   <div class="toolbar">
-    <button id="advancePhaseBtn">Advance Phase</button>
-    <button id="advanceDayBtn">Advance Day</button>
-    <button id="undoResolutionBtn" class="secondary">Undo Last Resolution</button>
-    <button id="backupBtn" class="secondary">Backup Game</button>
-    <button id="loadBtn" class="secondary">Load Backup</button>
-    <input id="loadFile" type="file" accept=".json" hidden>
-    <button id="resetBtn" class="danger">Reset Game</button>
+    <button id="newGameBtn">New Game</button>
+    <button id="exportBtn" class="secondary">Export</button>
+    <label class="file-btn secondary">Import<input id="importFile" type="file" accept="application/json" hidden></label>
+    <button id="resetBtn" class="danger">Reset</button>
   </div>
 </header>
 
-<section class="version-banner">
-  <strong>WAR FOR ACME — GAME-NIGHT BUILD v2.9</strong>
-  <span>Passive Reader • automatic immunity and trigger extraction • explained rules</span>
-</section>
-
-<section class="sync-bar">
-  <div class="sync-main">
-    <span id="syncDot" class="sync-dot offline"></span>
-    <strong id="syncStatus">Not connected</strong>
-    <span id="syncDetails" class="muted">Enter your GM name to join the shared ACME54 room.</span>
-  </div>
-  <div class="sync-controls">
-    <label class="sr-only" for="gmNameInput">GM name</label>
-    <input id="gmNameInput" placeholder="Your GM name">
-    <button id="connectSyncBtn">Connect</button>
-    <button id="forceSyncBtn" class="secondary">Force Sync</button>
-  </div>
-</section>
-
-<nav class="tabs" aria-label="Application sections">
-  <button class="tab active" data-view="liveView">Live Game</button>
-  <button class="tab" data-view="dashboardView">Dashboard</button>
+<nav class="tabs">
+  <button class="tab active" data-view="dashboardView">Dashboard</button>
+  <button class="tab" data-view="factionsView">Factions</button>
+  <button class="tab" data-view="rolesView">Roles</button>
   <button class="tab" data-view="playersView">Players</button>
-  <button class="tab" data-view="queueView">Night Queue</button>
-  <button class="tab warner-tab" data-view="warnerView">Warner Syndicate</button>
-  <button class="tab" data-view="reportsView">Reports</button>
-  <button class="tab" data-view="databaseView">Character Database</button>
-  <button class="tab" data-view="gmStatisticsView">GM Statistics</button>
-  <button class="tab" data-view="statisticsView">Ability Intelligence</button>
-  <button class="tab" data-view="timelineView">Timeline</button>
-  <button class="tab" data-view="logView">GM Log</button>
+  <button class="tab" data-view="queueView">Action Queue</button>
+  <button class="tab" data-view="statisticsView">Statistics</button>
+  <button class="tab" data-view="settingsView">Settings</button>
 </nav>
 
 <main>
-  <section id="liveView" class="view active">
-    <div id="liveMetrics" class="metrics"></div>
+  <section id="dashboardView" class="view active">
+    <div id="metrics" class="metrics"></div>
     <div class="grid2">
       <article class="panel">
-        <div class="section-heading">
-          <div>
-            <h2>Next Action</h2>
-            <div class="muted">The highest-priority unresolved action appears here.</div>
-          </div>
-          <span id="liveModeBadge" class="badge">LIVE MODE</span>
+        <h2>Faction Overview</h2>
+        <div id="factionOverview"></div>
+      </article>
+      <article class="panel">
+        <h2>Engine Model</h2>
+        <p>The engine always uses three standard faction classes:</p>
+        <div class="class-grid">
+          <div class="class-card villager"><strong>VILLAGER</strong><span>Primary informed or uninformed town-side faction.</span></div>
+          <div class="class-card den"><strong>DEN</strong><span>Coordinated hostile faction. Multiple Den teams are supported.</span></div>
+          <div class="class-card neutral"><strong>NEUTRAL</strong><span>Independent roles, linked groups, or neutral teams.</span></div>
         </div>
-        <div id="nextActionPanel"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Interaction Assistant</h2>
-        <div id="interactionAssistant"></div>
-      </article>
-    </div>
-
-    <div class="grid2 top-gap">
-      <article class="panel">
-        <h2>Recent Timeline</h2>
-        <div id="recentTimeline" class="scroll-area"></div>
-      </article>
-      <article class="panel">
-        <h2>Game Controls</h2>
-        <div class="toolbar">
-          <button id="jumpQueueBtn">Open Night Queue</button>
-          <button id="jumpReportsBtn" class="secondary">Open Reports</button>
-          <button id="toggleTestingBtn" class="secondary">Enable Testing Mode</button>
-          <button id="clearTestBtn" class="danger">Clear Test Data</button>
-        </div>
-        <p id="testingStatus" class="muted">Testing Mode is off.</p>
       </article>
     </div>
   </section>
 
-  <section id="dashboardView" class="view">
-    <div id="dashboardMetrics" class="metrics"></div>
-    <div class="setup-size-banner">
-      <strong>Official Game Setup: 56 Players</strong>
-      <span>34 ACME Defense Force (Villagers) • 11 Warner Syndicate (Den) • 11 Wildcards (Neutrals)</span>
+  <section id="factionsView" class="view">
+    <div class="layout">
+      <aside class="panel">
+        <h2>Add Faction</h2>
+        <label>Display name<input id="factionName" placeholder="Example: Warner Syndicate"></label>
+        <label>Standard class<select id="factionClass"><option value="VILLAGER">Villager</option><option value="DEN">Den</option><option value="NEUTRAL">Neutral</option></select></label>
+        <label>Short alias<input id="factionAlias" placeholder="Example: den"></label>
+        <label>Team number<input id="factionTeam" type="number" min="1" value="1"></label>
+        <button id="addFactionBtn" class="full">Add Faction</button>
+      </aside>
+      <div class="panel">
+        <div class="section-heading"><div><h2>Faction Instances</h2><p class="muted">Names are customizable; the internal class remains Villager, Den, or Neutral.</p></div></div>
+        <div id="factionList" class="card-grid"></div>
+      </div>
     </div>
+  </section>
 
-    <div class="grid2">
-      <article class="panel">
-        <h2>Faction Snapshot</h2>
-        <div id="factionSnapshot"></div>
-      </article>
-      <article class="panel">
-        <h2>Active Alerts</h2>
-        <div id="activeAlerts"></div>
-      </article>
-    </div>
-    <div class="grid2 top-gap">
-      <article class="panel">
-        <h2>World Domination</h2>
-        <div class="progress-line">
-          <div class="progress-track"><div id="worldProgressBar" class="progress-fill"></div></div>
-          <strong id="worldProgressText">0 / 3</strong>
-        </div>
-        <div class="toolbar">
-          <button id="worldMinusBtn" class="secondary">− Progress</button>
-          <button id="worldPlusBtn">+ Progress</button>
-          <button id="worldToggleBtn" class="secondary">Activate</button>
-        </div>
-        <p id="worldStatus" class="muted">World Domination is inactive.</p>
-      </article>
-      <article class="panel">
-        <h2>Quick Game Safety</h2>
-        <p class="muted">Use <strong>Backup Game</strong> after every completed night. The website saves automatically in this browser, but downloaded backups protect against browser or device problems.</p>
-        <div class="toolbar">
-          <button id="saveSetupBtn" class="secondary">Save Roster Setup</button>
-          <button id="loadSetupBtn" class="secondary">Load Roster Setup</button>
-        </div>
-      </article>
+  <section id="rolesView" class="view">
+    <div class="layout">
+      <aside class="panel">
+        <h2>Add Role</h2>
+        <label>Role name<input id="roleName" placeholder="Example: Guardian"></label>
+        <label>Faction<select id="roleFaction"></select></label>
+        <label>Ability tags<input id="roleTags" placeholder="protect, basic ask, instant kill"></label>
+        <label>Notes<textarea id="roleNotes" rows="4"></textarea></label>
+        <button id="addRoleBtn" class="full">Add Role</button>
+      </aside>
+      <div class="panel">
+        <div class="filters"><input id="roleSearch" placeholder="Search roles or ability tags"><select id="roleFactionFilter"></select></div>
+        <div id="roleList" class="card-grid"></div>
+      </div>
     </div>
   </section>
 
@@ -141,44 +88,13 @@
     <div class="layout">
       <aside class="panel">
         <h2>Add Player</h2>
-        <label for="playerName">Player / Discord name</label>
-        <input id="playerName" placeholder="Example: Hussain">
-        <label for="addFactionFilter">Faction filter</label>
-        <select id="addFactionFilter">
-          <option value="ALL">All groups</option>
-          <option>ACME Defense Force</option>
-          <option>Warner Syndicate</option>
-          <option>Independent Wildcard</option>
-        </select>
-        <label for="characterSelect">Character</label>
-        <select id="characterSelect"></select>
-        <div id="characterPreview" class="info-box"></div>
+        <label>Player name<input id="playerName" placeholder="Discord name"></label>
+        <label>Role<select id="playerRole"></select></label>
         <button id="addPlayerBtn" class="full">Add Player</button>
       </aside>
-
-      <div>
-        <div class="filters">
-          <select id="playerFactionFilter">
-            <option value="ALL">All factions</option>
-            <option>ACME Defense Force</option>
-            <option>Warner Syndicate</option>
-            <option>Independent Wildcard</option>
-          </select>
-          <select id="playerLifeFilter">
-            <option value="ALL">Alive and dead</option>
-            <option value="ALIVE">Alive only</option>
-            <option value="DEAD">Dead only</option>
-          </select>
-          <select id="playerStatusFilter">
-            <option value="ALL">All statuses</option>
-            <option>Protected</option><option>Blocked</option><option>Poisoned</option>
-            <option>Bleeding</option><option>Marked</option><option>Silenced</option>
-            <option>Redirected</option><option>Controlled</option><option>Wanted</option>
-            <option>Delayed</option><option>Converted</option><option>Immune</option>
-          </select>
-          <input id="playerSearch" placeholder="Search player or character">
-        </div>
-        <div id="playersGrid" class="card-grid"></div>
+      <div class="panel">
+        <div class="filters"><input id="playerSearch" placeholder="Search player or role"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select></div>
+        <div id="playerList" class="card-grid"></div>
       </div>
     </div>
   </section>
@@ -186,382 +102,48 @@
   <section id="queueView" class="view">
     <div class="layout">
       <aside class="panel">
-        <h2>Queue Night Action</h2>
-        <div class="rules-engine-card">
-        <div class="auto-resolution-note">
-          <strong>Sarge rule:</strong> “Cannot be converted or killed by the Den's standard faction kill.”
-          The engine treats the Den's standard faction kill as a Warner Den Instant Kill.
-        </div>
-
-          <strong>Role Rules Engine</strong>
-          <span>Checks target immunities, passive triggers, faction-action rules, protection, kill tier, and status effects before applying results.</span>
-          <div class="rule-status-row">
-            <span class="badge">Passive Reader enabled</span>
-            <span class="badge">Den trigger enabled</span>
-            <span class="badge">Explain-why enabled</span>
-          </div>
-        </div>
-
-        <div class="resolution-order-card">
-          <strong>Night Resolution Order</strong>
-          <ol>
-            <li>Blocks</li>
-            <li>Role Control / Swaps</li>
-            <li>Protects</li>
-            <li>Intel</li>
-            <li>Kills / Harmful Actions</li>
-            <li>Saves / Heals</li>
-          </ol>
-          <small>Super and Omega Kills bypass normal protection.</small>
-        </div>
-
-        
-        <div class="den-definition-card">
-          <strong>Definition: Regular Den Kill</strong>
-          <p>A regular den kill means one of the Warner Syndicate's two faction-owned Warner Den Instant Kills.</p>
-          <small>It is not an ability belonging to Brain, Pinky, Yakko, Wakko, Dot, or any other Warner player.</small>
-        </div>
-
-        <div class="den-action-card">
-          <strong>Warner Syndicate Den Resources</strong>
-          <small>These are faction-owned actions. Legal targets are living Villagers or Neutrals; Warner Syndicate players and dead players are excluded.</small>
-          <label for="denKillTarget1">Den Kill 1</label>
-          <select id="denKillTarget1"></select>
-          <label for="denKillTarget2">Den Kill 2</label>
-          <select id="denKillTarget2"></select>
-          <button id="queueDenKillsBtn" type="button" class="danger full">Queue Two Warner Den Instant Kills</button>
-          <div id="denKillStatus" class="muted"></div>
-        </div>
-
-        <label for="actionActor">Actor</label>
-        <select id="actionActor"></select>
-        <label for="actionAbility">Ability</label>
-        <select id="actionAbility"></select>
-        <label for="actionTargets">Targets</label>
-        <select id="actionTargets" multiple size="6"></select>
-        <div class="grid2">
-          <div>
-            <label for="actionPriority">Priority <span class="muted">(auto-filled from mechanic)</span></label>
-            <input id="actionPriority" type="number" value="50">
-          </div>
-          <div>
-            <label for="actionKillTier">Kill tier <span class="muted">(auto-detected when possible)</span></label>
-            <select id="actionKillTier">
-              <option>None</option><option>Standard Kill</option><option>Instant Kill</option>
-              <option>Super Kill</option><option>Omega Kill</option>
-            </select>
-          </div>
-        </div>
-        <label for="actionResult">Action result</label>
-        <select id="actionResult">
-          <option>Pending</option><option>Successful</option><option>Failed</option>
-          <option>Cancelled</option><option>Target Died</option><option>Escaped Death</option>
-        </select>
-
-        <label for="actionReason">Reason / interaction</label>
-        <select id="actionReason">
-          <option>None</option><option>Blocked</option><option>Protected</option>
-          <option>Immune</option><option>Redirected</option><option>Delayed</option>
-        </select>
-
-        <label for="affectedPlayer">Who was affected by the reason?</label>
-        <select id="affectedPlayer">
-          <option value="ACTOR">Actor</option>
-          <option value="TARGET">Original target</option>
-          <option value="REDIRECTED_TARGET">Redirected target</option>
-        </select>
-
-        <div class="grid2">
-          <div>
-            <label for="protectionSource">Protection / block source</label>
-            <select id="protectionSource"></select>
-          </div>
-          <div>
-            <label for="redirectedTarget">Redirected target</label>
-            <select id="redirectedTarget"></select>
-          </div>
-        </div>
-
-        <label for="statusApplied">Status applied after resolution</label>
-        <select id="statusApplied">
-          <option>None</option><option>Protected</option><option>Blocked</option>
-          <option>Poisoned</option><option>Bleeding</option><option>Marked</option>
-          <option>Silenced</option><option>Redirected</option><option>Controlled</option>
-          <option>Wanted</option><option>Delayed</option><option>Converted</option><option>Immune</option>
-        </select>
-
-        <label for="statusDuration">Status duration in days</label>
-        <input id="statusDuration" type="number" min="0" value="1">
-
-        <div id="actionAssistantPreview" class="assistant-box"></div>
-        <label for="actionNote">GM note</label>
-        <textarea id="actionNote" placeholder="Optional hidden details"></textarea>
-        <button id="queueActionBtn" class="full">Add to Queue</button>
+        <h2>Queue Action</h2>
+        <label>Actor<select id="actionActor"></select></label>
+        <label>Action name<input id="actionName" placeholder="Example: Den Kill"></label>
+        <label>Category<select id="actionCategory"><option>Block</option><option>Control / Swap</option><option>Protection</option><option>Investigation</option><option>Kill / Harmful</option><option>Save / Heal</option><option>Other</option></select></label>
+        <label>Target<select id="actionTarget"></select></label>
+        <button id="addActionBtn" class="full">Add Action</button>
       </aside>
-
-      <article class="panel">
-        <div class="section-heading">
-          <div>
-            <h2>Night Resolution Center</h2>
-            <div id="queueSummary" class="muted"></div>
-          </div>
-          <div class="toolbar">
-            <button id="sortQueueBtn" class="secondary">Sort by Priority</button>
-            <button id="resolveAllBtn" class="success">Auto-Resolve Night</button>
-            <button id="archiveNightBtn" class="secondary">Archive Night</button>
-            <button id="clearQueueBtn" class="danger">Clear Queue</button>
-          </div>
-        </div>
+      <div class="panel">
+        <h2>Resolution Order</h2>
+        <ol class="priority"><li>Blocks</li><li>Role Control / Swaps</li><li>Protects</li><li>Intel</li><li>Kills / Harmful Actions</li><li>Saves / Heals</li></ol>
         <div id="queueList"></div>
-      </article>
-    </div>
-  </section>
-
-  <section id="warnerView" class="view">
-    <article class="panel faction-resource-panel">
-      <h2>Warner Syndicate Den Resources</h2>
-      <div id="warnerFactionResources"></div>
-    </article>
-
-    <div class="warner-private-banner">
-      <strong>WARNER SYNDICATE — PRIVATE GM ROOM</strong>
-      <span>This section is intended only for the Game Masters. It does not create or manage a real Discord channel.</span>
-    </div>
-
-    <div class="grid2 top-gap">
-      <article class="panel warner-panel">
-        <h2>Conversion Manager</h2>
-        <p class="muted">Convert a living non-Warner player into the Warner Syndicate. Their original character and abilities remain visible here.</p>
-
-        <label for="conversionPlayer">Player to convert</label>
-        <select id="conversionPlayer"></select>
-
-        <label for="conversionNote">Conversion note</label>
-        <textarea id="conversionNote" placeholder="Example: Converted by Dot during Night 2"></textarea>
-
-        <button id="convertPlayerBtn" class="full">Add to Warner Syndicate</button>
-      </article>
-
-      <article class="panel warner-panel">
-        <h2>Warner Syndicate Status</h2>
-        <div id="warnerMetrics" class="metrics"></div>
-        <div class="progress-line">
-          <div class="progress-track"><div id="warnerWorldBar" class="progress-fill"></div></div>
-          <strong id="warnerWorldText">0 / 3</strong>
-        </div>
-        <div id="warnerWorldStatus" class="muted"></div>
-      </article>
-    </div>
-
-    <article class="panel warner-panel top-gap">
-      <div class="section-heading">
-        <div>
-          <h2>Private Warner Roster</h2>
-          <div class="muted">Native Warner characters and converted players appear together.</div>
-        </div>
       </div>
-      <div id="warnerRoster" class="card-grid"></div>
-    </article>
-
-    <article class="panel warner-panel top-gap">
-      <h2>Converted Role Ability Pool</h2>
-      <p class="muted">This shows the abilities currently brought into the Syndicate by converted players. It does not automatically grant those abilities to every Warner member unless your rules say so.</p>
-      <div id="convertedAbilityPool"></div>
-    </article>
-  </section>
-
-  <section id="reportsView" class="view">
-    <div class="grid3">
-      <article class="panel">
-        <h2>Public Announcement</h2>
-        <p class="muted">Only player deaths, escapes from death, and approved world events appear here. Character names and secret effects are never revealed.</p>
-        <textarea id="publicReport" class="report-box"></textarea>
-        <button id="generateReportsBtn" class="full">Generate All Reports</button>
-      </article>
-      <article class="panel">
-        <h2>Private GM Summary</h2>
-        <p class="muted">This section records every resolved action and hidden result.</p>
-        <textarea id="gmReport" class="report-box"></textarea>
-      </article>
-      <article class="panel">
-        <h2>Private Player Messages</h2>
-        <p class="muted">Copy only the relevant message to each affected player.</p>
-        <textarea id="playerMessages" class="report-box"></textarea>
-      </article>
-    </div>
-
-    <article class="panel top-gap">
-      <h2>Add Public World Event</h2>
-      <div class="grid2">
-        <div>
-          <label for="worldEventTitle">Event title</label>
-          <input id="worldEventTitle" placeholder="Example: World Domination Activated">
-        </div>
-        <div>
-          <label for="worldEventText">Public text</label>
-          <input id="worldEventText" placeholder="What every player is allowed to know">
-        </div>
-      </div>
-      <button id="addWorldEventBtn">Add World Event</button>
-      <div id="worldEventsList" class="top-gap"></div>
-    </article>
-  </section>
-
-  <section id="databaseView" class="view">
-    <article class="panel">
-      <div class="filters database-filters">
-        <input id="databaseSearch" placeholder="Search character, role, passive, ability or mechanic">
-        <select id="databaseFactionFilter">
-          <option value="ALL">All factions</option>
-          <option>ACME Defense Force</option>
-          <option>Warner Syndicate</option>
-          <option>Independent Wildcard</option>
-        </select>
-      </div>
-      <div id="databaseResults" class="database-grid"></div>
-    </article>
-  </section>
-
-
-  <section id="gmStatisticsView" class="view">
-    
-    <article class="panel roster-statistics-panel">
-      <div class="section-heading">
-        <div>
-          <h2>Roster Statistics — No Players Required</h2>
-          <div class="muted">Analyzes all official role cards directly from the database. This gives a general balance overview before any player is added or assigned.</div>
-        </div>
-      </div>
-
-      <div id="rosterSetupSummary" class="metrics"></div>
-
-      <div class="roster-stat-controls top-gap">
-        <input id="rosterStatSearch" placeholder="Search category, ability, character, role, or faction">
-        <select id="rosterStatFaction">
-          <option value="ALL">All factions</option>
-          <option>ACME Defense Force</option>
-          <option>Warner Syndicate</option>
-          <option>Independent Wildcard</option>
-        </select>
-      </div>
-
-      <div id="rosterCategorySummary" class="metrics top-gap"></div>
-      <div id="rosterStatisticsResults" class="roster-statistics-results top-gap"></div>
-    </article>
-
-    
-    <div class="grid2 top-gap">
-      <article class="panel">
-        <h2>How to Read These Numbers</h2>
-        <div class="list-item">
-          <strong>Roles</strong>
-          <div class="role-line">Unique character cards that contain at least one matching mechanic.</div>
-        </div>
-        <div class="list-item">
-          <strong>Ability entries</strong>
-          <div class="role-line">Every separate database ability or mechanic entry. One role may contribute more than one entry.</div>
-        </div>
-        <div class="list-item">
-          <strong>Faction breakdown</strong>
-          <div class="role-line">Villager = ACME Defense Force • Den = Warner Syndicate • Neutral = Wildcards.</div>
-        </div>
-      </article>
-      <article class="panel">
-        <h2>Shared Role Slot Rules</h2>
-        <div class="list-item"><strong>The Audience</strong><div class="role-line">Counts as 3 player slots.</div></div>
-        <div class="list-item"><strong>Goofy Gophers</strong><div class="role-line">Counts as 2 player slots.</div></div>
-        <div class="list-item"><strong>Warner Den Kills</strong><div class="role-line">Faction resources; excluded from player-role ability counts.</div></div>
-      </article>
     </div>
   </section>
 
   <section id="statisticsView" class="view">
-<article class="panel top-gap">
-      <div class="section-heading">
-        <div>
-          <h2>Ability Intelligence Center</h2>
-          <div class="muted">Category → subtype → faction → alive/dead player. Counts recalculate automatically from the live roster and remaining uses.</div>
-        </div>
-      </div>
-
-      <div class="ability-intel-controls">
-        <input id="abilityIntelSearch" placeholder="Search ability, mechanic, character, role, faction, or player">
-        <select id="abilityIntelLife">
-          <option value="ALL">Alive and dead</option>
-          <option value="ALIVE">Alive only</option>
-          <option value="DEAD">Dead only</option>
-        </select>
-        <select id="abilityIntelFaction">
-          <option value="ALL">All factions</option>
-          <option>ACME Defense Force</option>
-          <option>Warner Syndicate</option>
-          <option>Independent Wildcard</option>
-        </select>
-      </div>
-
-      <div id="abilityPowerSummary" class="metrics top-gap"></div>
-      <div class="faction-resource-note top-gap">
-        <strong>Faction resources are tracked separately from player abilities.</strong>
-        <span>Warner Syndicate den Instant Kills do not appear in player ability counts.</span>
-      </div>
-
-      <div id="abilityHierarchy" class="ability-hierarchy top-gap"></div>
-    </article>
-
-    <div class="grid2 top-gap">
-      <article class="panel"><h2>Faction Capability Snapshot</h2><div id="mechanicsByFaction"></div></article>
-      <article class="panel"><h2>Setup Warnings</h2><div id="setupWarnings"></div></article>
+    <div class="panel">
+      <div class="section-heading"><div><h2>Ability Statistics</h2><p class="muted">Counts update automatically from role tags and can be filtered by faction and living players.</p></div></div>
+      <div class="filters"><select id="statsFactionFilter"></select><label class="check"><input id="aliveOnlyStats" type="checkbox"> Alive players only</label></div>
+      <div id="abilityStats"></div>
     </div>
   </section>
 
-  <section id="timelineView" class="view">
-    <article class="panel">
-      <div class="section-heading">
-        <div>
-          <h2>Complete Game Timeline</h2>
-          <div class="muted">Every player assignment, queued action, resolution, phase change and ruling appears here.</div>
-        </div>
-        <div class="toolbar">
-          <select id="timelineDayFilter"><option value="ALL">All days</option></select>
-          <button id="exportTimelineBtn" class="secondary">Export Timeline</button>
-        </div>
-      </div>
-      <div id="fullTimeline" class="timeline-list"></div>
-    </article>
-  </section>
-
-  <section id="logView" class="view">
+  <section id="settingsView" class="view">
     <div class="grid2">
       <article class="panel">
-        <h2>Add GM Note</h2>
-        <textarea id="manualLogText" placeholder="Write a manual ruling, correction or reminder"></textarea>
-        <button id="addManualLogBtn">Add Note</button>
+        <h2>Game Identity</h2>
+        <label>Game name<input id="gameName"></label>
+        <label>Villager label<input id="villagerLabel"></label>
+        <label>Den label<input id="denLabel"></label>
+        <label>Neutral label<input id="neutralLabel"></label>
+        <button id="saveSettingsBtn">Save Settings</button>
       </article>
       <article class="panel">
-        <h2>Game Log</h2>
-        <div id="gameLog" class="scroll-area"></div>
+        <h2>Rules</h2>
+        <label class="check"><input id="allowMultiDen" type="checkbox"> Allow more than one Den faction</label>
+        <p class="muted">Enabled by default. Most games use one Villager faction, one Den faction, and one Neutral pool, but additional Den factions can be created at any time.</p>
       </article>
     </div>
-    <article class="panel top-gap">
-      <h2>Night Archive</h2>
-      <div id="nightArchive"></div>
-    </article>
   </section>
 </main>
 
-
-<div id="roleCardModal" class="role-card-modal" aria-hidden="true">
-  <div class="role-card-modal-backdrop" data-close-role-card></div>
-  <div class="role-card-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="roleCardModalTitle">
-    <div class="role-card-modal-head">
-      <strong id="roleCardModalTitle">Official Role Card</strong>
-      <button id="closeRoleCardBtn" class="secondary">Close</button>
-    </div>
-    <img id="roleCardModalImage" alt="Full official role card">
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

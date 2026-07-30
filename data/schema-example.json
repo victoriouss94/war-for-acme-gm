@@ -1,0 +1,7 @@
+{
+  "factions": [
+    {"id":"village_main","name":"ACME Defense Force","class":"VILLAGER","alias":"villager","teamNumber":1},
+    {"id":"den_main","name":"Warner Syndicate","class":"DEN","alias":"den","teamNumber":1},
+    {"id":"neutral_pool","name":"Wildcards","class":"NEUTRAL","alias":"neutral","teamNumber":1}
+  ]
+}

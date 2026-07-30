@@ -1,5 +1,17 @@
-# War for ACME GM Control Panel
+# GM Command Center v3.0
 
-Current release: **v2.9 — Passive Reader**
+A generic social-deduction game engine.
 
-The engine now reads standardized passive wording from every role and converts recognized immunities, triggers, and restrictions into automatic rules. Unrecognized text is visibly flagged for GM review.
+## Standard faction model
+
+Every faction instance has one permanent internal class:
+
+- `VILLAGER`
+- `DEN`
+- `NEUTRAL`
+
+The GM can rename the display labels for each game. Multiple Den factions are supported and can be disabled in Settings.
+
+## GitHub Pages
+
+Upload the contents of this folder to the root of your GitHub Pages repository and commit/push.
