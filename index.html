@@ -27,6 +27,7 @@
   <button class="tab" data-view="playersView">Players</button>
   <button class="tab" data-view="queueView">Action Queue</button>
   <button class="tab" data-view="statisticsView">Statistics</button>
+  <button class="tab" data-view="encyclopediaView">📚 Encyclopedia</button>
   <button class="tab" data-view="settingsView">Settings</button>
 </nav>
 
@@ -122,6 +123,31 @@
       <div class="section-heading"><div><h2>Ability Statistics</h2><p class="muted">Counts update automatically from role tags and can be filtered by faction and living players.</p></div></div>
       <div class="filters"><select id="statsFactionFilter"></select><label class="check"><input id="aliveOnlyStats" type="checkbox"> Alive players only</label></div>
       <div id="abilityStats"></div>
+    </div>
+  </section>
+
+  <section id="encyclopediaView" class="view">
+    <div class="layout encyclopedia-layout">
+      <aside class="panel">
+        <h2>Add Ability</h2>
+        <label>Ability name<input id="abilityName" placeholder="Example: Protect"></label>
+        <label>Category<select id="abilityCategory"><option>Investigation</option><option>Harmful</option><option>Protection</option><option>Support</option><option>Control</option><option>Communication</option><option>Passive</option><option>Other</option></select></label>
+        <label>Definition<textarea id="abilityDefinition" rows="5" placeholder="Explain exactly what this ability does."></textarea></label>
+        <label>Usual phase<select id="abilityPhase"><option>Night</option><option>Day</option><option>Any</option><option>Passive</option></select></label>
+        <label>Related mechanics<input id="abilityMechanics" placeholder="kill, protection, visitor"></label>
+        <button id="addAbilityBtn" class="full">Add Ability</button>
+      </aside>
+      <div class="panel">
+        <div class="section-heading encyclopedia-heading">
+          <div><h2>Ability Encyclopedia</h2><p class="muted">Every ability known by this game engine, with a clear definition and usage information.</p></div>
+          <span id="abilityCount" class="count-pill"></span>
+        </div>
+        <div class="filters encyclopedia-filters">
+          <input id="abilitySearch" placeholder="Search abilities, definitions, or mechanics">
+          <select id="abilityCategoryFilter"><option value="ALL">All categories</option></select>
+        </div>
+        <div id="abilityList" class="encyclopedia-list"></div>
+      </div>
     </div>
   </section>
 

@@ -1,17 +1,15 @@
-# GM Command Center v3.0
+# GM Command Center v3.1
 
-A generic social-deduction game engine.
+Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 
-## Standard faction model
+## New in v3.1
 
-Every faction instance has one permanent internal class:
+- Searchable Ability Encyclopedia
+- 35 built-in standard abilities with definitions
+- Category and mechanic filtering
+- Expandable ability details
+- Automatic “roles using this ability” links
+- Custom ability creation with required definitions
+- Encyclopedia included in JSON import/export
 
-- `VILLAGER`
-- `DEN`
-- `NEUTRAL`
-
-The GM can rename the display labels for each game. Multiple Den factions are supported and can be disabled in Settings.
-
-## GitHub Pages
-
-Upload the contents of this folder to the root of your GitHub Pages repository and commit/push.
+Open `index.html` in a browser or deploy the folder to GitHub Pages.

@@ -1,11 +1,18 @@
-# v3.0 Generic Engine
+# Changelog
 
-- Removed War for ACME-specific role and slide data.
-- Added permanent standard faction classes: Villager, Den, Neutral.
-- Added customizable faction display names and aliases.
-- Added support for multiple Den faction instances.
-- Kept faction-owned teams separate from individual roles.
-- Added generic faction, role, player, action queue, and statistics builders.
-- Added automatic alive-player and ability-tag statistics.
-- Preserved configurable night priority order.
-- Added JSON import/export for reusable game templates.
+## v3.1 — Ability Encyclopedia
+
+- Added a permanent Encyclopedia navigation tab.
+- Added a seeded library of standard social-deduction abilities.
+- Added definitions, categories, usual phases, and related mechanics.
+- Added live search and category filters.
+- Added expandable entries showing which roles use each ability.
+- Added custom ability creation and deletion.
+- Added migration support for v3.0 saved games.
+- Added abilities to game template import and export.
+
+## v3.0
+
+- Generic Villager, Den, and Neutral faction engine.
+- Multiple Den support.
+- Factions, roles, players, action queue, statistics, and settings.
