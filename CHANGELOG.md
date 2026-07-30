@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.2 — Editable Ability Library
+
+- Added editing for built-in and custom encyclopedia abilities.
+- Added duplication for every ability.
+- Added reset-to-default for built-in abilities.
+- Added lightweight revision history snapshots whenever an ability is edited or reset.
+- Added migration support for older ability records without revision arrays.
+- Preserved all existing v3.1 game data and encyclopedia entries.
+
 ## v3.1 — Ability Encyclopedia
 
 - Added a permanent Encyclopedia navigation tab.

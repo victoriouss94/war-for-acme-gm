@@ -129,13 +129,17 @@
   <section id="encyclopediaView" class="view">
     <div class="layout encyclopedia-layout">
       <aside class="panel">
-        <h2>Add Ability</h2>
+        <h2 id="abilityFormTitle">Add Ability</h2>
+        <p id="abilityEditNotice" class="muted form-notice" hidden>Editing an existing encyclopedia entry.</p>
         <label>Ability name<input id="abilityName" placeholder="Example: Protect"></label>
         <label>Category<select id="abilityCategory"><option>Investigation</option><option>Harmful</option><option>Protection</option><option>Support</option><option>Control</option><option>Communication</option><option>Passive</option><option>Other</option></select></label>
         <label>Definition<textarea id="abilityDefinition" rows="5" placeholder="Explain exactly what this ability does."></textarea></label>
         <label>Usual phase<select id="abilityPhase"><option>Night</option><option>Day</option><option>Any</option><option>Passive</option></select></label>
         <label>Related mechanics<input id="abilityMechanics" placeholder="kill, protection, visitor"></label>
-        <button id="addAbilityBtn" class="full">Add Ability</button>
+        <div class="form-actions">
+          <button id="addAbilityBtn" class="full">Add Ability</button>
+          <button id="cancelAbilityEditBtn" class="secondary full" hidden>Cancel Edit</button>
+        </div>
       </aside>
       <div class="panel">
         <div class="section-heading encyclopedia-heading">
