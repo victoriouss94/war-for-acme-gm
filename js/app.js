@@ -37,7 +37,7 @@ const standardAbilities=()=>[
   ['Action Success Guarantee','Support','Causes a compatible selected action to succeed against ordinary failure, blocking, or chance conditions unless explicitly bypassed.','Night','support, success'],
   ['Conversion','Control','Changes the targeted player’s faction, team, role relationship, or win condition according to the conversion rules.','Night','faction, recruitment'],
   ['Recruit','Control','Invites or forces a valid target to join the acting faction or group under the configured recruitment conditions.','Night','faction, recruitment']
-].map(([name,category,definition,phase,mechanics])=>({id:id(),name,category,definition,phase,mechanics:mechanics.split(',').map(x=>x.trim()),builtIn:true}));
+].map(([name,category,definition,phase,mechanics])=>({id:id(),name,defaultName:name,category,definition,phase,mechanics:mechanics.split(',').map(x=>x.trim()),builtIn:true}));
 
 const defaultState=()=>({
   settings:{gameName:'Untitled Social Deduction Game',labels:{VILLAGER:'Villagers',DEN:'Den',NEUTRAL:'Neutrals'},allowMultiDen:true},
@@ -59,7 +59,12 @@ function migrate(data){
   data.players=Array.isArray(data.players)?data.players:[];
   data.actions=Array.isArray(data.actions)?data.actions:[];
   if(!Array.isArray(data.abilities)||!data.abilities.length)data.abilities=standardAbilities();
-  data.abilities=data.abilities.map(a=>({...a, mechanics:Array.isArray(a.mechanics)?a.mechanics:[], revisions:Array.isArray(a.revisions)?a.revisions:[]}));
+  const templates=standardAbilities();
+  data.abilities=data.abilities.map(a=>{
+    const revisions=Array.isArray(a.revisions)?a.revisions:[];
+    const template=a.builtIn?templates.find(t=>[a.defaultName,a.name,...revisions.map(r=>r.name)].some(name=>normalized(name)===normalized(t.name))):null;
+    return {...a,defaultName:a.builtIn?(a.defaultName||template?.name||a.name):undefined,mechanics:Array.isArray(a.mechanics)?a.mechanics:[],revisions};
+  });
   return data;
 }
 function load(){try{return migrate(JSON.parse(localStorage.getItem(STORAGE_KEY))||defaultState())}catch{return defaultState()}}
@@ -167,7 +172,7 @@ function renderStats(){
   const max=Math.max(1,...Object.values(counts));
   $('abilityStats').innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([tag,count])=>`<div class="stat-row"><strong>${esc(tag)}</strong><span>${count}</span><div class="bar"><span style="width:${(count/max)*100}%"></span></div></div>`).join('')||'<p class="muted">Add abilities to roles to populate statistics.</p>';
 }
-function abilityTemplateByName(name){return standardAbilities().find(a=>normalized(a.name)===normalized(name))}
+function abilityTemplate(ability){return standardAbilities().find(a=>normalized(a.name)===normalized(ability.defaultName||ability.name))}
 function snapshotAbility(a){return {name:a.name,category:a.category,definition:a.definition,phase:a.phase,mechanics:[...a.mechanics],savedAt:new Date().toISOString()}}
 function clearAbilityForm(){
   editingAbilityId=null;
@@ -192,11 +197,12 @@ function duplicateAbility(abilityId){
   const source=state.abilities.find(x=>x.id===abilityId);if(!source)return;
   let name=`${source.name} Copy`,number=2;
   while(state.abilities.some(a=>normalized(a.name)===normalized(name)))name=`${source.name} Copy ${number++}`;
-  state.abilities.push({...source,id:id(),name,builtIn:false,revisions:[]});save();
+  const {defaultName,...copy}=source;
+  state.abilities.push({...copy,id:id(),name,builtIn:false,revisions:[]});save();
 }
 function resetBuiltInAbility(abilityId){
   const current=state.abilities.find(x=>x.id===abilityId);if(!current?.builtIn)return;
-  const template=abilityTemplateByName(current.name);
+  const template=abilityTemplate(current);
   if(!template)return alert('The original built-in definition could not be found.');
   if(!confirm(`Restore ${current.name} to its original built-in definition?`))return;
   current.revisions=[...(current.revisions||[]),snapshotAbility(current)];
@@ -226,7 +232,7 @@ $('addFactionBtn').onclick=()=>{const name=$('factionName').value.trim();if(!nam
 $('addRoleBtn').onclick=()=>{const name=$('roleName').value.trim();if(!name||!$('roleFaction').value)return alert('Enter a role name and faction.');const duplicate=state.roles.find(r=>normalized(r.name)===normalized(name)&&r.id!==editingRoleId);if(duplicate)return alert('A role with this name already exists.');const fields={name,factionId:$('roleFaction').value,tags:state.abilities.filter(a=>selectedRoleAbilityIds.has(a.id)).map(a=>a.name),notes:$('roleNotes').value.trim()};if(editingRoleId){const role=roleById(editingRoleId);if(!role)return clearRoleForm();Object.assign(role,fields)}else state.roles.push({id:id(),...fields});clearRoleForm();save()};
 $('addPlayerBtn').onclick=()=>{const name=$('playerName').value.trim();if(!name||!$('playerRole').value)return alert('Enter a player name and role.');state.players.push({id:id(),name,roleId:$('playerRole').value,alive:true});$('playerName').value='';save()};
 $('addActionBtn').onclick=()=>{if(!$('actionActor').value||!$('actionTarget').value)return alert('Add living players first.');state.actions.push({id:id(),actorId:$('actionActor').value,targetId:$('actionTarget').value,name:$('actionName').value.trim()||$('actionCategory').value,category:$('actionCategory').value});$('actionName').value='';save()};
-$('addAbilityBtn').onclick=()=>{const name=$('abilityName').value.trim(),definition=$('abilityDefinition').value.trim();if(!name||!definition)return alert('Ability name and definition are required.');const duplicate=state.abilities.find(a=>normalized(a.name)===normalized(name)&&a.id!==editingAbilityId);if(duplicate)return alert('An ability with this name already exists.');const fields={name,category:$('abilityCategory').value,definition,phase:$('abilityPhase').value,mechanics:$('abilityMechanics').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)};if(editingAbilityId){const ability=state.abilities.find(a=>a.id===editingAbilityId);if(!ability)return clearAbilityForm();ability.revisions=[...(ability.revisions||[]),snapshotAbility(ability)];Object.assign(ability,fields)}else state.abilities.push({id:id(),...fields,builtIn:false,revisions:[]});clearAbilityForm();save()};
+$('addAbilityBtn').onclick=()=>{const name=$('abilityName').value.trim(),definition=$('abilityDefinition').value.trim();if(!name||!definition)return alert('Ability name and definition are required.');const duplicate=state.abilities.find(a=>normalized(a.name)===normalized(name)&&a.id!==editingAbilityId);if(duplicate)return alert('An ability with this name already exists.');const fields={name,category:$('abilityCategory').value,definition,phase:$('abilityPhase').value,mechanics:$('abilityMechanics').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)};if(editingAbilityId){const ability=state.abilities.find(a=>a.id===editingAbilityId);if(!ability)return clearAbilityForm();const oldName=ability.name;ability.revisions=[...(ability.revisions||[]),snapshotAbility(ability)];Object.assign(ability,fields);if(normalized(oldName)!==normalized(name))state.roles.forEach(role=>{role.tags=role.tags.map(tag=>normalized(tag)===normalized(oldName)?name:tag)})}else state.abilities.push({id:id(),...fields,builtIn:false,revisions:[]});clearAbilityForm();save()};
 $('cancelRoleEditBtn').onclick=clearRoleForm;
 $('cancelAbilityEditBtn').onclick=clearAbilityForm;
 $('saveSettingsBtn').onclick=()=>{state.settings.gameName=$('gameName').value.trim()||'Untitled Social Deduction Game';state.settings.labels={VILLAGER:$('villagerLabel').value.trim()||'Villagers',DEN:$('denLabel').value.trim()||'Den',NEUTRAL:$('neutralLabel').value.trim()||'Neutrals'};state.settings.allowMultiDen=$('allowMultiDen').checked;save()};
