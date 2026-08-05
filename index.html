@@ -116,15 +116,17 @@
     <div class="layout encyclopedia-layout role-encyclopedia-section">
       <aside class="panel">
         <h2 id="roleFormTitle">Add Role</h2>
+        <p id="roleAccessNotice" class="muted form-notice" hidden>Role editing is read-only. Enable authorized GM role editing in Settings to make changes.</p>
         <p id="roleEditNotice" class="muted form-notice" hidden>Editing an existing role.</p>
-        <label>Role name<input id="roleName" placeholder="Example: Guardian"></label>
+        <p id="roleFormError" class="form-error" role="alert" hidden></p>
+        <label>Role name<input id="roleName" placeholder="Example: Guardian" maxlength="80" required></label>
         <label>Faction<select id="roleFaction"></select></label>
         <label>Abilities
           <input id="roleAbilitySearch" placeholder="Search the Ability Encyclopedia" autocomplete="off">
         </label>
         <div id="roleAbilityPicker" class="role-ability-picker" aria-label="Select abilities from the Encyclopedia"></div>
         <div id="selectedRoleAbilities" class="selected-role-abilities" aria-live="polite"></div>
-        <label>Notes<textarea id="roleNotes" rows="4"></textarea></label>
+        <label>Notes<textarea id="roleNotes" rows="4" maxlength="2000"></textarea></label>
         <div class="form-actions">
           <button id="addRoleBtn" class="full">Add Role</button>
           <button id="cancelRoleEditBtn" class="secondary full" hidden>Cancel Edit</button>
@@ -132,7 +134,7 @@
       </aside>
       <div class="panel">
         <div class="section-heading encyclopedia-heading">
-          <div><h2>Role Encyclopedia</h2><p class="muted">Every role in the game. Open a role to review, edit, duplicate, or delete it.</p></div>
+          <div><h2>Role Encyclopedia</h2><p class="muted">Every role in the game. Roles are permanent records; authorized GMs can edit or duplicate them.</p></div>
           <span id="roleCount" class="count-pill"></span>
         </div>
         <div class="filters encyclopedia-filters"><input id="roleSearch" placeholder="Search roles, notes, or abilities"><select id="roleFactionFilter"></select></div>
@@ -182,6 +184,8 @@
         <h2>Rules</h2>
         <label class="check"><input id="allowMultiDen" type="checkbox"> Allow more than one Den faction</label>
         <p class="muted">Enabled by default. Most games use one Villager faction, one Den faction, and one Neutral pool, but additional Den factions can be created at any time.</p>
+        <label class="check"><input id="roleEditingAuthorized" type="checkbox"> Authorize GM role editing on this device</label>
+        <p class="muted">Disable this on shared read-only displays. This local setting controls whether roles can be added, edited, or duplicated.</p>
       </article>
     </div>
   </section>

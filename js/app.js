@@ -40,7 +40,7 @@ const standardAbilities=()=>[
 ].map(([name,category,definition,phase,mechanics])=>({id:id(),name,defaultName:name,category,definition,phase,mechanics:mechanics.split(',').map(x=>x.trim()),builtIn:true}));
 
 const defaultState=()=>({
-  settings:{gameName:'Untitled Social Deduction Game',labels:{VILLAGER:'Villagers',DEN:'Den',NEUTRAL:'Neutrals'},allowMultiDen:true},
+  settings:{gameName:'Untitled Social Deduction Game',labels:{VILLAGER:'Villagers',DEN:'Den',NEUTRAL:'Neutrals'},allowMultiDen:true,roleEditingAuthorized:true},
   factions:[
     {id:id(),name:'Villagers',class:'VILLAGER',alias:'village',teamNumber:1},
     {id:id(),name:'Den',class:'DEN',alias:'den',teamNumber:1},
@@ -55,7 +55,7 @@ function migrate(data){
   const base=defaultState();
   data.settings={...base.settings,...(data.settings||{}),labels:{...base.settings.labels,...(data.settings?.labels||{})}};
   data.factions=Array.isArray(data.factions)?data.factions:base.factions;
-  data.roles=Array.isArray(data.roles)?data.roles:[];
+  data.roles=(Array.isArray(data.roles)?data.roles:[]).map(role=>({...role,tags:Array.isArray(role.tags)?[...new Set(role.tags.filter(tag=>typeof tag==='string'&&tag.trim()))]:[]}));
   data.players=Array.isArray(data.players)?data.players:[];
   data.actions=Array.isArray(data.actions)?data.actions:[];
   if(!Array.isArray(data.abilities)||!data.abilities.length)data.abilities=standardAbilities();
@@ -78,6 +78,7 @@ function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 function normalized(s=''){return s.trim().toLowerCase()}
 function removeById(list,itemId){state[list]=state[list].filter(x=>x.id!==itemId);save()}
 function rolesUsingAbility(ability){return state.roles.filter(r=>r.tags.some(t=>normalized(t)===normalized(ability.name)))}
+function canEditRoles(){return state.settings.roleEditingAuthorized===true}
 function renderSelects(){
   const factionSelects=[$('roleFaction'),$('roleFactionFilter'),$('statsFactionFilter')];
   factionSelects.forEach((sel,i)=>{const current=sel.value;sel.innerHTML='';if(i>0)sel.append(option('ALL','All factions'));state.factions.forEach(f=>sel.append(option(f.id,`${f.name} (${f.class})`)));if([...sel.options].some(o=>o.value===current))sel.value=current});
@@ -98,7 +99,7 @@ function renderRoleAbilityPicker(){
     (groups[ability.category]??=[]).push(ability);
     return groups;
   },{});
-  picker.innerHTML=Object.entries(grouped).map(([category,items])=>`<div class="role-ability-group"><strong>${esc(category)}</strong>${items.map(a=>`<label class="role-ability-option"><input type="checkbox" value="${a.id}" ${selectedRoleAbilityIds.has(a.id)?'checked':''}><span>${esc(a.name)}</span></label>`).join('')}</div>`).join('')||'<p class="muted role-ability-empty">No Encyclopedia abilities match.</p>';
+  picker.innerHTML=Object.entries(grouped).map(([category,items])=>`<div class="role-ability-group"><strong>${esc(category)}</strong>${items.map(a=>`<label class="role-ability-option"><input type="checkbox" value="${a.id}" ${selectedRoleAbilityIds.has(a.id)?'checked':''} ${canEditRoles()?'':'disabled'}><span>${esc(a.name)}</span></label>`).join('')}</div>`).join('')||'<p class="muted role-ability-empty">No Encyclopedia abilities match.</p>';
   picker.querySelectorAll('input[type="checkbox"]').forEach(box=>box.onchange=()=>{
     if(box.checked)selectedRoleAbilityIds.add(box.value);else selectedRoleAbilityIds.delete(box.value);
     renderSelectedRoleAbilities();
@@ -109,11 +110,35 @@ function renderSelectedRoleAbilities(){
   const target=$('selectedRoleAbilities');
   if(!target)return;
   const selected=state.abilities.filter(a=>selectedRoleAbilityIds.has(a.id)).sort((a,b)=>a.name.localeCompare(b.name));
-  target.innerHTML=selected.length?`<span class="selection-label">Selected:</span>${selected.map(a=>`<button type="button" class="selected-ability-chip" data-id="${a.id}" title="Remove ${esc(a.name)}">${esc(a.name)} <span aria-hidden="true">×</span></button>`).join('')}`:'<span class="muted">No abilities selected.</span>';
+  target.innerHTML=selected.length?`<span class="selection-label">Selected:</span>${selected.map(a=>`<button type="button" class="selected-ability-chip" data-id="${a.id}" title="Remove ${esc(a.name)}" ${canEditRoles()?'':'disabled'}>${esc(a.name)} <span aria-hidden="true">×</span></button>`).join('')}`:'<span class="muted">No abilities selected.</span>';
   target.querySelectorAll('.selected-ability-chip').forEach(button=>button.onclick=()=>{
     selectedRoleAbilityIds.delete(button.dataset.id);
     renderRoleAbilityPicker();
   });
+}
+function showRoleError(message){
+  const error=$('roleFormError');error.textContent=message;error.hidden=false;
+}
+function roleFormValues(){
+  if(!canEditRoles()){showRoleError('Role changes require authorized GM editing.');return null}
+  const name=$('roleName').value.trim(),factionId=$('roleFaction').value;
+  if(!name){showRoleError('Enter a role name.');return null}
+  if(name.length>80){showRoleError('Role names must be 80 characters or fewer.');return null}
+  if(!factionById(factionId)){showRoleError('Select a valid faction.');return null}
+  const abilities=state.abilities.filter(ability=>selectedRoleAbilityIds.has(ability.id));
+  if(!abilities.length){showRoleError('Select at least one ability from the Ability Encyclopedia.');return null}
+  if(abilities.length!==selectedRoleAbilityIds.size){showRoleError('One or more selected abilities no longer exist. Review the selection and try again.');return null}
+  const duplicate=state.roles.find(role=>normalized(role.name)===normalized(name)&&role.id!==editingRoleId);
+  if(duplicate){showRoleError('A role with this name already exists.');return null}
+  $('roleFormError').hidden=true;
+  return {name,factionId,tags:abilities.map(ability=>ability.name),notes:$('roleNotes').value.trim()};
+}
+function renderRoleEditorAccess(){
+  const authorized=canEditRoles(),panel=$('roleFormTitle').closest('.panel');
+  panel.classList.toggle('role-editor-locked',!authorized);
+  $('roleAccessNotice').hidden=authorized;
+  ['roleName','roleFaction','roleAbilitySearch','roleNotes','addRoleBtn'].forEach(elementId=>$(elementId).disabled=!authorized);
+  if(!authorized){$('roleFormTitle').textContent='Role Editor (Read Only)';$('cancelRoleEditBtn').hidden=true}
 }
 
 function renderDashboard(){
@@ -128,9 +153,11 @@ function renderFactions(){
 function clearRoleForm(){
   editingRoleId=null;selectedRoleAbilityIds.clear();
   $('roleFormTitle').textContent='Add Role';$('roleEditNotice').hidden=true;$('addRoleBtn').textContent='Add Role';$('cancelRoleEditBtn').hidden=true;
-  $('roleName').value='';$('roleAbilitySearch').value='';$('roleNotes').value='';renderRoleAbilityPicker();
+  $('roleFormError').hidden=true;$('roleFormError').textContent='';
+  $('roleName').value='';$('roleAbilitySearch').value='';$('roleNotes').value='';renderRoleAbilityPicker();renderRoleEditorAccess();
 }
 function beginRoleEdit(roleId){
+  if(!canEditRoles())return;
   const role=roleById(roleId);if(!role)return;editingRoleId=role.id;
   $('roleFormTitle').textContent=`Edit ${role.name}`;$('roleEditNotice').hidden=false;$('addRoleBtn').textContent='Save Changes';$('cancelRoleEditBtn').hidden=false;
   $('roleName').value=role.name;$('roleFaction').value=role.factionId;$('roleNotes').value=role.notes||'';$('roleAbilitySearch').value='';
@@ -138,7 +165,10 @@ function beginRoleEdit(roleId){
   renderRoleAbilityPicker();$('roleName').focus();
 }
 function duplicateRole(roleId){
+  if(!canEditRoles())return;
   const source=roleById(roleId);if(!source)return;let name=`${source.name} Copy`,number=2;
+  const hasInvalidAbilities=!source.tags.length||source.tags.some(tag=>!state.abilities.some(ability=>normalized(ability.name)===normalized(tag)));
+  if(hasInvalidAbilities)return showRoleError('This legacy role has missing or invalid abilities. Edit it and select at least one current Encyclopedia ability before duplicating it.');
   while(state.roles.some(r=>normalized(r.name)===normalized(name)))name=`${source.name} Copy ${number++}`;
   state.roles.push({...source,id:id(),name,tags:[...source.tags]});save();
 }
@@ -146,11 +176,10 @@ function renderRoles(){
   const q=normalized($('roleSearch').value),ff=$('roleFactionFilter').value;
   const roles=state.roles.filter(r=>(ff==='ALL'||r.factionId===ff)&&normalized(`${r.name} ${r.notes||''} ${r.tags.join(' ')}`).includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
   $('roleCount').textContent=`${state.roles.length} known`;
-  $('roleList').innerHTML=roles.map(r=>{const f=factionById(r.factionId),assigned=state.players.filter(p=>p.roleId===r.id).length;return `<article class="ability-entry role-entry" data-id="${r.id}"><div class="ability-summary"><div><div class="ability-name">${esc(r.name)}</div><div class="ability-definition">${esc(r.notes||'No role notes.')}</div></div><span class="category-badge ${f?.class||''}">${esc(f?.name||'No faction')}</span><span class="expand-mark">＋</span></div><div class="ability-details"><div class="detail-grid"><div class="detail-box"><strong>Faction class</strong>${esc(f?.class||'None')}</div><div class="detail-box"><strong>Assigned players</strong>${assigned}</div><div class="detail-box"><strong>Abilities</strong>${r.tags.length}</div></div><strong>Role abilities</strong>${r.tags.length?`<div class="role-tag-list">${r.tags.map(t=>`<span class="badge">${esc(t)}</span>`).join(' ')}</div>`:'<p class="muted">No abilities selected.</p>'}<div class="ability-actions"><button class="secondary edit-role" data-id="${r.id}">Edit</button><button class="secondary duplicate-role" data-id="${r.id}">Duplicate</button><button class="danger delete-role" data-id="${r.id}">Delete</button></div></div></article>`}).join('')||'<div class="empty-state">No roles match this search.</div>';
+  $('roleList').innerHTML=roles.map(r=>{const f=factionById(r.factionId),assigned=state.players.filter(p=>p.roleId===r.id).length;return `<article class="ability-entry role-entry" data-id="${r.id}"><div class="ability-summary"><div><div class="ability-name">${esc(r.name)}</div><div class="ability-definition">${esc(r.notes||'No role notes.')}</div></div><span class="category-badge ${f?.class||''}">${esc(f?.name||'No faction')}</span><span class="expand-mark">＋</span></div><div class="ability-details"><div class="detail-grid"><div class="detail-box"><strong>Faction class</strong>${esc(f?.class||'None')}</div><div class="detail-box"><strong>Assigned players</strong>${assigned}</div><div class="detail-box"><strong>Abilities</strong>${r.tags.length}</div></div><strong>Role abilities</strong>${r.tags.length?`<div class="role-tag-list">${r.tags.map(t=>`<span class="badge">${esc(t)}</span>`).join(' ')}</div>`:'<p class="muted">No abilities selected.</p>'}<div class="ability-actions">${canEditRoles()?`<button class="secondary edit-role" data-id="${r.id}">Edit</button><button class="secondary duplicate-role" data-id="${r.id}">Duplicate</button>`:'<span class="muted">Read only</span>'}</div></div></article>`}).join('')||'<div class="empty-state">No roles match this search.</div>';
   document.querySelectorAll('.role-entry .ability-summary').forEach(el=>el.onclick=()=>{const entry=el.closest('.role-entry');entry.classList.toggle('open');entry.querySelector('.expand-mark').textContent=entry.classList.contains('open')?'−':'＋'});
   document.querySelectorAll('.edit-role').forEach(b=>b.onclick=e=>{e.stopPropagation();beginRoleEdit(b.dataset.id)});
   document.querySelectorAll('.duplicate-role').forEach(b=>b.onclick=e=>{e.stopPropagation();duplicateRole(b.dataset.id)});
-  document.querySelectorAll('.delete-role').forEach(b=>b.onclick=e=>{e.stopPropagation();if(state.players.some(p=>p.roleId===b.dataset.id))return alert('Remove players assigned to this role first.');if(editingRoleId===b.dataset.id)clearRoleForm();removeById('roles',b.dataset.id)});
 }
 function renderPlayers(){
   const q=$('playerSearch').value.toLowerCase(),life=$('playerLifeFilter').value;
@@ -220,23 +249,24 @@ function renderEncyclopedia(){
   document.querySelectorAll('.edit-ability').forEach(b=>b.onclick=e=>{e.stopPropagation();beginAbilityEdit(b.dataset.id)});
   document.querySelectorAll('.duplicate-ability').forEach(b=>b.onclick=e=>{e.stopPropagation();duplicateAbility(b.dataset.id)});
   document.querySelectorAll('.reset-ability').forEach(b=>b.onclick=e=>{e.stopPropagation();resetBuiltInAbility(b.dataset.id)});
-  document.querySelectorAll('.delete-ability').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=state.abilities.find(x=>x.id===b.dataset.id);if(rolesUsingAbility(a).length&&!confirm('This ability is used by one or more roles. Delete it anyway?'))return;if(editingAbilityId===a.id)clearAbilityForm();removeById('abilities',b.dataset.id)});
+  document.querySelectorAll('.delete-ability').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=state.abilities.find(x=>x.id===b.dataset.id),used=rolesUsingAbility(a);if(used.length)return alert(`This ability is assigned to ${used.length} role${used.length===1?'':'s'} and cannot be deleted.`);if(editingAbilityId===a.id)clearAbilityForm();removeById('abilities',b.dataset.id)});
 }
 function renderSettings(){
-  $('gameName').value=state.settings.gameName;$('villagerLabel').value=state.settings.labels.VILLAGER;$('denLabel').value=state.settings.labels.DEN;$('neutralLabel').value=state.settings.labels.NEUTRAL;$('allowMultiDen').checked=state.settings.allowMultiDen;document.title=`${state.settings.gameName} — GM Command Center`;
+  $('gameName').value=state.settings.gameName;$('villagerLabel').value=state.settings.labels.VILLAGER;$('denLabel').value=state.settings.labels.DEN;$('neutralLabel').value=state.settings.labels.NEUTRAL;$('allowMultiDen').checked=state.settings.allowMultiDen;$('roleEditingAuthorized').checked=canEditRoles();document.title=`${state.settings.gameName} — GM Command Center`;
 }
-function renderAll(){renderSelects();renderRoleAbilityPicker();renderDashboard();renderFactions();renderRoles();renderPlayers();renderQueue();renderStats();renderEncyclopedia();renderSettings()}
+function renderAll(){renderSelects();renderRoleAbilityPicker();renderRoleEditorAccess();renderDashboard();renderFactions();renderRoles();renderPlayers();renderQueue();renderStats();renderEncyclopedia();renderSettings()}
 
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));t.classList.add('active');$(t.dataset.view).classList.add('active')}));
 $('addFactionBtn').onclick=()=>{const name=$('factionName').value.trim();if(!name)return alert('Enter a faction name.');const cls=$('factionClass').value;if(cls==='DEN'&&!state.settings.allowMultiDen&&state.factions.some(f=>f.class==='DEN'))return alert('Multiple Den factions are disabled in Settings.');state.factions.push({id:id(),name,class:cls,alias:$('factionAlias').value.trim(),teamNumber:Number($('factionTeam').value)||1});$('factionName').value='';$('factionAlias').value='';save()};
-$('addRoleBtn').onclick=()=>{const name=$('roleName').value.trim();if(!name||!$('roleFaction').value)return alert('Enter a role name and faction.');const duplicate=state.roles.find(r=>normalized(r.name)===normalized(name)&&r.id!==editingRoleId);if(duplicate)return alert('A role with this name already exists.');const fields={name,factionId:$('roleFaction').value,tags:state.abilities.filter(a=>selectedRoleAbilityIds.has(a.id)).map(a=>a.name),notes:$('roleNotes').value.trim()};if(editingRoleId){const role=roleById(editingRoleId);if(!role)return clearRoleForm();Object.assign(role,fields)}else state.roles.push({id:id(),...fields});clearRoleForm();save()};
+$('addRoleBtn').onclick=()=>{const fields=roleFormValues();if(!fields)return;if(editingRoleId){const role=roleById(editingRoleId);if(!role){showRoleError('This role no longer exists.');return}Object.assign(role,fields)}else state.roles.push({id:id(),...fields});clearRoleForm();save()};
 $('addPlayerBtn').onclick=()=>{const name=$('playerName').value.trim();if(!name||!$('playerRole').value)return alert('Enter a player name and role.');state.players.push({id:id(),name,roleId:$('playerRole').value,alive:true});$('playerName').value='';save()};
 $('addActionBtn').onclick=()=>{if(!$('actionActor').value||!$('actionTarget').value)return alert('Add living players first.');state.actions.push({id:id(),actorId:$('actionActor').value,targetId:$('actionTarget').value,name:$('actionName').value.trim()||$('actionCategory').value,category:$('actionCategory').value});$('actionName').value='';save()};
 $('addAbilityBtn').onclick=()=>{const name=$('abilityName').value.trim(),definition=$('abilityDefinition').value.trim();if(!name||!definition)return alert('Ability name and definition are required.');const duplicate=state.abilities.find(a=>normalized(a.name)===normalized(name)&&a.id!==editingAbilityId);if(duplicate)return alert('An ability with this name already exists.');const fields={name,category:$('abilityCategory').value,definition,phase:$('abilityPhase').value,mechanics:$('abilityMechanics').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)};if(editingAbilityId){const ability=state.abilities.find(a=>a.id===editingAbilityId);if(!ability)return clearAbilityForm();const oldName=ability.name;ability.revisions=[...(ability.revisions||[]),snapshotAbility(ability)];Object.assign(ability,fields);if(normalized(oldName)!==normalized(name))state.roles.forEach(role=>{role.tags=role.tags.map(tag=>normalized(tag)===normalized(oldName)?name:tag)})}else state.abilities.push({id:id(),...fields,builtIn:false,revisions:[]});clearAbilityForm();save()};
 $('cancelRoleEditBtn').onclick=clearRoleForm;
 $('cancelAbilityEditBtn').onclick=clearAbilityForm;
-$('saveSettingsBtn').onclick=()=>{state.settings.gameName=$('gameName').value.trim()||'Untitled Social Deduction Game';state.settings.labels={VILLAGER:$('villagerLabel').value.trim()||'Villagers',DEN:$('denLabel').value.trim()||'Den',NEUTRAL:$('neutralLabel').value.trim()||'Neutrals'};state.settings.allowMultiDen=$('allowMultiDen').checked;save()};
+$('saveSettingsBtn').onclick=()=>{state.settings.gameName=$('gameName').value.trim()||'Untitled Social Deduction Game';state.settings.labels={VILLAGER:$('villagerLabel').value.trim()||'Villagers',DEN:$('denLabel').value.trim()||'Den',NEUTRAL:$('neutralLabel').value.trim()||'Neutrals'};state.settings.allowMultiDen=$('allowMultiDen').checked;state.settings.roleEditingAuthorized=$('roleEditingAuthorized').checked;save()};
 $('allowMultiDen').onchange=()=>{state.settings.allowMultiDen=$('allowMultiDen').checked;save()};
+$('roleEditingAuthorized').onchange=()=>{state.settings.roleEditingAuthorized=$('roleEditingAuthorized').checked;if(!canEditRoles())clearRoleForm();save()};
 ['roleSearch','roleFactionFilter'].forEach(i=>$(i).addEventListener('input',renderRoles));$('roleAbilitySearch').addEventListener('input',renderRoleAbilityPicker);['playerSearch','playerLifeFilter'].forEach(i=>$(i).addEventListener('input',renderPlayers));['statsFactionFilter','aliveOnlyStats'].forEach(i=>$(i).addEventListener('input',renderStats));['abilitySearch','abilityCategoryFilter'].forEach(i=>$(i).addEventListener('input',renderEncyclopedia));
 $('newGameBtn').onclick=()=>{if(confirm('Create a new blank game? Built-in encyclopedia abilities will remain available.')){state=defaultState();save()}};
 $('resetBtn').onclick=()=>{if(confirm('Reset all locally stored engine data?')){localStorage.removeItem(STORAGE_KEY);state=defaultState();save()}};
