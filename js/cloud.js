@@ -4,6 +4,8 @@
   const required=()=>{if(!client)throw new Error('Shared database is not configured.');return client};
   const unwrap=({data,error})=>{if(error)throw error;return data};
   const displayName=()=>session?.user?.user_metadata?.display_name||session?.user?.email?.split('@')[0]||'GM';
+  const importBucket='game-import-documents';
+  const safeFileName=name=>String(name||'game.docx').replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(-160)||'game.docx';
 
   async function init(onAuth){
     if(!window.supabase?.createClient||!config.url||!config.publishableKey)return {available:false,session:null};
@@ -30,15 +32,28 @@
     return {document,game,members};
   }
   async function createGame(document){return unwrap(await required().rpc('create_game',{game_id:document.game.id,initial_document:document}));}
+  async function uploadImportSource(file,metadata){
+    const path=session.user.id+'/'+metadata.id+'/'+safeFileName(file.name),options={contentType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',cacheControl:'3600',upsert:false};unwrap(await required().storage.from(importBucket).upload(path,file,options));return path;
+  }
+  async function removeImportSource(path){try{unwrap(await required().storage.from(importBucket).remove([path]))}catch(error){console.warn('Could not clean up import source',error)}}
+  async function createImportedGame(document,file,metadata){
+    const storagePath=await uploadImportSource(file,metadata);try{return unwrap(await required().rpc('create_game_from_import',{game_id:document.game.id,initial_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}))}catch(error){await removeImportSource(storagePath);throw error}
+  }
   async function saveGame(gameId,version,document,audit={}){
     const rows=unwrap(await required().rpc('save_game_document',{target_game_id:gameId,expected_version:version,next_document:document,change_action:audit.action||'Game updated',change_entity_type:audit.entityType||'game',change_entity_id:audit.entityId||null}));
     return rows[0];
+  }
+  async function reimportGame(gameId,version,document,file,metadata){
+    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return rows[0]}catch(error){await removeImportSource(storagePath);throw error}
   }
   async function deleteGame(gameId){return unwrap(await required().rpc('delete_game',{target_game_id:gameId}))}
   async function joinGame(code){return unwrap(await required().rpc('join_game_by_code',{invite_code:code}))}
   async function setMemberRole(gameId,userId,role){return unwrap(await required().rpc('set_game_member_role',{target_game_id:gameId,target_user_id:userId,next_role:role}))}
   async function roleTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.roles||[]).map(role=>({key:row.game_id+':'+role.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',role,abilities:row.document?.data?.abilities||[],factions:row.document?.data?.factions||[]})))}
+  async function abilityTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.abilities||[]).map(ability=>({key:row.game_id+':'+ability.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',...ability})))}
   async function history(gameId){return unwrap(await required().from('change_history').select('*,profiles!change_history_profile_fkey(display_name)').eq('game_id',gameId).order('created_at',{ascending:false}).limit(250))}
+  async function imports(gameId){return unwrap(await required().from('game_imports').select('*').eq('game_id',gameId).order('created_at',{ascending:false}))}
+  async function downloadImport(record){const blob=unwrap(await required().storage.from(importBucket).download(record.storage_path)),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=record.source_file_name||'game.docx';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
   async function unsubscribe(){if(channel&&client){await client.removeChannel(channel);channel=null}}
   async function subscribe(gameId,{onDocument,onPresence,onStatus}){
     await unsubscribe();
@@ -53,5 +68,5 @@
   async function track(patch){if(channel)await channel.track({userId:session.user.id,name:displayName(),onlineAt:new Date().toISOString(),...patch})}
   function user(){return session?.user||null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,signIn,passwordSignIn,createAccount,signOut,listGames,loadGame,createGame,saveGame,deleteGame,joinGame,setMemberRole,roleTemplates,history,subscribe,unsubscribe,track,user,dispose};
+  window.GMCloud={init,signIn,passwordSignIn,createAccount,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,setMemberRole,roleTemplates,abilityTemplates,history,imports,downloadImport,subscribe,unsubscribe,track,user,dispose};
 })();

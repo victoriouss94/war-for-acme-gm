@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=5.0.0">
+  <link rel="stylesheet" href="css/main.css?v=6.0.0">
 </head>
 <body>
 <header class="topbar">
@@ -47,7 +47,7 @@
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
       <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
-      <div class="form-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="createGameBtn">+ Create New Game</button></div>
+      <div class="form-actions game-create-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="importWordBtn" class="secondary">Import From Word Document</button><input id="importWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><button id="createGameBtn">+ Create New Game</button></div>
     </div>
     <article id="gameFormPanel" class="panel game-form-panel" hidden>
       <div class="section-heading"><h2 id="gameFormTitle">Create New Game</h2><button id="cancelGameFormBtn" class="secondary">Cancel</button></div>
@@ -61,6 +61,22 @@
       <label>Game Description<textarea id="gameDescriptionField" rows="3" maxlength="2000" placeholder="Optional"></textarea></label>
       <label>Notes<textarea id="gameNotesField" rows="3" maxlength="4000" placeholder="Optional GM notes"></textarea></label>
       <button id="saveGameFormBtn">Create Game</button>
+    </article>
+    <article id="documentImportPanel" class="panel document-import-panel" hidden>
+      <div class="section-heading"><div><h2 id="documentImportTitle">Document Import</h2><p id="documentImportStatus" class="muted" aria-live="polite">Choose a .docx file to begin.</p></div><button id="cancelDocumentImportBtn" class="secondary">Cancel</button></div>
+      <p id="documentImportError" class="form-error" role="alert" hidden></p>
+      <div id="documentImportSummary" class="import-summary"></div>
+      <div id="documentImportTabs" class="import-tabs" hidden>
+        <button type="button" class="secondary" data-import-tab="overview">Overview</button>
+        <button type="button" class="secondary" data-import-tab="game">Game Info</button>
+        <button type="button" class="secondary" data-import-tab="factions">Factions</button>
+        <button type="button" class="secondary" data-import-tab="roles">Roles</button>
+        <button type="button" class="secondary" data-import-tab="abilities">Abilities</button>
+        <button type="button" class="secondary" data-import-tab="rules">Rules</button>
+        <button type="button" class="secondary" data-import-tab="warnings">Warnings</button>
+      </div>
+      <div id="documentImportContent" class="import-review-content"></div>
+      <div id="documentImportActions" class="import-actions" hidden><button id="reviewDocumentImportBtn" class="secondary">Review Import</button><button id="confirmDocumentImportBtn">Import Game</button></div>
     </article>
     <article id="joinGamePanel" class="panel join-game-panel" hidden><div><h2>Join a shared game</h2><p class="muted">Ask the owner for the game invite code.</p></div><input id="joinGameCode" maxlength="10" placeholder="Invite code"><button id="joinGameBtn">Join Game</button></article>
     <div id="gamesEmptyState" class="empty-state games-empty" hidden><h2>No Games Yet</h2><p>Create your first game to start using GM Command Center.</p><button id="emptyCreateGameBtn">Create New Game</button></div>
@@ -100,7 +116,11 @@
         <label>Standard class<select id="factionClass"><option value="VILLAGER">Villager</option><option value="DEN">Den</option><option value="NEUTRAL">Neutral</option></select></label>
         <label>Short alias<input id="factionAlias" placeholder="Example: den"></label>
         <label>Team number<input id="factionTeam" type="number" min="1" value="1"></label>
-        <button id="addFactionBtn" class="full">Add Faction</button>
+        <label>Alignment / type<input id="factionAlignment" maxlength="120" placeholder="Example: Town-aligned"></label>
+        <label>Description<textarea id="factionDescription" rows="3" maxlength="3000"></textarea></label>
+        <label>Win condition<textarea id="factionWinCondition" rows="2" maxlength="2000"></textarea></label>
+        <label>Notes<textarea id="factionNotes" rows="3" maxlength="3000"></textarea></label>
+        <div class="form-actions"><button id="addFactionBtn" class="full">Add Faction</button><button id="cancelFactionEditBtn" class="secondary full" hidden>Cancel Edit</button></div>
       </aside>
       <div class="panel">
         <div class="section-heading"><div><h2>Faction Instances</h2><p class="muted">Names are customizable; the internal class remains Villager, Den, or Neutral.</p></div></div>
@@ -276,6 +296,12 @@
         <p class="muted">Owners and GMs can edit roles. Viewers remain read-only while still receiving live updates.</p>
       </article>
       <article class="panel"><h2>Live Collaboration</h2><p>Invite code: <strong id="gameShareCode">—</strong></p><button id="copyShareCodeBtn" class="secondary">Copy Invite Code</button><h3>Currently viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div><h3>Members</h3><div id="memberList" class="presence-list"></div></article>
+      <article id="sourceDocumentPanel" class="panel">
+        <h2>Source Document</h2>
+        <div id="sourceDocumentInfo"><p class="muted">This game was not created from a Word document.</p></div>
+        <div class="form-actions"><button id="reimportWordBtn" class="secondary">Re-import Document</button><input id="reimportWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></div>
+        <div id="importHistoryList" class="import-history-list"></div>
+      </article>
       <article class="panel danger-zone">
         <h2>Danger Zone</h2>
         <p class="muted">These actions affect only the current game.</p>
@@ -288,8 +314,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=5.0.0"></script>
-<script src="js/cloud.js?v=5.0.0"></script>
-<script src="js/app.js?v=5.0.0"></script>
+<script src="js/supabase-config.js?v=6.0.0"></script>
+<script src="js/cloud.js?v=6.0.0"></script>
+<script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
+<script type="module" src="js/app.js?v=6.0.0"></script>
 </body>
 </html>

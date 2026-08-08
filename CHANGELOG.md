@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.0.0 — Word Document Game Importer
+
+- Added `.docx` validation, structured Mammoth parsing, and a staged review workflow.
+- Added editable import previews for game information, factions, roles, abilities, rules, and parser warnings.
+- Added Ability Encyclopedia matching, selective section/item import, duplicate-role review, and relationship validation.
+- Added private Supabase Storage for source documents, RLS-protected import metadata, atomic import/re-import RPCs, and audit history.
+- Added safe re-import comparisons and merge choices without silently deleting existing roles or other game content.
+- Added editable faction details and preserved imported data in the normal game document architecture.
+- Added browser smoke coverage plus automated parser, DOCX, validation, matching, comparison, static, and regression tests.
+
 ## v5.0.0 — Shared GM Collaboration
 
 - Replaced browser-only persistence as the shared authority with authenticated Supabase persistence.

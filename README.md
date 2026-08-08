@@ -1,8 +1,18 @@
-# GM Command Center v5.0
+# GM Command Center v6.0
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 
-## New in v5.0
+## New in v6.0
+
+- Staged `.docx` game importer that preserves headings, lists, tables, and labeled fields
+- Editable review tabs for game info, factions, roles, abilities, rules, and warnings before any data is written
+- Existing Ability Encyclopedia matching plus explicit create/link decisions for imported abilities
+- Selective import, duplicate-role handling, unassigned-faction warnings, and relationship validation
+- Private original-document storage with a 10 MB limit and authenticated game-member access
+- Reviewable re-import comparison with New, Changed, Unchanged, and Missing states; existing content is kept by default
+- Atomic database writes, import audit records, optimistic version checks, and normal Realtime game updates
+
+## Shared collaboration
 
 - Supabase-backed shared games with email/password or magic-link authentication
 - Owner, GM, and read-only viewer membership enforced with Row Level Security
@@ -38,4 +48,4 @@ For local development, serve the directory over HTTP rather than opening `index.
 
 ## Verification
 
-Run `npm run lint`, `npm run typecheck`, `npm run build`, and `npm test`.
+Run `npm run lint`, `npm run typecheck`, `npm run build`, and `npm test`. The importer tests include a real generated DOCX fixture with headings, lists, and a role table.
