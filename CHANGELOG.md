@@ -1,5 +1,10 @@
 # Changelog
 
+## v6.2.1 — Deleted Session Cleanup
+
+- Validates persisted browser sessions against Supabase Auth during startup.
+- Immediately clears cached tokens for accounts that were deleted or revoked on the server.
+
 ## v6.2.0 — No-Email GM Accounts
 
 - Adds a one-click, no-email GM account backed by Supabase anonymous authentication.

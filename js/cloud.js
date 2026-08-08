@@ -11,6 +11,7 @@
     if(!window.supabase?.createClient||!config.url||!config.publishableKey)return {available:false,session:null};
     client=window.supabase.createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},realtime:{params:{eventsPerSecond:20}}});
     session=(await client.auth.getSession()).data.session;
+    if(session){const verified=await client.auth.getUser();if(verified.error||!verified.data.user){await client.auth.signOut({scope:'local'});session=null}}
     authListener=client.auth.onAuthStateChange((_event,next)=>{session=next;queueMicrotask(()=>onAuth?.(next))}).data.subscription;
     return {available:true,session};
   }

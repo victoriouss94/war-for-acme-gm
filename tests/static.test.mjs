@@ -64,6 +64,11 @@ test('no-email GM accounts use Supabase anonymous auth and warn before unrecover
   assert.match(app,/This no-email account cannot be recovered after signing out/);
 });
 
+test('startup clears cached sessions for users deleted from Supabase Auth',()=>{
+  assert.match(cloud,/auth\.getUser\(\)/);
+  assert.match(cloud,/auth\.signOut\(\{scope:'local'\}\)/);
+});
+
 test('destructive actions retain explicit confirmation',()=>{
   assert.match(app,/confirm\('Permanently delete/);
   assert.match(app,/confirm\('Delete rule/);
