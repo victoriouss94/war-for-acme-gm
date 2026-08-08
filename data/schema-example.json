@@ -1,7 +1,31 @@
 {
-  "factions": [
-    {"id":"village_main","name":"ACME Defense Force","class":"VILLAGER","alias":"villager","teamNumber":1},
-    {"id":"den_main","name":"Warner Syndicate","class":"DEN","alias":"den","teamNumber":1},
-    {"id":"neutral_pool","name":"Wildcards","class":"NEUTRAL","alias":"neutral","teamNumber":1}
-  ]
+  "gameIndex": {
+    "version": 4,
+    "activeGameId": "game_uuid",
+    "games": [
+      {
+        "id": "game_uuid",
+        "name": "War for Acme",
+        "status": "ACTIVE",
+        "currentDay": 3,
+        "currentPhase": "Night"
+      }
+    ]
+  },
+  "gameDetail": {
+    "version": 4,
+    "gameId": "game_uuid",
+    "factions": [
+      {"id": "faction_uuid", "gameId": "game_uuid", "name": "ACME Defense Force", "class": "VILLAGER"}
+    ],
+    "roles": [
+      {"id": "role_uuid", "gameId": "game_uuid", "name": "Guardian", "factionId": "faction_uuid", "tags": ["Protect"]}
+    ],
+    "players": [
+      {"id": "player_uuid", "gameId": "game_uuid", "name": "Player One", "roleId": "role_uuid", "alive": true}
+    ],
+    "actions": [],
+    "abilities": [],
+    "history": []
+  }
 }

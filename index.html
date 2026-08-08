@@ -10,28 +10,59 @@
 <header class="topbar">
   <div>
     <h1>GM Command Center</h1>
-    <p>Generic social-deduction engine</p>
+    <p id="currentGameLabel">No game open</p>
   </div>
   <div class="toolbar">
-    <button id="newGameBtn">New Game</button>
-    <button id="exportBtn" class="secondary">Export</button>
+    <label class="game-switcher">Current Game<select id="gameSwitcher"><option value="">No game open</option></select></label>
+    <button id="saveGameBtn" disabled>Save Game</button>
+    <span id="lastSavedLabel" class="save-indicator">Not saved</span>
+    <button id="exportBtn" class="secondary" disabled>Export</button>
     <label class="file-btn secondary">Import<input id="importFile" type="file" accept="application/json" hidden></label>
-    <button id="resetBtn" class="danger">Reset</button>
   </div>
 </header>
 
 <nav class="tabs">
-  <button class="tab active" data-view="dashboardView">Dashboard</button>
-  <button class="tab" data-view="factionsView">Factions</button>
-  <button class="tab" data-view="playersView">Players</button>
-  <button class="tab" data-view="queueView">Action Queue</button>
-  <button class="tab" data-view="statisticsView">Statistics</button>
-  <button class="tab" data-view="encyclopediaView">📚 Encyclopedia</button>
-  <button class="tab" data-view="settingsView">Settings</button>
+  <button class="tab active" data-view="gamesView">Games</button>
+  <button class="tab game-tab" data-view="dashboardView">Dashboard</button>
+  <button class="tab game-tab" data-view="factionsView">Factions</button>
+  <button class="tab game-tab" data-view="playersView">Players</button>
+  <button class="tab game-tab" data-view="queueView">Action Queue</button>
+  <button class="tab game-tab" data-view="statisticsView">Statistics</button>
+  <button class="tab game-tab" data-view="encyclopediaView">📚 Encyclopedia</button>
+  <button class="tab game-tab" data-view="historyView">History</button>
+  <button class="tab game-tab" data-view="settingsView">Game Settings</button>
 </nav>
 
 <main>
-  <section id="dashboardView" class="view active">
+  <section id="gamesView" class="view active">
+    <div class="section-heading games-heading">
+      <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
+      <button id="createGameBtn">+ Create New Game</button>
+    </div>
+    <article id="gameFormPanel" class="panel game-form-panel" hidden>
+      <div class="section-heading"><h2 id="gameFormTitle">Create New Game</h2><button id="cancelGameFormBtn" class="secondary">Cancel</button></div>
+      <p id="gameFormError" class="form-error" role="alert" hidden></p>
+      <div class="game-form-grid">
+        <label>Game Name<input id="gameNameField" maxlength="100" required></label>
+        <label>Game Theme<input id="gameThemeField" maxlength="120" placeholder="Optional"></label>
+        <label>Game Status<select id="gameStatusField"><option value="SETUP">Setup</option><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option><option value="COMPLETED">Completed</option><option value="ARCHIVED">Archived</option></select></label>
+        <label>Starting Day<select id="gameStartingDayField"><option value="0">Day 0</option><option value="1">Day 1</option></select></label>
+      </div>
+      <label>Game Description<textarea id="gameDescriptionField" rows="3" maxlength="2000" placeholder="Optional"></textarea></label>
+      <label>Notes<textarea id="gameNotesField" rows="3" maxlength="4000" placeholder="Optional GM notes"></textarea></label>
+      <button id="saveGameFormBtn">Create Game</button>
+    </article>
+    <div id="gamesEmptyState" class="empty-state games-empty" hidden><h2>No Games Yet</h2><p>Create your first game to start using GM Command Center.</p><button id="emptyCreateGameBtn">Create New Game</button></div>
+    <div id="gamesManagerContent">
+      <div class="panel games-controls"><input id="gamesSearch" placeholder="Search by game name or theme"><select id="gamesSort"><option value="UPDATED">Recently Updated</option><option value="CREATED">Date Created</option><option value="NAME">Name</option><option value="STATUS">Status</option></select></div>
+      <section class="game-group"><h2>Active Games</h2><div id="activeGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>Saved Games</h2><div id="savedGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>Archived Games</h2><div id="archivedGamesList" class="game-card-grid"></div></section>
+    </div>
+  </section>
+
+  <section id="dashboardView" class="view">
+    <div id="gameDashboardHeading" class="game-dashboard-heading"></div>
     <div id="metrics" class="metrics"></div>
     <div class="grid2">
       <article class="panel">
@@ -108,6 +139,13 @@
     </div>
   </section>
 
+  <section id="historyView" class="view">
+    <div class="panel">
+      <div class="section-heading"><div><h2>Game History</h2><p class="muted">Permanent, game-specific audit events in chronological order.</p></div></div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </section>
+
   <section id="encyclopediaView" class="view">
     <div class="section-heading encyclopedia-main-heading">
       <div><h2>Game Encyclopedia</h2><p class="muted">Manage both roles and abilities in one place.</p></div>
@@ -175,6 +213,11 @@
       <article class="panel">
         <h2>Game Identity</h2>
         <label>Game name<input id="gameName"></label>
+        <label>Theme<input id="gameTheme"></label>
+        <label>Description<textarea id="gameDescription" rows="3"></textarea></label>
+        <label>Status<select id="gameStatus"><option value="SETUP">Setup</option><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option><option value="COMPLETED">Completed</option><option value="ARCHIVED">Archived</option></select></label>
+        <div class="grid2 compact-grid"><label>Current day<input id="currentDay" type="number" min="0"></label><label>Current phase<select id="currentPhase"><option>Day</option><option>Night</option></select></label></div>
+        <label>Game notes<textarea id="gameNotes" rows="4"></textarea></label>
         <label>Villager label<input id="villagerLabel"></label>
         <label>Den label<input id="denLabel"></label>
         <label>Neutral label<input id="neutralLabel"></label>
@@ -186,6 +229,13 @@
         <p class="muted">Enabled by default. Most games use one Villager faction, one Den faction, and one Neutral pool, but additional Den factions can be created at any time.</p>
         <label class="check"><input id="roleEditingAuthorized" type="checkbox"> Authorize GM role editing on this device</label>
         <p class="muted">Disable this on shared read-only displays. This local setting controls whether roles can be added, edited, or duplicated.</p>
+      </article>
+      <article class="panel danger-zone">
+        <h2>Danger Zone</h2>
+        <p class="muted">These actions affect only the current game.</p>
+        <button id="resetCurrentGameBtn" class="danger">Reset Game Progress</button>
+        <button id="archiveCurrentGameBtn" class="secondary">Archive Game</button>
+        <button id="deleteCurrentGameBtn" class="danger">Delete Game</button>
       </article>
     </div>
   </section>

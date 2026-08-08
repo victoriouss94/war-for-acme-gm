@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.0 — Saved Games and Game Management
+
+- Added permanent game IDs and a Games management page.
+- Added Active, Saved, and Archived game collections with search and sorting.
+- Added isolated, lazily loaded per-game storage records under a lightweight game index.
+- Added safe migration from the legacy v3 single-game save without deleting the old record.
+- Added autosave, manual save, last-saved status, game switching, archive/restore, and guarded deletion.
+- Added fresh-setup duplication that copies configuration without players, actions, or gameplay history.
+- Added per-game chronological history and game-specific settings, phase, day, theme, description, and notes.
+- Added `gameId` ownership to every game-specific record during creation, import, and migration.
+
 ## v3.2 — Editable Ability Library
 
 - Added editing for built-in and custom encyclopedia abilities.
