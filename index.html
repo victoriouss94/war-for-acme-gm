@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=6.2.1">
+  <link rel="stylesheet" href="css/main.css?v=7.0.0">
 </head>
-<body>
+<body class="auth-pending">
 <header class="topbar">
   <div>
     <h1>GM Command Center</h1>
@@ -17,8 +17,16 @@
     <button id="saveGameBtn" disabled>Save Game</button>
     <span id="lastSavedLabel" class="save-indicator">Not saved</span>
     <span id="connectionStatus" class="connection-status offline" title="Shared database connection">● Offline</span>
-    <span id="currentUserLabel" class="muted"></span>
-    <button id="signOutBtn" class="secondary" hidden>Sign out</button>
+    <div id="accountMenu" class="account-menu" hidden>
+      <button id="accountMenuButton" class="secondary account-menu-button" type="button" aria-haspopup="menu" aria-expanded="false"><span id="currentUserLabel">Account</span> <span aria-hidden="true">▾</span></button>
+      <div id="accountMenuDropdown" class="account-menu-dropdown" role="menu" hidden>
+        <button id="showAccountBtn" class="account-menu-item" type="button" role="menuitem">Account</button>
+        <button id="showMyGamesBtn" class="account-menu-item" type="button" role="menuitem">My Games</button>
+        <button id="showSharedGamesBtn" class="account-menu-item" type="button" role="menuitem">Shared Games</button>
+        <button id="showChangePasswordBtn" class="account-menu-item" type="button" role="menuitem">Change Password</button>
+        <button id="signOutBtn" class="account-menu-item danger-text" type="button" role="menuitem">Log Out</button>
+      </div>
+    </div>
     <button id="exportBtn" class="secondary" disabled>Export</button>
     <label class="file-btn secondary">Import<input id="importFile" type="file" accept="application/json" hidden></label>
   </div>
@@ -39,10 +47,69 @@
 </nav>
 
 <main>
-  <section id="authPanel" class="panel auth-panel">
-    <div><h2>Connect to the shared command center</h2><p class="muted">Create a quick device account without an email, or use email and a password for a recoverable account.</p></div>
-    <div class="auth-fields"><label>GM display name<input id="authDisplayName" maxlength="80" placeholder="Arrow"></label><button id="createDeviceAccountBtn">Continue without email</button><span class="auth-divider" aria-hidden="true">or</span><label>Email (optional)<input id="authEmail" type="email" placeholder="gm@example.com"></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password"></label><button id="passwordSignInBtn">Sign in</button><button id="createAccountBtn" class="secondary">Create email account</button><button id="sendMagicLinkBtn" class="secondary">Email sign-in link</button><p class="muted auth-device-help">No-email accounts stay on this browser. If you sign out or clear site data, that account cannot be recovered.</p></div>
-    <p id="authMessage" class="form-notice" aria-live="polite"></p>
+  <section id="authPanel" class="panel auth-panel account-gateway">
+    <div class="auth-brand"><p class="eyebrow">GM COMMAND CENTER</p><h2>Welcome back, GM</h2><p class="muted">Log in to your permanent account or create one with only a username and password.</p></div>
+    <div class="auth-card">
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button id="showLoginTabBtn" class="auth-tab active" type="button" role="tab" aria-selected="true" aria-controls="loginForm">Log In</button>
+        <button id="showCreateTabBtn" class="auth-tab" type="button" role="tab" aria-selected="false" aria-controls="createAccountForm">Create Account</button>
+      </div>
+      <form id="loginForm" class="auth-form" novalidate>
+        <h2>Log In</h2>
+        <label>Username<input id="loginUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+        <label>Password<input id="loginPassword" type="password" minlength="8" maxlength="256" autocomplete="current-password" required></label>
+        <label class="check show-password"><input id="showLoginPassword" type="checkbox"> Show Password</label>
+        <button id="loginBtn" type="submit">Log In</button>
+      </form>
+      <form id="createAccountForm" class="auth-form" novalidate hidden>
+        <h2>Create Account</h2>
+        <label>Username<input id="createUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="usernameHelp" required></label>
+        <p id="usernameHelp" class="field-help">3–30 characters. Use letters, numbers, underscores, or hyphens; begin with a letter or number.</p>
+        <label>Password<input id="createPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" aria-describedby="passwordHelp" required></label>
+        <p id="passwordHelp" class="field-help">At least 8 characters. Long passphrases and password-manager passwords are welcome.</p>
+        <label>Confirm Password<input id="confirmPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+        <label class="check show-password"><input id="showCreatePassword" type="checkbox"> Show Passwords</label>
+        <button id="createAccountBtn" type="submit">Create Account</button>
+      </form>
+      <p id="authMessage" class="form-notice" role="status" aria-live="polite"></p>
+      <p class="muted no-recovery-notice">No email is collected. If you forget your password, automatic email recovery is unavailable.</p>
+    </div>
+  </section>
+  <section id="legacyUpgradePanel" class="panel legacy-upgrade-panel" hidden>
+    <div><p class="eyebrow">ACCOUNT UPGRADE REQUIRED</p><h2>Keep your existing games</h2><p>Your earlier device account is still connected to its games. Choose a permanent username and password now so you can log back in from any session.</p></div>
+    <form id="legacyUpgradeForm" class="legacy-upgrade-form" novalidate>
+      <label>Username<input id="legacyUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label>Password<input id="legacyPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+      <label>Confirm Password<input id="legacyConfirmPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+      <label class="check show-password"><input id="showLegacyPasswords" type="checkbox"> Show Passwords</label>
+      <button id="upgradeLegacyAccountBtn" type="submit">Upgrade Account</button>
+      <p id="legacyUpgradeMessage" class="form-notice" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+  <section id="accountView" class="view">
+    <div class="section-heading account-heading"><div><p class="eyebrow">ACCOUNT</p><h2 id="accountHeading">GM Account</h2><p class="muted">Your permanent command-center identity.</p></div><button id="accountBackToGamesBtn" class="secondary" type="button">Back to Games</button></div>
+    <div class="grid2 account-grid">
+      <article class="panel account-summary">
+        <dl>
+          <div><dt>Username</dt><dd id="accountUsername">—</dd></div>
+          <div><dt>Member Since</dt><dd id="accountMemberSince">—</dd></div>
+          <div><dt>Games Owned</dt><dd id="accountGamesOwned">0</dd></div>
+          <div><dt>Shared Games</dt><dd id="accountSharedGames">0</dd></div>
+        </dl>
+        <div class="form-actions"><button id="accountChangePasswordBtn" type="button">Change Password</button><button id="accountLogOutBtn" class="secondary" type="button">Log Out</button></div>
+      </article>
+      <article id="changePasswordPanel" class="panel" hidden>
+        <h2>Change Password</h2>
+        <form id="changePasswordForm" novalidate>
+          <label>Current Password<input id="currentPassword" type="password" minlength="8" maxlength="256" autocomplete="current-password" required></label>
+          <label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+          <label>Confirm New Password<input id="confirmNewPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+          <label class="check show-password"><input id="showChangePasswords" type="checkbox"> Show Passwords</label>
+          <div class="form-actions"><button id="changePasswordSubmitBtn" type="submit">Change Password</button><button id="cancelChangePasswordBtn" class="secondary" type="button">Cancel</button></div>
+        </form>
+        <p id="changePasswordMessage" class="form-notice" role="status" aria-live="polite"></p>
+      </article>
+    </div>
   </section>
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
@@ -340,9 +407,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=6.2.1"></script>
-<script src="js/cloud.js?v=6.2.1"></script>
+<script src="js/supabase-config.js?v=7.0.0"></script>
+<script src="js/cloud.js?v=7.0.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=6.2.1"></script>
+<script type="module" src="js/app.js?v=7.0.0"></script>
 </body>
 </html>

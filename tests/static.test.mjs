@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-const [html,app,cloud,sql,importSql,inviteSql]=await Promise.all([
-  readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/migrations/202608080001_shared_game_documents.sql','utf8'),readFile('supabase/migrations/20260808173057_word_document_imports.sql','utf8'),readFile('supabase/migrations/20260808175237_complete_gm_invitation_system.sql','utf8')
+const [html,app,cloud,sql,importSql,inviteSql,accountSql]=await Promise.all([
+  readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/migrations/202608080001_shared_game_documents.sql','utf8'),readFile('supabase/migrations/20260808173057_word_document_imports.sql','utf8'),readFile('supabase/migrations/20260808175237_complete_gm_invitation_system.sql','utf8'),readFile('supabase/migrations/20260808193900_username_password_accounts.sql','utf8')
 ]);
 
 test('roles and rules have separate game views and complete editors',()=>{
@@ -52,16 +52,45 @@ test('GM Access and Join Game expose the complete reviewed collaboration flow',(
   for(const text of ['Invalid Invite Code','Invite Expired','Invite Already Used','Already Joined','Access Denied','Shared With Me'])assert.match(app+html,new RegExp(text));
 });
 
-test('authentication explains duplicate accounts, invalid credentials, and provider email limits',()=>{
-  for(const pattern of [/accountCreationMessage/,/result\.user\.identities\.length===0/,/This email already has an account/,/over_email_send_rate_limit/,/temporarily reached its signup-email limit/,/That email or password is incorrect/])assert.match(app,pattern);
+test('username-only registration and login have complete validation and safe errors',()=>{
+  for(const id of ['loginForm','loginUsername','loginPassword','loginBtn','createAccountForm','createUsername','createPassword','confirmPassword','createAccountBtn','showLoginPassword','showCreatePassword'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const pattern of [/usernamePattern/,/Username already taken\./,/Invalid username or password\./,/password!==confirmation/,/registerLoginFailure/,/Too many account attempts/])assert.match(app,pattern);
+  assert.doesNotMatch(html,/type="email"/);
+  assert.doesNotMatch(html,/Forgot Password|Email Verification|Email OTP|Email sign-in link/i);
 });
 
-test('no-email GM accounts use Supabase anonymous auth and warn before unrecoverable sign-out',()=>{
-  assert.match(html,/id="createDeviceAccountBtn"/);
-  assert.match(html,/No-email accounts stay on this browser/);
-  assert.match(cloud,/signInAnonymously\(\{options:\{data:\{display_name:name\}\}\}\)/);
-  assert.match(app,/GMCloud\.createDeviceAccount\(name\)/);
-  assert.match(app,/This no-email account cannot be recovered after signing out/);
+test('Supabase Auth supplies permanent username sessions without exposing email UI',()=>{
+  assert.match(cloud,/auth\.signUp\(\{email:accountEmail\(normalized\),password/);
+  assert.match(cloud,/auth\.signInWithPassword\(\{email:accountEmail\(normalized\),password\}\)/);
+  assert.match(cloud,/indexedDB\.open\(databaseName,1\)/);
+  assert.match(cloud,/const storage=indexedDbStorage\(\)/);
+  assert.match(cloud,/authStorageKey='gm-command-center-auth-v7'/);
+  assert.match(cloud,/migrateLegacyLocalStorageSession\(storage\)/);
+  assert.doesNotMatch(cloud,/signInAnonymously/);
+  assert.doesNotMatch(cloud,/signInWithOtp/);
+});
+
+test('account schema enforces case-insensitive usernames and keeps password data in Supabase Auth',()=>{
+  for(const pattern of [/username_normalized text/,/profiles_username_normalized_key/,/username_normalized=lower\(username\)/,/\^\[A-Za-z0-9\]\[A-Za-z0-9_-\]\{2,29\}\$/,/new\.is_anonymous/,/expected_email/,/public\.is_permanent_account\(\)/,/require_permanent_game_member/])assert.match(accountSql,pattern);
+  assert.doesNotMatch(accountSql,/\bplain_password\b|\boriginal_password\b|create table[^;]*password_hash/is);
+  assert.match(accountSql,/without touching\s+-- games, ownership, memberships, invitations, documents, or audit history/);
+});
+
+test('account menu, account summary, password change, and logout isolation are wired',()=>{
+  for(const id of ['accountMenu','accountMenuButton','showAccountBtn','showMyGamesBtn','showSharedGamesBtn','showChangePasswordBtn','signOutBtn','accountView','accountUsername','accountMemberSince','accountGamesOwned','accountSharedGames','changePasswordForm','currentPassword','newPassword','confirmNewPassword'])assert.match(html,new RegExp(`id="${id}"`));
+  assert.match(cloud,/current_password:currentPassword/);
+  assert.match(cloud,/signOut\(\{scope:'others'\}\)/);
+  assert.match(app,/function clearAuthenticatedState\(\)/);
+  assert.match(app,/localStorage\.removeItem\(gameDataKey\(gameId\)\)/);
+  assert.match(app,/previousUserId&&previousUserId!==session\.user\.id/);
+});
+
+test('legacy device accounts keep memberships and have an in-place permanent upgrade path',()=>{
+  for(const id of ['legacyUpgradePanel','legacyUpgradeForm','legacyUsername','legacyPassword','legacyConfirmPassword','upgradeLegacyAccountBtn'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const pattern of [/legacy_account boolean/,/is_legacy_account\(\)/,/complete_legacy_account/,/legacy_account=false/,/New anonymous signups are rejected/])assert.match(accountSql,pattern);
+  assert.match(cloud,/auth\.updateUser\(\{email:accountEmail\(normalized\),password/);
+  assert.match(cloud,/rpc\('complete_legacy_account'/);
+  assert.match(app,/submitLegacyUpgrade/);
 });
 
 test('startup clears cached sessions for users deleted from Supabase Auth',()=>{

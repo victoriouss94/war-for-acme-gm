@@ -1,8 +1,18 @@
-# GM Command Center v6.1
+# GM Command Center v7.0
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 
-## New in v6.1
+## New in v7.0
+
+- Permanent username + password accounts with no email field, confirmation, OTP, or email recovery flow
+- Case-insensitive unique usernames and clear 3–30 character validation
+- Supabase Auth password hashing and salted credential storage; no plaintext or reversible password fields
+- Persistent sessions outside `localStorage`, verified at startup and fully cleared on logout
+- Account menu and Account page with membership date, owned/shared game counts, password change, and logout
+- Existing device-account upgrade that preserves the same user ID, game ownership, memberships, invitations, and audit history
+- Database-authorized My Games and Shared With Me results, authenticated audit attribution, and private game-scoped Realtime
+
+## Invitations from v6.1
 
 - Owner-managed GM and Viewer invitation codes generated cryptographically in PostgreSQL
 - Persisted invitation expiration, one-use or unlimited use limits, revocation, and audit history
@@ -24,7 +34,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 ## Shared collaboration
 
-- Supabase-backed shared games with no-email device accounts, email/password, or magic-link authentication
+- Supabase-backed shared games with permanent username/password accounts and no required user email
 - Owner, GM, and read-only viewer membership enforced with Row Level Security
 - Live game-scoped updates and presence over Supabase Realtime
 - Optimistic version checks that reject stale edits instead of overwriting them
@@ -52,7 +62,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 The database migrations are in `supabase/migrations` and have been applied to the configured Supabase project. The browser uses the publishable key in `js/supabase-config.js`; no service-role secret is shipped to the client.
 
-Deploy the folder to GitHub Pages, then add the exact production URL to **Supabase → Authentication → URL Configuration → Redirect URLs** so magic-link sign-in returns to the site. Password and no-email device accounts do not depend on a redirect. No-email accounts are anonymous Supabase users: they keep the same RLS-protected access while the browser session exists, but cannot be recovered after sign-out or cleared site data.
+Deploy the folder to GitHub Pages and keep **Confirm email** and **Allow anonymous sign-ins** disabled in Supabase Auth. Username accounts use an internal, non-deliverable identity solely to let Supabase Auth provide password hashing and sessions; users never enter or receive email. Legacy anonymous accounts that still have a valid browser session are prompted to upgrade in place so their existing games remain attached to the same user ID.
 
 For local development, serve the directory over HTTP rather than opening `index.html` as a `file:` URL.
 

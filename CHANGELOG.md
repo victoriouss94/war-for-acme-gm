@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.0.0 — Permanent Username Accounts
+
+- Replaces email and temporary-device sign-in with permanent username/password registration and login.
+- Enforces case-insensitive unique usernames, 3–30 character validation, and an 8-character password minimum.
+- Keeps password hashing, salts, refresh-token rotation, and login throttling inside Supabase Auth; no application table stores password material.
+- Adds persistent session restoration through IndexedDB instead of `localStorage`, complete logout state isolation, and deleted-session validation.
+- Adds an account menu, account summary, password change with current-password verification, and revocation of other sessions.
+- Preserves Owner/GM/Viewer memberships, database-backed saved games, invitation redemption, authenticated audit identity, and private Realtime channels.
+- Grandfathers existing anonymous device accounts only for their existing memberships and provides an in-place username/password upgrade without copying or reassigning games.
+- Disables new anonymous sign-ins and keeps email confirmation off because users never provide an email address.
+
 ## v6.2.1 — Deleted Session Cleanup
 
 - Validates persisted browser sessions against Supabase Auth during startup.
