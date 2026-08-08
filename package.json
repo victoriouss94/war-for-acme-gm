@@ -1,0 +1,12 @@
+{
+  "name": "gm-command-center",
+  "private": true,
+  "version": "5.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",
+    "typecheck": "npm run lint",
+    "build": "node scripts/verify-build.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

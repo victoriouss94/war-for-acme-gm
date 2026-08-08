@@ -1,22 +1,22 @@
-WAR FOR ACME GM — VERSION 2.9
+GM COMMAND CENTER — VERSION 5.0.0
 
-This replaces v2.8.2.
+This replaces v4.0.1.
 
-1. Extract the ZIP.
-2. Copy every file and folder into the GitHub repository.
-3. Replace existing files.
-4. Commit:
-   Publish War for ACME GM v2.9 Passive Reader
-5. Push origin.
-6. Wait 1–2 minutes.
-7. Open the site and press Ctrl + F5.
+1. Copy every file and folder into the GitHub repository.
+2. Replace existing files.
+3. Commit: Publish GM Command Center v5.0 shared collaboration
+4. Push origin.
+5. Wait 1–2 minutes and refresh the site.
+
+SUPABASE:
+1. The migrations in supabase/migrations are already applied to the configured project.
+2. Add the deployed site URL to Supabase Authentication Redirect URLs.
+3. Create the first GM account from the sign-in panel.
+4. Create a game, then share its invite code with another authenticated GM.
 
 TEST:
-1. Assign Sarge.
-2. Open Sarge's player card and confirm the recognized passive chips show:
-   - Cannot be converted
-   - Cannot be killed by the Den's standard faction kill
-3. Target Sarge with a Warner Den Instant Kill.
-4. Auto-resolve: Sarge survives and counterattacks.
-5. Target Sarge with conversion.
-6. Auto-resolve: Sarge remains unconverted and counterattacks.
+1. Open the same game in two signed-in browser sessions.
+2. Edit a role, rule, and current phase in one session.
+3. Confirm the second session updates without refreshing.
+4. Attempt a stale save and confirm it is rejected with a conflict message.
+5. Open another game and confirm it receives no updates from the first game.

@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.0.0 — Shared GM Collaboration
+
+- Replaced browser-only persistence as the shared authority with authenticated Supabase persistence.
+- Added game membership, invite codes, Owner/GM/Viewer permissions, RLS, server validation, and audit history.
+- Added game-scoped Realtime subscriptions, presence, connection status, reconnect refresh, and debounced saves.
+- Added atomic optimistic concurrency so stale writes fail instead of overwriting newer changes.
+- Split Roles into a dedicated game section and expanded the role schema and editor while preserving existing fields.
+- Added role search, faction/status filters, sorting, duplication, archive/restore, and safe deletion.
+- Added a per-game Rules section with custom categories, visibility, ordering, duplication, enable/disable, and deletion.
+- Added password and magic-link sign-in, game invite joining, cache-busted assets, and static/database tests.
+
 ## v4.0.1 — Game Creation Cache Fix
 
 - Versioned the application JavaScript and stylesheet URLs so deployments cannot combine the v4 Games interface with stale v3 behavior.

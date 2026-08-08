@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=4.0.1">
+  <link rel="stylesheet" href="css/main.css?v=5.0.0">
 </head>
 <body>
 <header class="topbar">
@@ -16,6 +16,9 @@
     <label class="game-switcher">Current Game<select id="gameSwitcher"><option value="">No game open</option></select></label>
     <button id="saveGameBtn" disabled>Save Game</button>
     <span id="lastSavedLabel" class="save-indicator">Not saved</span>
+    <span id="connectionStatus" class="connection-status offline" title="Shared database connection">● Offline</span>
+    <span id="currentUserLabel" class="muted"></span>
+    <button id="signOutBtn" class="secondary" hidden>Sign out</button>
     <button id="exportBtn" class="secondary" disabled>Export</button>
     <label class="file-btn secondary">Import<input id="importFile" type="file" accept="application/json" hidden></label>
   </div>
@@ -26,18 +29,25 @@
   <button class="tab game-tab" data-view="dashboardView">Dashboard</button>
   <button class="tab game-tab" data-view="factionsView">Factions</button>
   <button class="tab game-tab" data-view="playersView">Players</button>
+  <button class="tab game-tab" data-view="rolesView">Roles</button>
   <button class="tab game-tab" data-view="queueView">Action Queue</button>
   <button class="tab game-tab" data-view="statisticsView">Statistics</button>
-  <button class="tab game-tab" data-view="encyclopediaView">📚 Encyclopedia</button>
+  <button class="tab game-tab" data-view="rulesView">Rules</button>
+  <button class="tab game-tab" data-view="encyclopediaView">📚 Abilities</button>
   <button class="tab game-tab" data-view="historyView">History</button>
   <button class="tab game-tab" data-view="settingsView">Game Settings</button>
 </nav>
 
 <main>
+  <section id="authPanel" class="panel auth-panel">
+    <div><h2>Connect to the shared command center</h2><p class="muted">Sign in by email so saved games and live GM edits are authorized and permanently stored.</p></div>
+    <div class="auth-fields"><label>GM display name<input id="authDisplayName" maxlength="80" placeholder="Arrow"></label><label>Email<input id="authEmail" type="email" placeholder="gm@example.com"></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password"></label><button id="passwordSignInBtn">Sign in</button><button id="createAccountBtn" class="secondary">Create account</button><button id="sendMagicLinkBtn" class="secondary">Email sign-in link</button></div>
+    <p id="authMessage" class="form-notice" aria-live="polite"></p>
+  </section>
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
       <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
-      <button id="createGameBtn">+ Create New Game</button>
+      <div class="form-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="createGameBtn">+ Create New Game</button></div>
     </div>
     <article id="gameFormPanel" class="panel game-form-panel" hidden>
       <div class="section-heading"><h2 id="gameFormTitle">Create New Game</h2><button id="cancelGameFormBtn" class="secondary">Cancel</button></div>
@@ -52,6 +62,7 @@
       <label>Notes<textarea id="gameNotesField" rows="3" maxlength="4000" placeholder="Optional GM notes"></textarea></label>
       <button id="saveGameFormBtn">Create Game</button>
     </article>
+    <article id="joinGamePanel" class="panel join-game-panel" hidden><div><h2>Join a shared game</h2><p class="muted">Ask the owner for the game invite code.</p></div><input id="joinGameCode" maxlength="10" placeholder="Invite code"><button id="joinGameBtn">Join Game</button></article>
     <div id="gamesEmptyState" class="empty-state games-empty" hidden><h2>No Games Yet</h2><p>Create your first game to start using GM Command Center.</p><button id="emptyCreateGameBtn">Create New Game</button></div>
     <div id="gamesManagerContent">
       <div class="panel games-controls"><input id="gamesSearch" placeholder="Search by game name or theme"><select id="gamesSort"><option value="UPDATED">Recently Updated</option><option value="CREATED">Date Created</option><option value="NAME">Name</option><option value="STATUS">Status</option></select></div>
@@ -146,9 +157,11 @@
     </div>
   </section>
 
-  <section id="encyclopediaView" class="view">
+  <section id="rolesView" class="view">
     <div class="section-heading encyclopedia-main-heading">
-      <div><h2>Game Encyclopedia</h2><p class="muted">Manage both roles and abilities in one place.</p></div>
+      <div><h2>Roles</h2><p class="muted">Editable, game-specific role copies. Changes here never alter another game's roles.</p></div>
+      <div class="template-picker"><button id="browseRoleTemplatesBtn" class="secondary">Browse Encyclopedia</button><select id="roleTemplateSelect" hidden></select><button id="addRoleTemplateBtn" hidden>Add Selected Role</button></div>
+      <div id="roleLiveNotice" class="muted"></div>
     </div>
 
     <div class="layout encyclopedia-layout role-encyclopedia-section">
@@ -159,12 +172,23 @@
         <p id="roleFormError" class="form-error" role="alert" hidden></p>
         <label>Role name<input id="roleName" placeholder="Example: Guardian" maxlength="80" required></label>
         <label>Faction<select id="roleFaction"></select></label>
+        <label>Alignment<input id="roleAlignment" maxlength="120" placeholder="Example: Village-aligned"></label>
+        <label>Description<textarea id="roleDescription" rows="3" maxlength="4000"></textarea></label>
+        <div class="grid2 compact-grid"><label>Primary active ability<select id="roleActiveAbility"></select></label><label>Primary passive ability<select id="rolePassiveAbility"></select></label></div>
         <label>Abilities
           <input id="roleAbilitySearch" placeholder="Search the Ability Encyclopedia" autocomplete="off">
         </label>
         <div id="roleAbilityPicker" class="role-ability-picker" aria-label="Select abilities from the Encyclopedia"></div>
         <div id="selectedRoleAbilities" class="selected-role-abilities" aria-live="polite"></div>
+        <div class="grid2 compact-grid"><label>Ability uses<input id="roleAbilityUses" type="number" min="0" step="1"></label><label>Cooldowns<input id="roleCooldowns" maxlength="300"></label></div>
+        <label>Immunities<input id="roleImmunities" maxlength="500" placeholder="Comma separated"></label>
+        <label>Restrictions<input id="roleRestrictions" maxlength="1000" placeholder="Comma separated"></label>
+        <label>Win condition<textarea id="roleWinCondition" rows="2" maxlength="2000"></textarea></label>
         <label>Notes<textarea id="roleNotes" rows="4" maxlength="2000"></textarea></label>
+        <label>GM-only notes<textarea id="roleGmNotes" rows="3" maxlength="4000"></textarea></label>
+        <label>Tags<input id="roleLabels" maxlength="500" placeholder="investigator, unique"></label>
+        <label class="check"><input id="roleEnabled" type="checkbox" checked> Enabled</label>
+        <p id="roleSaveMeta" class="muted"></p>
         <div class="form-actions">
           <button id="addRoleBtn" class="full">Add Role</button>
           <button id="cancelRoleEditBtn" class="secondary full" hidden>Cancel Edit</button>
@@ -172,13 +196,18 @@
       </aside>
       <div class="panel">
         <div class="section-heading encyclopedia-heading">
-          <div><h2>Role Encyclopedia</h2><p class="muted">Every role in the game. Roles are permanent records; authorized GMs can edit or duplicate them.</p></div>
+          <div><h2>Game Roles</h2><p class="muted">Create, edit, copy, archive, and safely delete roles for this game.</p></div>
           <span id="roleCount" class="count-pill"></span>
         </div>
-        <div class="filters encyclopedia-filters"><input id="roleSearch" placeholder="Search roles, notes, or abilities"><select id="roleFactionFilter"></select></div>
+        <div class="filters encyclopedia-filters"><input id="roleSearch" placeholder="Search roles, notes, or abilities"><select id="roleFactionFilter"></select><select id="roleStatusFilter"><option value="ALL">All statuses</option><option value="ENABLED">Enabled</option><option value="DISABLED">Disabled</option><option value="ARCHIVED">Archived</option></select><select id="roleSort"><option value="NAME">Name</option><option value="UPDATED">Recently updated</option><option value="FACTION">Faction</option></select></div>
         <div id="roleList" class="encyclopedia-list"></div>
       </div>
     </div>
+
+  </section>
+
+  <section id="encyclopediaView" class="view">
+    <div class="section-heading encyclopedia-main-heading"><div><h2>Ability Encyclopedia</h2><p class="muted">Manage the abilities that game roles can select.</p></div></div>
 
     <div class="layout encyclopedia-layout">
       <aside class="panel">
@@ -208,6 +237,22 @@
     </div>
   </section>
 
+  <section id="rulesView" class="view">
+    <div class="layout">
+      <aside class="panel">
+        <h2 id="ruleFormTitle">Add Rule</h2><p id="ruleFormError" class="form-error" role="alert" hidden></p>
+        <label>Rule title<input id="ruleTitle" maxlength="120"></label>
+        <label>Description<textarea id="ruleDescription" rows="5" maxlength="5000"></textarea></label>
+        <label>Category<input id="ruleCategory" list="ruleCategories" maxlength="80" value="General"><datalist id="ruleCategories"><option>General</option><option>Voting</option><option>Hanging</option><option>Abilities</option><option>Factions</option><option>Communication</option><option>Death</option><option>Conversion</option><option>Game Master</option><option>Custom</option></datalist></label>
+        <label>Visibility<select id="ruleVisibility"><option value="public">Public</option><option value="gm">GM-only</option></select></label>
+        <label>Notes<textarea id="ruleNotes" rows="3" maxlength="3000"></textarea></label>
+        <label class="check"><input id="ruleEnabled" type="checkbox" checked> Enabled</label>
+        <div class="form-actions"><button id="saveRuleBtn" class="full">Add Rule</button><button id="cancelRuleEditBtn" class="secondary full" hidden>Cancel Edit</button></div>
+      </aside>
+      <div class="panel"><div class="section-heading"><div><h2>Game Rules</h2><p class="muted">Rules are ordered and isolated to this game. Use Move Up/Down to reorder.</p></div><span id="ruleCount" class="count-pill"></span></div><div class="filters"><input id="ruleSearch" placeholder="Search rules"><select id="ruleStatusFilter"><option value="ALL">All</option><option value="ENABLED">Enabled</option><option value="DISABLED">Disabled</option></select></div><div id="ruleList" class="encyclopedia-list"></div></div>
+    </div>
+  </section>
+
   <section id="settingsView" class="view">
     <div class="grid2">
       <article class="panel">
@@ -224,12 +269,13 @@
         <button id="saveSettingsBtn">Save Settings</button>
       </article>
       <article class="panel">
-        <h2>Rules</h2>
+        <h2>Game Configuration</h2>
         <label class="check"><input id="allowMultiDen" type="checkbox"> Allow more than one Den faction</label>
         <p class="muted">Enabled by default. Most games use one Villager faction, one Den faction, and one Neutral pool, but additional Den factions can be created at any time.</p>
-        <label class="check"><input id="roleEditingAuthorized" type="checkbox"> Authorize GM role editing on this device</label>
-        <p class="muted">Disable this on shared read-only displays. This local setting controls whether roles can be added, edited, or duplicated.</p>
+        <label class="check"><input id="roleEditingAuthorized" type="checkbox" disabled> Role editing permission</label>
+        <p class="muted">Owners and GMs can edit roles. Viewers remain read-only while still receiving live updates.</p>
       </article>
+      <article class="panel"><h2>Live Collaboration</h2><p>Invite code: <strong id="gameShareCode">—</strong></p><button id="copyShareCodeBtn" class="secondary">Copy Invite Code</button><h3>Currently viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div><h3>Members</h3><div id="memberList" class="presence-list"></div></article>
       <article class="panel danger-zone">
         <h2>Danger Zone</h2>
         <p class="muted">These actions affect only the current game.</p>
@@ -241,6 +287,9 @@
   </section>
 </main>
 
-<script src="js/app.js?v=4.0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<script src="js/supabase-config.js?v=5.0.0"></script>
+<script src="js/cloud.js?v=5.0.0"></script>
+<script src="js/app.js?v=5.0.0"></script>
 </body>
 </html>
