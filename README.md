@@ -1,8 +1,18 @@
-# GM Command Center v6.0
+# GM Command Center v6.1
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 
-## New in v6.0
+## New in v6.1
+
+- Owner-managed GM and Viewer invitation codes generated cryptographically in PostgreSQL
+- Persisted invitation expiration, one-use or unlimited use limits, revocation, and audit history
+- Atomic redemption with row locking so a one-use invite cannot be consumed twice
+- Complete GM Access settings with member permission changes and safe member removal
+- My Games and Shared With Me collections backed by permanent membership records
+- Realtime membership/invitation refresh with backend authorization enforced on every protected write
+- Friendly join errors without exposing raw database details
+
+## Word importer from v6.0
 
 - Staged `.docx` game importer that preserves headings, lists, tables, and labeled fields
 - Editable review tabs for game info, factions, roles, abilities, rules, and warnings before any data is written

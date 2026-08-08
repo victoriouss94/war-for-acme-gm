@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.1.0 — Complete GM Invitations
+
+- Replaced the permanent per-game share-code shortcut with persisted, owner-created invitations.
+- Added secure server-side invite generation, permission selection, expiration, usage limits, revocation, and active-invite management.
+- Added atomic redemption with a locked invite row, permanent shared-game membership, and no game duplication.
+- Added owner, GM, and Viewer member management with permission changes, safe removal, audit records, and realtime refresh.
+- Split the Games screen into My Games, Shared With Me, and Archived Games.
+- Added friendly invitation errors and server diagnostics that never log raw invite codes.
+- Backfilled owner memberships and added database constraints, indexes, RLS, least-privilege grants, and regression coverage.
+
 ## v6.0.0 — Word Document Game Importer
 
 - Added `.docx` validation, structured Mammoth parsing, and a staged review workflow.

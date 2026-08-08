@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=6.0.0">
+  <link rel="stylesheet" href="css/main.css?v=6.1.0">
 </head>
 <body>
 <header class="topbar">
@@ -47,7 +47,7 @@
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
       <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
-      <div class="form-actions game-create-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="importWordBtn" class="secondary">Import From Word Document</button><input id="importWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><button id="createGameBtn">+ Create New Game</button></div>
+      <div class="form-actions game-create-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="showJoinGameBtn" class="secondary">Join Game</button><button id="importWordBtn" class="secondary">Import From Word Document</button><input id="importWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><button id="createGameBtn">+ Create New Game</button></div>
     </div>
     <article id="gameFormPanel" class="panel game-form-panel" hidden>
       <div class="section-heading"><h2 id="gameFormTitle">Create New Game</h2><button id="cancelGameFormBtn" class="secondary">Cancel</button></div>
@@ -78,12 +78,17 @@
       <div id="documentImportContent" class="import-review-content"></div>
       <div id="documentImportActions" class="import-actions" hidden><button id="reviewDocumentImportBtn" class="secondary">Review Import</button><button id="confirmDocumentImportBtn">Import Game</button></div>
     </article>
-    <article id="joinGamePanel" class="panel join-game-panel" hidden><div><h2>Join a shared game</h2><p class="muted">Ask the owner for the game invite code.</p></div><input id="joinGameCode" maxlength="10" placeholder="Invite code"><button id="joinGameBtn">Join Game</button></article>
+    <article id="joinGamePanel" class="panel join-game-panel" hidden>
+      <div class="section-heading"><div><h2>Join a Game</h2><p class="muted">Paste a valid invitation code from the game owner.</p></div><button id="closeJoinGameBtn" class="secondary">Cancel</button></div>
+      <div id="joinGameForm" class="join-game-form"><label>Invite Code<input id="joinGameCode" maxlength="40" autocomplete="off" spellcheck="false" placeholder="JUNGLE-X7K9-PQ2M-H8DZ"></label><button id="joinGameBtn">Join Game</button></div>
+      <p id="joinGameError" class="form-error" role="alert" hidden></p>
+      <div id="joinGameSuccess" class="join-game-success" hidden><h3>Game Joined</h3><p>You joined <strong id="joinedGameName"></strong>.</p><p>Permission: <strong id="joinedGamePermission"></strong></p><button id="openJoinedGameBtn">Open Game</button></div>
+    </article>
     <div id="gamesEmptyState" class="empty-state games-empty" hidden><h2>No Games Yet</h2><p>Create your first game to start using GM Command Center.</p><button id="emptyCreateGameBtn">Create New Game</button></div>
     <div id="gamesManagerContent">
       <div class="panel games-controls"><input id="gamesSearch" placeholder="Search by game name or theme"><select id="gamesSort"><option value="UPDATED">Recently Updated</option><option value="CREATED">Date Created</option><option value="NAME">Name</option><option value="STATUS">Status</option></select></div>
-      <section class="game-group"><h2>Active Games</h2><div id="activeGamesList" class="game-card-grid"></div></section>
-      <section class="game-group"><h2>Saved Games</h2><div id="savedGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>My Games</h2><p class="muted">Games you own.</p><div id="myGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>Shared With Me</h2><p class="muted">Games where you are a GM or Viewer.</p><div id="sharedGamesList" class="game-card-grid"></div></section>
       <section class="game-group"><h2>Archived Games</h2><div id="archivedGamesList" class="game-card-grid"></div></section>
     </div>
   </section>
@@ -295,7 +300,28 @@
         <label class="check"><input id="roleEditingAuthorized" type="checkbox" disabled> Role editing permission</label>
         <p class="muted">Owners and GMs can edit roles. Viewers remain read-only while still receiving live updates.</p>
       </article>
-      <article class="panel"><h2>Live Collaboration</h2><p>Invite code: <strong id="gameShareCode">—</strong></p><button id="copyShareCodeBtn" class="secondary">Copy Invite Code</button><h3>Currently viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div><h3>Members</h3><div id="memberList" class="presence-list"></div></article>
+      <article id="gmAccessPanel" class="panel gm-access-panel">
+        <div class="section-heading"><div><h2>GM Access</h2><p class="muted">Manage collaborators for this saved game.</p></div><button id="showInviteFormBtn">+ Invite GM</button></div>
+        <p id="gmAccessNotice" class="form-notice" hidden></p>
+        <div id="inviteFormPanel" class="invite-form-panel" hidden>
+          <h3>Generate Invitation</h3>
+          <div class="invite-form-grid">
+            <label>Permission<select id="invitePermission"><option value="gm">GM</option><option value="viewer">Viewer</option></select></label>
+            <label>Expiration<select id="inviteExpiration"><option value="86400">24 Hours</option><option value="604800" selected>7 Days</option><option value="2592000">30 Days</option><option value="">Never</option></select></label>
+            <label>Uses<select id="inviteUses"><option value="1">One Use</option><option value="">Multiple Uses (Unlimited)</option></select></label>
+          </div>
+          <div class="form-actions horizontal-actions"><button id="generateInviteBtn">Generate Invite</button><button id="cancelInviteFormBtn" class="secondary">Cancel</button></div>
+          <p id="inviteFormError" class="form-error" role="alert" hidden></p>
+        </div>
+        <div id="inviteResult" class="invite-result" hidden></div>
+        <div class="member-sections">
+          <section><h3>Owner</h3><div id="ownerMemberList" class="member-list"></div></section>
+          <section><h3>Game Masters</h3><div id="gmMemberList" class="member-list"></div></section>
+          <section><h3>Viewers</h3><div id="viewerMemberList" class="member-list"></div></section>
+        </div>
+        <section id="activeInvitesSection"><h3>Active Invites</h3><div id="activeInviteList" class="invite-list"></div></section>
+        <h3>Currently Viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div>
+      </article>
       <article id="sourceDocumentPanel" class="panel">
         <h2>Source Document</h2>
         <div id="sourceDocumentInfo"><p class="muted">This game was not created from a Word document.</p></div>
@@ -314,9 +340,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=6.0.0"></script>
-<script src="js/cloud.js?v=6.0.0"></script>
+<script src="js/supabase-config.js?v=6.1.0"></script>
+<script src="js/cloud.js?v=6.1.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=6.0.0"></script>
+<script type="module" src="js/app.js?v=6.1.0"></script>
 </body>
 </html>

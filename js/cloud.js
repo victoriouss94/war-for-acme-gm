@@ -28,7 +28,7 @@
   async function loadGame(gameId){
     const document=unwrap(await required().from('game_documents').select('*').eq('game_id',gameId).single());
     const game=unwrap(await required().from('games').select('*').eq('id',gameId).single());
-    const members=unwrap(await required().from('game_members').select('user_id,member_role,profiles(display_name)').eq('game_id',gameId));
+    const members=unwrap(await required().from('game_members').select('user_id,member_role,created_at,invited_by,profiles(display_name)').eq('game_id',gameId));
     return {document,game,members};
   }
   async function createGame(document){return unwrap(await required().rpc('create_game',{game_id:document.game.id,initial_document:document}));}
@@ -47,18 +47,24 @@
     const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return rows[0]}catch(error){await removeImportSource(storagePath);throw error}
   }
   async function deleteGame(gameId){return unwrap(await required().rpc('delete_game',{target_game_id:gameId}))}
-  async function joinGame(code){return unwrap(await required().rpc('join_game_by_code',{invite_code:code}))}
+  async function joinGame(code){const rows=unwrap(await required().rpc('redeem_game_invite',{invite_code:code}));return rows[0]}
+  async function invites(gameId){return unwrap(await required().from('game_invites').select('*').eq('game_id',gameId).order('created_at',{ascending:false}))}
+  async function generateInvite(gameId,permission,expiresInSeconds,maxUses){const rows=unwrap(await required().rpc('generate_game_invite',{target_game_id:gameId,invite_permission:permission,expires_in_seconds:expiresInSeconds,requested_max_uses:maxUses}));return rows[0]}
+  async function revokeInvite(inviteId){return unwrap(await required().rpc('revoke_game_invite',{target_invite_id:inviteId}))}
   async function setMemberRole(gameId,userId,role){return unwrap(await required().rpc('set_game_member_role',{target_game_id:gameId,target_user_id:userId,next_role:role}))}
+  async function removeMember(gameId,userId){return unwrap(await required().rpc('remove_game_member',{target_game_id:gameId,target_user_id:userId}))}
   async function roleTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.roles||[]).map(role=>({key:row.game_id+':'+role.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',role,abilities:row.document?.data?.abilities||[],factions:row.document?.data?.factions||[]})))}
   async function abilityTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.abilities||[]).map(ability=>({key:row.game_id+':'+ability.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',...ability})))}
   async function history(gameId){return unwrap(await required().from('change_history').select('*,profiles!change_history_profile_fkey(display_name)').eq('game_id',gameId).order('created_at',{ascending:false}).limit(250))}
   async function imports(gameId){return unwrap(await required().from('game_imports').select('*').eq('game_id',gameId).order('created_at',{ascending:false}))}
   async function downloadImport(record){const blob=unwrap(await required().storage.from(importBucket).download(record.storage_path)),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=record.source_file_name||'game.docx';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
   async function unsubscribe(){if(channel&&client){await client.removeChannel(channel);channel=null}}
-  async function subscribe(gameId,{onDocument,onPresence,onStatus}){
+  async function subscribe(gameId,{onDocument,onMembership,onInvites,onPresence,onStatus}){
     await unsubscribe();
     channel=required().channel('game:'+gameId,{config:{private:true,presence:{key:session.user.id}}});
     channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_documents',filter:'game_id=eq.'+gameId},payload=>onDocument?.(payload.new));
+    channel.on('postgres_changes',{event:'*',schema:'public',table:'game_members',filter:'game_id=eq.'+gameId},payload=>onMembership?.(payload));
+    channel.on('postgres_changes',{event:'*',schema:'public',table:'game_invites',filter:'game_id=eq.'+gameId},payload=>onInvites?.(payload));
     channel.on('presence',{event:'sync'},()=>onPresence?.(channel.presenceState()));
     channel.subscribe(async status=>{
       onStatus?.(status);
@@ -68,5 +74,5 @@
   async function track(patch){if(channel)await channel.track({userId:session.user.id,name:displayName(),onlineAt:new Date().toISOString(),...patch})}
   function user(){return session?.user||null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,signIn,passwordSignIn,createAccount,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,setMemberRole,roleTemplates,abilityTemplates,history,imports,downloadImport,subscribe,unsubscribe,track,user,dispose};
+  window.GMCloud={init,signIn,passwordSignIn,createAccount,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,subscribe,unsubscribe,track,user,dispose};
 })();
