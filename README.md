@@ -24,7 +24,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 ## Shared collaboration
 
-- Supabase-backed shared games with email/password or magic-link authentication
+- Supabase-backed shared games with no-email device accounts, email/password, or magic-link authentication
 - Owner, GM, and read-only viewer membership enforced with Row Level Security
 - Live game-scoped updates and presence over Supabase Realtime
 - Optimistic version checks that reject stale edits instead of overwriting them
@@ -52,7 +52,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 The database migrations are in `supabase/migrations` and have been applied to the configured Supabase project. The browser uses the publishable key in `js/supabase-config.js`; no service-role secret is shipped to the client.
 
-Deploy the folder to GitHub Pages, then add the exact production URL to **Supabase → Authentication → URL Configuration → Redirect URLs** so magic-link sign-in returns to the site. Password sign-in does not depend on a redirect.
+Deploy the folder to GitHub Pages, then add the exact production URL to **Supabase → Authentication → URL Configuration → Redirect URLs** so magic-link sign-in returns to the site. Password and no-email device accounts do not depend on a redirect. No-email accounts are anonymous Supabase users: they keep the same RLS-protected access while the browser session exists, but cannot be recovered after sign-out or cleared site data.
 
 For local development, serve the directory over HTTP rather than opening `index.html` as a `file:` URL.
 

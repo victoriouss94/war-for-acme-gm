@@ -20,6 +20,7 @@
   }
   async function passwordSignIn(email,password){return unwrap(await required().auth.signInWithPassword({email,password}))}
   async function createAccount(email,password,name){return unwrap(await required().auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname,data:{display_name:name||email.split('@')[0]}}}))}
+  async function createDeviceAccount(name){return unwrap(await required().auth.signInAnonymously({options:{data:{display_name:name}}}))}
   async function signOut(){await unsubscribe();unwrap(await required().auth.signOut())}
   async function listGames(){
     const rows=unwrap(await required().from('games').select('*,game_members(user_id,member_role)').order('updated_at',{ascending:false}));
@@ -74,5 +75,5 @@
   async function track(patch){if(channel)await channel.track({userId:session.user.id,name:displayName(),onlineAt:new Date().toISOString(),...patch})}
   function user(){return session?.user||null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,signIn,passwordSignIn,createAccount,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,subscribe,unsubscribe,track,user,dispose};
+  window.GMCloud={init,signIn,passwordSignIn,createAccount,createDeviceAccount,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,subscribe,unsubscribe,track,user,dispose};
 })();

@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.2.0 — No-Email GM Accounts
+
+- Adds a one-click, no-email GM account backed by Supabase anonymous authentication.
+- Keeps email/password sign-in available for users who want a recoverable account.
+- Warns before signing out of a no-email account because it cannot be recovered after the browser session is removed.
+- Disables mandatory email confirmation and enables anonymous sign-ins in the hosted Supabase project.
+
 ## v6.1.1 — Clearer Account Creation Feedback
 
 - Detects Supabase's privacy-preserving repeated-signup response and directs existing users to sign in instead of claiming a new account was created.

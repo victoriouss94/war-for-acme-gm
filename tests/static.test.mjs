@@ -56,6 +56,14 @@ test('authentication explains duplicate accounts, invalid credentials, and provi
   for(const pattern of [/accountCreationMessage/,/result\.user\.identities\.length===0/,/This email already has an account/,/over_email_send_rate_limit/,/temporarily reached its signup-email limit/,/That email or password is incorrect/])assert.match(app,pattern);
 });
 
+test('no-email GM accounts use Supabase anonymous auth and warn before unrecoverable sign-out',()=>{
+  assert.match(html,/id="createDeviceAccountBtn"/);
+  assert.match(html,/No-email accounts stay on this browser/);
+  assert.match(cloud,/signInAnonymously\(\{options:\{data:\{display_name:name\}\}\}\)/);
+  assert.match(app,/GMCloud\.createDeviceAccount\(name\)/);
+  assert.match(app,/This no-email account cannot be recovered after signing out/);
+});
+
 test('destructive actions retain explicit confirmation',()=>{
   assert.match(app,/confirm\('Permanently delete/);
   assert.match(app,/confirm\('Delete rule/);

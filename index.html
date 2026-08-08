@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=6.1.1">
+  <link rel="stylesheet" href="css/main.css?v=6.2.0">
 </head>
 <body>
 <header class="topbar">
@@ -40,8 +40,8 @@
 
 <main>
   <section id="authPanel" class="panel auth-panel">
-    <div><h2>Connect to the shared command center</h2><p class="muted">Sign in by email so saved games and live GM edits are authorized and permanently stored.</p></div>
-    <div class="auth-fields"><label>GM display name<input id="authDisplayName" maxlength="80" placeholder="Arrow"></label><label>Email<input id="authEmail" type="email" placeholder="gm@example.com"></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password"></label><button id="passwordSignInBtn">Sign in</button><button id="createAccountBtn" class="secondary">Create account</button><button id="sendMagicLinkBtn" class="secondary">Email sign-in link</button></div>
+    <div><h2>Connect to the shared command center</h2><p class="muted">Create a quick device account without an email, or use email and a password for a recoverable account.</p></div>
+    <div class="auth-fields"><label>GM display name<input id="authDisplayName" maxlength="80" placeholder="Arrow"></label><button id="createDeviceAccountBtn">Continue without email</button><span class="auth-divider" aria-hidden="true">or</span><label>Email (optional)<input id="authEmail" type="email" placeholder="gm@example.com"></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password"></label><button id="passwordSignInBtn">Sign in</button><button id="createAccountBtn" class="secondary">Create email account</button><button id="sendMagicLinkBtn" class="secondary">Email sign-in link</button><p class="muted auth-device-help">No-email accounts stay on this browser. If you sign out or clear site data, that account cannot be recovered.</p></div>
     <p id="authMessage" class="form-notice" aria-live="polite"></p>
   </section>
   <section id="gamesView" class="view active">
@@ -340,9 +340,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=6.1.1"></script>
-<script src="js/cloud.js?v=6.1.1"></script>
+<script src="js/supabase-config.js?v=6.2.0"></script>
+<script src="js/cloud.js?v=6.2.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=6.1.1"></script>
+<script type="module" src="js/app.js?v=6.2.0"></script>
 </body>
 </html>
