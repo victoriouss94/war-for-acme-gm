@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.1.1 — Clearer Account Creation Feedback
+
+- Detects Supabase's privacy-preserving repeated-signup response and directs existing users to sign in instead of claiming a new account was created.
+- Explains the hosted email provider's temporary signup-email limit and recommends custom SMTP for production-scale account creation.
+- Replaces raw authentication errors with actionable messages for invalid credentials and invalid email addresses.
+
 ## v6.1.0 — Complete GM Invitations
 
 - Replaced the permanent per-game share-code shortcut with persisted, owner-created invitations.

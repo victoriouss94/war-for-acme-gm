@@ -52,6 +52,10 @@ test('GM Access and Join Game expose the complete reviewed collaboration flow',(
   for(const text of ['Invalid Invite Code','Invite Expired','Invite Already Used','Already Joined','Access Denied','Shared With Me'])assert.match(app+html,new RegExp(text));
 });
 
+test('authentication explains duplicate accounts, invalid credentials, and provider email limits',()=>{
+  for(const pattern of [/accountCreationMessage/,/result\.user\.identities\.length===0/,/This email already has an account/,/over_email_send_rate_limit/,/temporarily reached its signup-email limit/,/That email or password is incorrect/])assert.match(app,pattern);
+});
+
 test('destructive actions retain explicit confirmation',()=>{
   assert.match(app,/confirm\('Permanently delete/);
   assert.match(app,/confirm\('Delete rule/);
