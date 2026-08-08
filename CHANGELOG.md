@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.0.1 — Game Creation Cache Fix
+
+- Versioned the application JavaScript and stylesheet URLs so deployments cannot combine the v4 Games interface with stale v3 behavior.
+- Restored reliable Create New Game handling after updates and ordinary browser refreshes.
+
 ## v4.0 — Saved Games and Game Management
 
 - Added permanent game IDs and a Games management page.
