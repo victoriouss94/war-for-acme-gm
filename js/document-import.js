@@ -119,6 +119,82 @@ function createFaction(name,fields={}){const clean=text(name);return {tempId:tem
 function createRole(name,fields={}){const clean=text(name);return {tempId:tempId('role'),name:clean,factionTempId:null,factionName:'',alignment:'',description:'',activeAbilityName:'',passiveAbilityName:'',abilityNames:[],abilityUses:null,cooldowns:'',restrictions:[],immunities:[],winCondition:'',notes:'',gmNotes:'',tags:[],enabled:true,selected:true,confidence:.75,sourceText:clean,duplicateOfTempId:null,duplicateDecision:'merge',...fields}}
 function createAbility(name,fields={}){const clean=text(name);return {tempId:tempId('ability'),name:clean,definition:'',category:'Other',phase:'Any',mechanics:[],selected:true,confidence:.72,matchStatus:'new',matchKey:'',decision:'create-new',possibleMatches:[],sourceText:clean,...fields}}
 
+const flatFactionHeaders=new Map([
+  ['den',{name:'Den',className:'DEN'}],['mafia',{name:'Mafia',className:'DEN'}],['wolves',{name:'Wolves',className:'DEN'}],['decepticons',{name:'Decepticons',className:'DEN'}],['cult',{name:'Cult',className:'DEN'}],
+  ['villagers',{name:'Villagers',className:'VILLAGER'}],['town',{name:'Town',className:'VILLAGER'}],['autobots',{name:'Autobots',className:'VILLAGER'}],
+  ['neutral',{name:'Neutrals',className:'NEUTRAL'}],['neutrals',{name:'Neutrals',className:'NEUTRAL'}]
+]);
+const flatDash='(?:\\u2014|\\u2013|-)';
+function flatFactionHeader(value){return flatFactionHeaders.get(normalizeImportName(value))||null}
+function flatModeHeader(value){
+  const match=text(value).match(new RegExp('^(robot|alt)\\s+mode\\s*'+flatDash+'?\\s*(.*)$','i'));if(!match)return null;
+  return {mode:/^robot$/i.test(match[1])?'Robot Mode':'Alt Mode',label:text(match[2])};
+}
+function flatDashParts(value){return text(value).split(new RegExp('\\s*'+flatDash+'\\s*')).map(text).filter(Boolean)}
+function isFlatRoleTitle(blocks,index,faction){
+  const block=blocks[index],value=text(block?.text),normalized=normalizeImportName(value);if(block?.type!=='paragraph'||!value||flatFactionHeader(value))return null;
+  if(/^(round information|rooms|times|special mechanics?|rules?|wincon|win condition|all?sp?ark shard)\b/.test(normalized)||/^\d+\s+(?:basic|scrap|energon)\b/.test(normalized))return null;
+  const next=blocks.slice(index+1).find(item=>text(item?.text)||item?.type==='table'),nextMode=next?.type==='list-item'&&flatModeHeader(next.text);
+  if(faction.className!=='NEUTRAL'){
+    if(nextMode)return {name:value,description:'',abilityLabel:''};
+    const parts=flatDashParts(value);return parts.length>=2&&looksLikeTitle(value)&&!/^\d/.test(value)?{name:value,description:'',abilityLabel:''}:null;
+  }
+  const parts=flatDashParts(value);if(parts.length>=3&&/^(?:each|every|can|will|wins?|has|starts?|choose|once)\b/i.test(parts[2]))return {name:parts[0],description:parts.slice(2).join(' — '),abilityLabel:parts[1]};
+  if(parts.length>=2&&/^(?:each|every|can|will|wins?|has|starts?|choose|once)\b/i.test(parts[1]))return {name:parts[0],description:parts.slice(1).join(' — '),abilityLabel:''};
+  if(!looksLikeTitle(value))return null;
+  return {name:value,description:'',abilityLabel:''};
+}
+
+function analyzeFlatRosterDocument(blocks,source={}){
+  const usable=(Array.isArray(blocks)?blocks:[]).filter(block=>block?.type!=='table'&&text(block?.text));
+  const factionIndexes=usable.map((block,index)=>flatFactionHeader(block.text)?index:-1).filter(index=>index>=0),modeCount=usable.filter(block=>block.type==='list-item'&&flatModeHeader(block.text)).length;
+  if(!factionIndexes.length||modeCount<2)return null;
+  const model={schemaVersion:1,source:{...source,structureMode:'flat-roster'},game:{name:text(source.fileName).replace(/\.docx$/i,'')||'Imported Game',theme:'',description:'',playerCount:null,startingPhase:'Day',notes:'',selected:true},factions:[],roles:[],abilities:[],rules:[],warnings:[],sections:{game:true,factions:true,roles:true,abilities:true,rules:true}};
+  const abilityMap=new Map();let currentFaction=null,currentRole=null,currentAbility=null,pendingRule=null;
+  const addRule=(title,description='')=>{const rule=ruleFromText(description||title,model.rules.length);rule.title=text(title).replace(/:\s*$/,'')||rule.title;rule.description=text(description);model.rules.push(rule);return rule};
+  const addAbility=(role,name,definition='',phase='Any')=>{
+    const cleanName=text(name),key=normalizeImportName(cleanName);if(!role||!key)return null;let ability=abilityMap.get(key);
+    if(!ability){ability=createAbility(cleanName,{definition:text(definition),category:inferAbilityCategory(cleanName,definition,''),phase:phase==='Passive'?'Passive':'Any',sourceText:text(definition||cleanName),confidence:.84});abilityMap.set(key,ability);model.abilities.push(ability)}else if(definition)ability.definition=[ability.definition,text(definition)].filter(Boolean).join(' ');
+    role.abilityNames=uniqueNames([...role.abilityNames,ability.name]);if(!role.activeAbilityName&&phase!=='Passive')role.activeAbilityName=ability.name;if(phase==='Passive'&&!role.passiveAbilityName)role.passiveAbilityName=ability.name;currentAbility=ability;return ability;
+  };
+  const beginRole=details=>{const role=createRole(details.name,{factionTempId:currentFaction?.tempId||null,factionName:currentFaction?.name||'',description:text(details.description),sourceText:text(details.name),confidence:.86});model.roles.push(role);currentRole=role;currentAbility=null;if(details.description)addAbility(role,role.name+' — '+(details.abilityLabel||'Ability'),details.description);return role};
+  const preamble=[];
+  for(let index=0;index<usable.length;index+=1){
+    const block=usable[index],value=text(block.text),factionInfo=flatFactionHeader(value);
+    if(factionInfo){
+      if(pendingRule&&!pendingRule.description)pendingRule.description=pendingRule.title;
+      currentFaction=createFaction(factionInfo.name,{className:factionInfo.className,confidence:.96,sourceText:value});model.factions.push(currentFaction);currentRole=null;currentAbility=null;pendingRule=null;continue;
+    }
+    if(!currentFaction){
+      if(/^special mechanics?\b/i.test(value)){pendingRule=addRule(value,'');continue}
+      if(pendingRule&&!pendingRule.description){pendingRule.description=value;pendingRule.sourceText=value;pendingRule=null;continue}
+      preamble.push(value);continue;
+    }
+    if(currentFaction.className==='NEUTRAL'&&/\b(?:special mechanic|family vacation)\b/i.test(value)&&looksLikeTitle(value)){
+      pendingRule=addRule(value,'');currentRole=null;currentAbility=null;continue;
+    }
+    if(/^\d+\s+basics?\b/i.test(value)){currentFaction.notes=[currentFaction.notes,value].filter(Boolean).join(' ');currentRole=null;currentAbility=null;continue}
+    const roleTitle=isFlatRoleTitle(usable,index,currentFaction);
+    if(roleTitle){if(pendingRule&&!pendingRule.description){pendingRule.description=pendingRule.title;pendingRule=null}beginRole(roleTitle);continue}
+    if(pendingRule&&!pendingRule.description){pendingRule.description=value;pendingRule.sourceText=value;pendingRule=null;continue}
+    const mode=flatModeHeader(value);
+    if(mode&&currentRole){addAbility(currentRole,currentRole.name+' — '+mode.mode+(mode.label?': '+mode.label:''),'');continue}
+    if(!currentRole){currentFaction.description=[currentFaction.description,value].filter(Boolean).join(' ');continue}
+    const normalized=normalizeImportName(value);
+    if(/^wincon\b|^win condition\b/.test(normalized)){currentRole.winCondition=text(flatDashParts(value).slice(1).join(' — ')||value.replace(/^win\s*con(?:dition)?\s*:?/i,''));continue}
+    const parts=flatDashParts(value);
+    if(currentFaction.className==='NEUTRAL'&&parts.length>=2&&!/^\d/.test(value)&&parts[0].length<=60){addAbility(currentRole,currentRole.name+' — '+parts[0],parts.slice(1).join(' — '));currentRole.description=[currentRole.description,value].filter(Boolean).join(' ');continue}
+    currentRole.description=[currentRole.description,value].filter(Boolean).join(' ');
+    if(currentAbility){currentAbility.definition=[currentAbility.definition,value].filter(Boolean).join(' ');currentAbility.category=inferAbilityCategory(currentAbility.name,currentAbility.definition,'');currentAbility.phase=inferAbilityPhase('',currentAbility.definition)}
+    else if(currentFaction.className==='NEUTRAL')addAbility(currentRole,currentRole.name+' — Ability',value);
+  }
+  model.game.description=preamble.join('\n').slice(0,2000);
+  model.roles.forEach(role=>{if(!role.abilityNames.length)model.warnings.push(createWarning('missing-ability','No ability details were detected for '+role.name+'. The role will still be imported for GM review.','warning',role.tempId))});
+  model.warnings.push(createWarning('flat-document-structure','This Word document uses ordinary paragraphs instead of heading styles. Its faction rosters and mode lists were recovered automatically.','info'));
+  if(!model.rules.length)model.warnings.push(createWarning('no-rules','No individual game rules were detected.','info'));
+  return model;
+}
+
 export function prepareDocumentBlocksForAi(blocks){
   const prepared=(Array.isArray(blocks)?blocks:[]).map(block=>{
     const type=['heading','paragraph','list-item','table'].includes(block?.type)?block.type:'paragraph';
@@ -170,6 +246,7 @@ export function normalizeAiDocumentImport(result,source={}){
 }
 
 export function analyzeDocumentBlocks(blocks,source={}){
+  const flatModel=analyzeFlatRosterDocument(blocks,source);if(flatModel)return flatModel;
   const model={schemaVersion:1,source:{...source},game:{name:'',theme:'',description:'',playerCount:null,startingPhase:'Day',notes:'',selected:true},factions:[],roles:[],abilities:[],rules:[],warnings:[],sections:{game:true,factions:true,roles:true,abilities:true,rules:true}};
   const factionMap=new Map(),abilityMap=new Map();let section=null,sectionLevel=0,currentFaction=null,factionLevel=0,currentRole=null,currentAbility=null,pendingText='',gameDescription=[];
   const ensureFaction=(name,fields={})=>{const clean=text(name);if(!clean)return null;const key=normalizeImportName(clean);let faction=factionMap.get(key);if(!faction){faction=createFaction(clean,fields);model.factions.push(faction);factionMap.set(key,faction)}else Object.assign(faction,Object.fromEntries(Object.entries(fields).filter(([,value])=>value!==''&&value!=null)));return faction};
@@ -281,8 +358,9 @@ export function validateGameImport(model){
   const errors=[],warnings=[];if(!model||typeof model!=='object')return {valid:false,errors:['No parsed import is available.'],warnings};
   if(!text(model.game?.name)||text(model.game.name).length>100)errors.push('Game name must contain 1 to 100 characters.');
   const factions=(model.sections?.factions===false?[]:model.factions.filter(item=>item.selected)),roles=(model.sections?.roles===false?[]:model.roles.filter(item=>item.selected)),abilities=(model.sections?.abilities===false?[]:model.abilities.filter(item=>item.selected)),rules=(model.sections?.rules===false?[]:model.rules.filter(item=>item.selected));
-  if(roles.length&&!factions.length)errors.push('Selected roles require at least one selected faction.');
-  const factionIds=new Set(factions.map(item=>item.tempId)),roleNames=new Set();roles.forEach(role=>{const key=normalizeImportName(role.name);if(!key)errors.push('Every selected role needs a name.');else if(roleNames.has(key))errors.push('Selected role names must be unique: '+role.name+'.');else roleNames.add(key);if(!role.factionTempId||!factionIds.has(role.factionTempId))errors.push(role.name+' must be assigned to a selected faction.');if(!role.abilityNames?.length)errors.push(role.name+' needs at least one ability.');});
+  if(!factions.length)errors.push('Import at least one faction.');
+  if(!roles.length)errors.push('Import at least one role.');
+  const factionIds=new Set(factions.map(item=>item.tempId)),roleNames=new Set();roles.forEach(role=>{const key=normalizeImportName(role.name);if(!key)errors.push('Every selected role needs a name.');else if(roleNames.has(key))errors.push('Selected role names must be unique: '+role.name+'.');else roleNames.add(key);if(!role.factionTempId||!factionIds.has(role.factionTempId))errors.push(role.name+' must be assigned to a selected faction.');if(!role.abilityNames?.length)warnings.push(role.name+' has no detected ability and should be reviewed.');});
   const abilityNames=new Set();abilities.forEach(ability=>{const key=normalizeImportName(ability.name);if(!key)errors.push('Every selected ability needs a name.');else if(abilityNames.has(key))errors.push('Selected ability names must be unique: '+ability.name+'.');else abilityNames.add(key);if(ability.decision==='use-existing'&&!ability.matchKey)errors.push('Choose an existing Encyclopedia match for '+ability.name+'.')});
   roles.forEach(role=>role.abilityNames.forEach(name=>{if(!abilityNames.has(normalizeImportName(name)))errors.push(role.name+' references an ability that is not selected: '+name+'.')}));
   rules.forEach(rule=>{if(!text(rule.title)||!text(rule.description))errors.push('Every selected rule needs a title and description.')});

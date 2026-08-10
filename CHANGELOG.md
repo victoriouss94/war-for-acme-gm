@@ -1,5 +1,12 @@
 # Changelog
 
+## v9.0.1 — Flat DOCX Roster Import Fix
+
+- Recovers faction rosters and role abilities from Word documents that use ordinary paragraphs and lists instead of heading styles or tables.
+- Understands role-qualified Robot Mode and Alt Mode ability blocks and preserves listed roles even when their mechanics need GM review.
+- Rejects empty imports so a document that produced zero factions or zero roles can no longer create an empty game.
+- Preserves the complete local roster when AI analysis returns materially fewer roles, and clarifies the difference between knowledge indexing and game setup import.
+
 ## v9.0.0 — Phase 1 AI GM Knowledge and Official Abilities
 
 - Adds persistent, game-scoped Ask GM Assistant conversations with cited authoritative sources.

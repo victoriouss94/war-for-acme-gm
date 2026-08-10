@@ -1,3 +1,3 @@
 GM Command Center
-Version: 9.0.0
-Build: Phase 1 AI GM Knowledge and Official Ability Encyclopedia
+Version: 9.0.1
+Build: Flat DOCX Roster Import Fix

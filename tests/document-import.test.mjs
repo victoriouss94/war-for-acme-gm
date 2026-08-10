@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync,readFileSync} from 'node:fs';
 import JSZip from 'jszip';
 import mammoth from 'mammoth';
 import {DOCX_MIME,MAX_AI_DOCUMENT_CHARS,analyzeDocumentBlocks,compareGameImport,htmlToDocumentBlocks,matchImportAbilities,normalizeAiDocumentImport,prepareDocumentBlocksForAi,validateDocxFile,validateGameImport} from '../js/document-import.js';
@@ -51,6 +52,27 @@ test('AI normalization creates reviewable ability placeholders and warnings for 
 test('AI block preparation preserves document structure and rejects oversized extracted text',()=>{
   assert.deepEqual(prepareDocumentBlocksForAi([heading(2,'Roles'),{type:'table',headers:['Role'],rows:[['Guardian']]}]).map(block=>block.type),['heading','table']);
   assert.throws(()=>prepareDocumentBlocksForAi(Array.from({length:Math.ceil(MAX_AI_DOCUMENT_CHARS/12000)+2},()=>({type:'paragraph',text:'x'.repeat(12000)}))),/too much extracted text/i);
+});
+
+test('recovers flat Word rosters with faction paragraphs and Robot Mode / Alt Mode lists',()=>{
+  const blocks=[
+    paragraph('Round Information:'),paragraph('Special Mechanics — Hidden Sentinel:'),paragraph('A hidden role may change factions.'),
+    paragraph('Den'),paragraph('The den may replace its leader.'),paragraph('Alpha — Megatron'),{type:'list-item',text:'Robot Mode — Fusion Cannon'},{type:'list-item',text:'Has two instant attacks.'},{type:'list-item',text:'Alt Mode — Tank'},{type:'list-item',text:'Protected against standard kills.'},paragraph('Traitor — Punch/Counterpunch'),
+    paragraph('Villagers'),paragraph('Doc — Ratchet'),{type:'list-item',text:'Robot Mode — Medic'},{type:'list-item',text:'Has two saves.'},{type:'list-item',text:'Alt Mode — Ambulance'},{type:'list-item',text:'Protect one player.'},
+    paragraph('Neutrals'),paragraph('Sam'),paragraph('Sam can give the Allspark to another player.'),paragraph('Wincon — The Allspark ends with an Autobot.'),paragraph('Agent Simmons'),paragraph('Each night he captures one transformer.')
+  ];
+  const model=analyzeDocumentBlocks(blocks,{fileName:'transformers.docx'}),alpha=model.roles.find(role=>role.name==='Alpha — Megatron'),traitor=model.roles.find(role=>role.name==='Traitor — Punch/Counterpunch');
+  assert.deepEqual(model.factions.map(faction=>faction.className),['DEN','VILLAGER','NEUTRAL']);assert.equal(model.roles.length,5);assert.equal(alpha.abilityNames.length,2);assert.match(model.abilities.find(ability=>ability.name.includes('Fusion Cannon')).definition,/instant attacks/i);assert.equal(traitor.abilityNames.length,0);assert.equal(validateGameImport(model).valid,true);assert.ok(validateGameImport(model).warnings.some(message=>message.includes('Traitor')));
+});
+
+test('rejects an empty-role import even when a game name was inferred',()=>{
+  const model=analyzeDocumentBlocks([paragraph('Unstructured notes only.')],{fileName:'empty.docx'}),validation=validateGameImport(model);assert.equal(validation.valid,false);assert.match(validation.errors.join(' '),/faction/i);assert.match(validation.errors.join(' '),/role/i);
+});
+
+const suppliedTransformersDocx=process.env.TRANSFORMERS_DOCX;
+test('acceptance: the supplied Transformers DOCX yields a complete editable roster',{skip:!suppliedTransformersDocx||!existsSync(suppliedTransformersDocx)},async()=>{
+  const converted=await mammoth.convertToHtml({buffer:readFileSync(suppliedTransformersDocx)}),blocks=htmlToDocumentBlocks(converted.value),model=analyzeDocumentBlocks(blocks,{fileName:'transformers.docx'}),names=new Set(model.roles.map(role=>role.name));
+  assert.equal(model.factions.length,3);assert.ok(model.roles.length>=35,'roles='+model.roles.length+' '+JSON.stringify([...names]));assert.ok(model.abilities.length>=55,'abilities='+model.abilities.length);assert.ok(names.has('Alpha – Megatron'));assert.ok(names.has('Ultimate – Optimus'));assert.ok(names.has('Unicron- Ultimate Neutral'));assert.equal(validateGameImport(model).valid,true);
 });
 
 test('rejects unsupported, empty, and oversized uploads before parsing',()=>{
