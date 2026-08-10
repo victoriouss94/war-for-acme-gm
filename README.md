@@ -1,6 +1,14 @@
-# GM Command Center v8.0
+# GM Command Center v8.1
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
+
+## New in v8.1
+
+- AI Word importer that reads free-form `.docx` content and extracts game information, factions, roles, linked abilities, and rules
+- Terra analysis by default with an optional Sol deep-analysis retry
+- Strict structured output normalized into the existing editable import model and validated before save
+- Local structured parser fallback when AI is unavailable, with a visible warning and retry control
+- Authenticated, rate-limited Edge Function with prompt-injection defenses, bounded input, non-retained requests, and no direct database writes
 
 ## New in v8.0
 
@@ -70,7 +78,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 ## Deployment
 
-The database migrations are in `supabase/migrations` and have been applied to the configured Supabase project. The browser uses the publishable key in `js/supabase-config.js`; no service-role or OpenAI secret is shipped to the client. The `gm-copilot` Edge Function requires an `OPENAI_API_KEY` Edge Function secret and JWT verification.
+The database migrations are in `supabase/migrations` and have been applied to the configured Supabase project. The browser uses the publishable key in `js/supabase-config.js`; no service-role or OpenAI secret is shipped to the client. The `gm-copilot` and `gm-document-import` Edge Functions require an `OPENAI_API_KEY` Edge Function secret and JWT verification.
 
 Deploy the folder to GitHub Pages and keep **Confirm email** and **Allow anonymous sign-ins** disabled in Supabase Auth. Username accounts use an internal, non-deliverable identity solely to let Supabase Auth provide password hashing and sessions; users never enter or receive email. Legacy anonymous accounts that still have a valid browser session are prompted to upgrade in place so their existing games remain attached to the same user ID.
 

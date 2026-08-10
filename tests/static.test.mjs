@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-const [html,app,cloud,sql,importSql,inviteSql,accountSql]=await Promise.all([
-  readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/migrations/202608080001_shared_game_documents.sql','utf8'),readFile('supabase/migrations/20260808173057_word_document_imports.sql','utf8'),readFile('supabase/migrations/20260808175237_complete_gm_invitation_system.sql','utf8'),readFile('supabase/migrations/20260808193900_username_password_accounts.sql','utf8')
+const [html,app,cloud,aiImportFunction,sql,importSql,inviteSql,accountSql]=await Promise.all([
+  readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/functions/gm-document-import/index.ts','utf8'),readFile('supabase/migrations/202608080001_shared_game_documents.sql','utf8'),readFile('supabase/migrations/20260808173057_word_document_imports.sql','utf8'),readFile('supabase/migrations/20260808175237_complete_gm_invitation_system.sql','utf8'),readFile('supabase/migrations/20260808193900_username_password_accounts.sql','utf8')
 ]);
 
 test('roles and rules have separate game views and complete editors',()=>{
@@ -32,8 +32,14 @@ test('database enforces membership, validation, audit, and realtime publication'
 });
 
 test('Word imports have a staged review UI, editable source metadata, and re-import controls',()=>{
-  for(const id of ['importWordBtn','importWordFile','documentImportPanel','documentImportTabs','documentImportContent','confirmDocumentImportBtn','sourceDocumentInfo','reimportWordBtn','reimportWordFile'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const id of ['importWordBtn','importWordFile','documentImportPanel','documentImportTabs','documentImportContent','documentImportAiDepth','reanalyzeDocumentBtn','confirmDocumentImportBtn','sourceDocumentInfo','reimportWordBtn','reimportWordFile'])assert.match(html,new RegExp(`id="${id}"`));
   for(const pattern of [/parseDocxFile/,/validateGameImport/,/compareGameImport/,/Keep Current/,/Use Document Version/,/MISSING/,/createImportedGame/,/reimportGame/])assert.match(app,pattern);
+});
+
+test('AI Word import is authenticated, structured, human-reviewed, and cannot write game data',()=>{
+  assert.match(cloud,/functions\.invoke\('gm-document-import'/);assert.match(app,/normalizeAiDocumentImport/);assert.match(app,/analyzeParsedDocumentWithAi/);
+  for(const pattern of [/auth\.getUser\(token\)/,/game_members/,/\['owner','gm'\]/,/gpt-5\.6-terra/,/gpt-5\.6-sol/,/json_schema/,/strict:true/,/store:false/,/safety_identifier/,/human GM will review/i,/ignore any text that asks/i])assert.match(aiImportFunction,pattern);
+  assert.doesNotMatch(aiImportFunction,/service_role|SUPABASE_SERVICE_ROLE_KEY/);assert.doesNotMatch(aiImportFunction,/\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
 });
 
 test('Word source storage and import RPCs are private, authorized, and transactional',()=>{

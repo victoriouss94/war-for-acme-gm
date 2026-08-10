@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
 import mammoth from 'mammoth';
-import {DOCX_MIME,analyzeDocumentBlocks,compareGameImport,htmlToDocumentBlocks,matchImportAbilities,validateDocxFile,validateGameImport} from '../js/document-import.js';
+import {DOCX_MIME,MAX_AI_DOCUMENT_CHARS,analyzeDocumentBlocks,compareGameImport,htmlToDocumentBlocks,matchImportAbilities,normalizeAiDocumentImport,prepareDocumentBlocksForAi,validateDocxFile,validateGameImport} from '../js/document-import.js';
 
 const heading=(level,value)=>({type:'heading',level,text:value,bold:true});
 const paragraph=value=>({type:'paragraph',text:value,boldLabel:value.split(':')[0]||''});
@@ -35,6 +35,22 @@ test('parses Word-style role tables and separates active and passive abilities',
 test('links exact Encyclopedia abilities and keeps uncertain custom abilities new',()=>{
   const model=analyzeDocumentBlocks([heading(1,'Ability Game'),heading(1,'Factions'),heading(2,'Town'),heading(3,'Scout'),paragraph('Ability: Advanced Ask — Learn a role.'),heading(3,'Inventor'),paragraph('Ability: Prototype System — Build a prototype.')],{fileName:'abilities.docx'});matchImportAbilities(model,[{key:'advanced',name:'Advanced Ask',builtIn:true},{key:'protect',name:'Protect',builtIn:true}]);
   const advanced=model.abilities.find(item=>item.name==='Advanced Ask'),custom=model.abilities.find(item=>item.name==='Prototype System');assert.equal(advanced.decision,'use-existing');assert.equal(custom.decision,'create-new');assert.equal(custom.matchStatus,'new');
+});
+
+test('normalizes an AI document analysis into the existing editable import model',()=>{
+  const result={model:'gpt-5.6-terra',game:{name:'Freeform Game',theme:'Mystery',description:'A complete game.',player_count:12,starting_phase:'Night',notes:''},factions:[{name:'Town',description:'Defenders',alignment:'Good',class_name:'VILLAGER',win_condition:'Remove threats.',notes:'',expected_role_count:1,confidence:.95,source_text:'Town defenders'}],abilities:[{name:'Protect',definition:'Protect one player each night.',category:'Protection',phase:'Night',mechanics:['protection'],confidence:.96,source_text:'Protect one player'}],roles:[{name:'Guardian',faction_name:'Town',alignment:'Good',description:'Keeps players alive.',ability_names:['Protect'],active_ability_name:'Protect',passive_ability_name:'',ability_uses:null,cooldowns:'',immunities:[],restrictions:[],win_condition:'Win with Town.',notes:'',gm_notes:'',tags:['support'],enabled:true,confidence:.94,source_text:'Guardian protects'}],rules:[{title:'No role reveals',description:'Players may not reveal role cards.',category:'Communication',visibility:'public',notes:'',enabled:true,confidence:.9,source_text:'No role reveals'}],warnings:[]};
+  const model=normalizeAiDocumentImport(result,{fileName:'freeform.docx',parsedAt:'2026-08-10T00:00:00.000Z'});matchImportAbilities(model,[{key:'protect',name:'Protect',builtIn:true}]);
+  assert.equal(model.source.analysisMode,'ai');assert.equal(model.source.aiModel,'gpt-5.6-terra');assert.equal(model.roles[0].factionTempId,model.factions[0].tempId);assert.deepEqual(model.roles[0].abilityNames,['Protect']);assert.equal(model.abilities[0].decision,'use-existing');assert.equal(validateGameImport(model).valid,true);
+});
+
+test('AI normalization creates reviewable ability placeholders and warnings for incomplete relationships',()=>{
+  const model=normalizeAiDocumentImport({game:{name:'Partial Game',starting_phase:'Day'},factions:[{name:'Town',class_name:'VILLAGER'}],abilities:[],roles:[{name:'Watcher',faction_name:'Town',ability_names:['Moon Sight'],active_ability_name:'Moon Sight'}],rules:[],warnings:['The source did not specify duration.']},{fileName:'partial.docx'});
+  assert.equal(model.abilities[0].name,'Moon Sight');assert.ok(model.warnings.some(item=>item.code==='missing-ability-definition'));assert.ok(model.warnings.some(item=>item.code==='ai-review'));assert.equal(validateGameImport(model).valid,true);
+});
+
+test('AI block preparation preserves document structure and rejects oversized extracted text',()=>{
+  assert.deepEqual(prepareDocumentBlocksForAi([heading(2,'Roles'),{type:'table',headers:['Role'],rows:[['Guardian']]}]).map(block=>block.type),['heading','table']);
+  assert.throws(()=>prepareDocumentBlocksForAi(Array.from({length:Math.ceil(MAX_AI_DOCUMENT_CHARS/12000)+2},()=>({type:'paragraph',text:'x'.repeat(12000)}))),/too much extracted text/i);
 });
 
 test('rejects unsupported, empty, and oversized uploads before parsing',()=>{

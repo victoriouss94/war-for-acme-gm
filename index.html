@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=8.0.0">
+  <link rel="stylesheet" href="css/main.css?v=8.1.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -114,7 +114,7 @@
   </section>
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
-      <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
+      <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games. Word imports send extracted document text to OpenAI for analysis and use API credits.</p></div>
       <div class="form-actions game-create-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="showJoinGameBtn" class="secondary">Join Game</button><button id="importWordBtn" class="secondary">Import From Word Document</button><input id="importWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><button id="createGameBtn">+ Create New Game</button></div>
     </div>
     <article id="gameFormPanel" class="panel game-form-panel" hidden>
@@ -133,6 +133,7 @@
     <article id="documentImportPanel" class="panel document-import-panel" hidden>
       <div class="section-heading"><div><h2 id="documentImportTitle">Document Import</h2><p id="documentImportStatus" class="muted" aria-live="polite">Choose a .docx file to begin.</p></div><button id="cancelDocumentImportBtn" class="secondary">Cancel</button></div>
       <p id="documentImportError" class="form-error" role="alert" hidden></p>
+      <div id="documentImportAiControls" class="import-ai-controls"><label>AI analysis<select id="documentImportAiDepth"><option value="standard">Terra — recommended</option><option value="deep">Sol — deeper, slower, higher cost</option></select></label><button id="reanalyzeDocumentBtn" class="secondary" type="button" disabled>Analyze Again with AI</button></div>
       <div id="documentImportSummary" class="import-summary"></div>
       <div id="documentImportTabs" class="import-tabs" hidden>
         <button type="button" class="secondary" data-import-tab="overview">Overview</button>
@@ -445,9 +446,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=8.0.0"></script>
-<script src="js/cloud.js?v=8.0.0"></script>
+<script src="js/supabase-config.js?v=8.1.0"></script>
+<script src="js/cloud.js?v=8.1.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=8.0.0"></script>
+<script type="module" src="js/app.js?v=8.1.0"></script>
 </body>
 </html>

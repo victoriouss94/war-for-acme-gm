@@ -189,6 +189,15 @@
     }
     return data;
   }
+  async function analyzeWordDocument(request){
+    const {data,error}=await required().functions.invoke('gm-document-import',{body:request});
+    if(error){
+      let payload=null;
+      try{payload=await error.context?.json?.()}catch{}
+      throw Object.assign(new Error(payload?.error||error.message||'AI document analysis failed.'),{code:payload?.code||error.code||'AI_IMPORT_ERROR',status:error.context?.status||null});
+    }
+    return data;
+  }
   async function unsubscribe(){if(channel&&client){await client.removeChannel(channel);channel=null}}
   async function subscribe(gameId,{onDocument,onMembership,onInvites,onPresence,onStatus}){
     await unsubscribe();
@@ -206,5 +215,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,askCopilot,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,askCopilot,analyzeWordDocument,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

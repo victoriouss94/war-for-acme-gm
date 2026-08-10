@@ -1,5 +1,6 @@
 export const MAX_DOCX_BYTES=10*1024*1024;
 export const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+export const MAX_AI_DOCUMENT_CHARS=800000;
 
 let generatedId=0;
 const text=value=>String(value??'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim();
@@ -117,6 +118,56 @@ function createWarning(code,message,severity='warning',relatedId=null){return {i
 function createFaction(name,fields={}){const clean=text(name);return {tempId:tempId('faction'),name:clean,description:'',alignment:'',className:inferFactionClass(clean),winCondition:'',notes:'',expectedRoleCount:null,selected:true,confidence:.78,sourceText:clean,...fields}}
 function createRole(name,fields={}){const clean=text(name);return {tempId:tempId('role'),name:clean,factionTempId:null,factionName:'',alignment:'',description:'',activeAbilityName:'',passiveAbilityName:'',abilityNames:[],abilityUses:null,cooldowns:'',restrictions:[],immunities:[],winCondition:'',notes:'',gmNotes:'',tags:[],enabled:true,selected:true,confidence:.75,sourceText:clean,duplicateOfTempId:null,duplicateDecision:'merge',...fields}}
 function createAbility(name,fields={}){const clean=text(name);return {tempId:tempId('ability'),name:clean,definition:'',category:'Other',phase:'Any',mechanics:[],selected:true,confidence:.72,matchStatus:'new',matchKey:'',decision:'create-new',possibleMatches:[],sourceText:clean,...fields}}
+
+export function prepareDocumentBlocksForAi(blocks){
+  const prepared=(Array.isArray(blocks)?blocks:[]).map(block=>{
+    const type=['heading','paragraph','list-item','table'].includes(block?.type)?block.type:'paragraph';
+    if(type==='table')return {type,headers:(block.headers||[]).map(value=>text(value).slice(0,2000)),rows:(block.rows||[]).slice(0,2000).map(row=>(Array.isArray(row)?row:[]).map(value=>text(value).slice(0,2000)))};
+    return {type,level:type==='heading'?Math.min(6,Math.max(1,Number(block.level)||1)):null,text:text(block.text).slice(0,12000),boldLabel:text(block.boldLabel).slice(0,500),ordered:Boolean(block.ordered)};
+  }).filter(block=>block.type==='table'?block.headers.length||block.rows.length:block.text);
+  if(!prepared.length)throw new Error('No readable game information was found for AI analysis.');
+  if(JSON.stringify(prepared).length>MAX_AI_DOCUMENT_CHARS)throw new Error('This document contains too much extracted text for one AI analysis. Split it into smaller Word documents and try again.');
+  return prepared;
+}
+
+function limitedText(value,limit=4000){return text(value).slice(0,limit)}
+function limitedList(value,limit=100,itemLimit=500){return uniqueNames((Array.isArray(value)?value:[]).slice(0,limit).map(item=>limitedText(item,itemLimit)))}
+function confidence(value,fallback=.8){const number=Number(value);return Number.isFinite(number)?Math.min(1,Math.max(0,number)):fallback}
+
+export function normalizeAiDocumentImport(result,source={}){
+  if(!result||typeof result!=='object'||Array.isArray(result))throw new Error('The AI returned an invalid document analysis.');
+  const rawGame=result.game||{},model={schemaVersion:1,source:{...source,analysisMode:'ai',aiModel:limitedText(result.model||source.aiModel,80),analyzedAt:new Date().toISOString()},game:{name:limitedText(rawGame.name,100),theme:limitedText(rawGame.theme,120),description:limitedText(rawGame.description,2000),playerCount:rawGame.player_count==null?null:Math.max(0,Math.min(10000,Number(rawGame.player_count)||0)),startingPhase:rawGame.starting_phase==='Night'?'Night':'Day',notes:limitedText(rawGame.notes,4000),selected:true},factions:[],roles:[],abilities:[],rules:[],warnings:[],sections:{game:true,factions:true,roles:true,abilities:true,rules:true}};
+  const factionMap=new Map(),abilityMap=new Map();
+  for(const raw of (Array.isArray(result.factions)?result.factions:[]).slice(0,500)){
+    const name=limitedText(raw?.name,120),key=normalizeImportName(name);if(!key||factionMap.has(key))continue;
+    const faction=createFaction(name,{description:limitedText(raw.description),alignment:limitedText(raw.alignment,500),className:['VILLAGER','DEN','NEUTRAL'].includes(raw.class_name)?raw.class_name:inferFactionClass(name,raw.alignment),winCondition:limitedText(raw.win_condition),notes:limitedText(raw.notes),expectedRoleCount:raw.expected_role_count==null?null:Math.max(0,Math.min(10000,Number(raw.expected_role_count)||0)),confidence:confidence(raw.confidence,.84),sourceText:limitedText(raw.source_text||name,2000)});model.factions.push(faction);factionMap.set(key,faction);
+  }
+  const ensureAbility=raw=>{
+    const name=limitedText(typeof raw==='string'?raw:raw?.name,120),key=normalizeImportName(name);if(!key)return null;let ability=abilityMap.get(key);
+    if(!ability){ability=createAbility(name,{definition:limitedText(raw?.definition),category:['Investigation','Harmful','Protection','Support','Control','Communication','Passive','Other'].includes(raw?.category)?raw.category:inferAbilityCategory(name,raw?.definition,raw?.category),phase:['Night','Day','Any','Passive'].includes(raw?.phase)?raw.phase:inferAbilityPhase(raw?.category,raw?.definition),mechanics:limitedList(raw?.mechanics,50,120),confidence:confidence(raw?.confidence,.82),sourceText:limitedText(raw?.source_text||raw?.definition||name,2000)});model.abilities.push(ability);abilityMap.set(key,ability)}
+    else if(!ability.definition&&raw?.definition)ability.definition=limitedText(raw.definition);
+    return ability;
+  };
+  for(const raw of (Array.isArray(result.abilities)?result.abilities:[]).slice(0,1000))ensureAbility(raw);
+  const roleMap=new Map();
+  for(const raw of (Array.isArray(result.roles)?result.roles:[]).slice(0,2000)){
+    const name=limitedText(raw?.name,120);if(!name)continue;const factionName=limitedText(raw.faction_name,120),faction=factionMap.get(normalizeImportName(factionName));
+    const abilityNames=limitedList([...(Array.isArray(raw.ability_names)?raw.ability_names:[]),raw.active_ability_name,raw.passive_ability_name],100,120);abilityNames.forEach(abilityName=>ensureAbility({name:abilityName,definition:'',category:'Other',phase:'Any',confidence:.55,source_text:abilityName}));
+    const role=createRole(name,{factionTempId:faction?.tempId||null,factionName:faction?.name||factionName,alignment:limitedText(raw.alignment,500),description:limitedText(raw.description),activeAbilityName:limitedText(raw.active_ability_name,120),passiveAbilityName:limitedText(raw.passive_ability_name,120),abilityNames,abilityUses:raw.ability_uses==null?null:Math.max(0,Math.min(10000,Number(raw.ability_uses)||0)),cooldowns:limitedText(raw.cooldowns,1000),restrictions:limitedList(raw.restrictions,100,500),immunities:limitedList(raw.immunities,100,500),winCondition:limitedText(raw.win_condition),notes:limitedText(raw.notes),gmNotes:limitedText(raw.gm_notes),tags:limitedList(raw.tags,100,120),enabled:raw.enabled!==false,confidence:confidence(raw.confidence,.82),sourceText:limitedText(raw.source_text||name,2000)});
+    const key=normalizeImportName(name),first=roleMap.get(key);if(first){role.duplicateOfTempId=first.tempId;role.selected=false;model.warnings.push(createWarning('duplicate-role','Possible duplicate role: '+name+'. It is set to merge; choose Keep Separate to import both.','warning',role.tempId))}else roleMap.set(key,role);model.roles.push(role);
+  }
+  for(const raw of (Array.isArray(result.rules)?result.rules:[]).slice(0,1000)){
+    const title=limitedText(raw?.title,120),description=limitedText(raw?.description);if(!title&&!description)continue;model.rules.push({tempId:tempId('rule'),title:title||limitedText(description,120)||'Imported Rule',description,category:limitedText(raw.category,80)||'General',visibility:raw.visibility==='gm'?'gm':'public',notes:limitedText(raw.notes),enabled:raw.enabled!==false,selected:true,confidence:confidence(raw.confidence,.82),sourceText:limitedText(raw.source_text||description,2000)});
+  }
+  for(const warning of (Array.isArray(result.warnings)?result.warnings:[]).slice(0,200))if(limitedText(warning,1000))model.warnings.push(createWarning('ai-review',limitedText(warning,1000),'warning'));
+  if(!model.game.name){model.game.name=text(source.fileName).replace(/\.docx$/i,'')||'Imported Game';model.warnings.push(createWarning('game-name-inferred','The AI could not identify a game name, so it was inferred from the file name.'))}
+  model.roles.forEach(role=>{if(!role.factionTempId)model.warnings.push(createWarning('unassigned-faction','Could not determine a faction for '+role.name+'. Assign one before importing.','warning',role.tempId));if(!role.abilityNames.length)model.warnings.push(createWarning('missing-ability','No ability was detected for '+role.name+'. Add an ability or deselect the role.','warning',role.tempId));});
+  model.abilities.forEach(ability=>{if(!ability.definition)model.warnings.push(createWarning('missing-ability-definition','No definition was detected for '+ability.name+'. Review and complete it before importing.','warning',ability.tempId))});
+  if(!model.factions.length)model.warnings.push(createWarning('no-factions','No factions were detected.','error'));
+  if(!model.roles.length)model.warnings.push(createWarning('no-roles','No roles were detected.','error'));
+  if(!model.rules.length)model.warnings.push(createWarning('no-rules','No individual game rules were detected.','info'));
+  return model;
+}
 
 export function analyzeDocumentBlocks(blocks,source={}){
   const model={schemaVersion:1,source:{...source},game:{name:'',theme:'',description:'',playerCount:null,startingPhase:'Day',notes:'',selected:true},factions:[],roles:[],abilities:[],rules:[],warnings:[],sections:{game:true,factions:true,roles:true,abilities:true,rules:true}};
