@@ -1,5 +1,63 @@
 # Changelog
 
+## v8.0.0 — Secure AI GM Copilot
+
+- Adds a game-specific AI GM interface with Terra standard and Sol deep reasoning modes.
+- Grounds rulings in the authoritative cloud save, including roles, linked abilities, rules, players, factions, phase, history, and action queue.
+- Adds structured action resolution, confidence, ruling references, warnings, follow-up questions, and allowlisted proposed changes.
+- Requires an explicit owner/GM confirmation before a validated proposal can mutate or save game data.
+- Adds an authenticated Supabase Edge Function with membership checks, RLS context, request bounds, per-user rate limiting, origin restrictions, secret isolation, and disabled OpenAI response storage.
+- Revokes the previously exposed API credential and uses a backend-only service account key stored in Supabase Edge Function secrets.
+
+## v7.0.0 — Permanent Username Accounts
+
+- Replaces email and temporary-device sign-in with permanent username/password registration and login.
+- Enforces case-insensitive unique usernames, 3–30 character validation, and an 8-character password minimum.
+- Keeps password hashing, salts, refresh-token rotation, and login throttling inside Supabase Auth; no application table stores password material.
+- Adds persistent session restoration through IndexedDB instead of `localStorage`, complete logout state isolation, and deleted-session validation.
+- Adds an account menu, account summary, password change with current-password verification, and revocation of other sessions.
+- Preserves Owner/GM/Viewer memberships, database-backed saved games, invitation redemption, authenticated audit identity, and private Realtime channels.
+- Grandfathers existing anonymous device accounts only for their existing memberships and provides an in-place username/password upgrade without copying or reassigning games.
+- Disables new anonymous sign-ins and keeps email confirmation off because users never provide an email address.
+
+## v6.2.1 — Deleted Session Cleanup
+
+- Validates persisted browser sessions against Supabase Auth during startup.
+- Immediately clears cached tokens for accounts that were deleted or revoked on the server.
+
+## v6.2.0 — No-Email GM Accounts
+
+- Adds a one-click, no-email GM account backed by Supabase anonymous authentication.
+- Keeps email/password sign-in available for users who want a recoverable account.
+- Warns before signing out of a no-email account because it cannot be recovered after the browser session is removed.
+- Disables mandatory email confirmation and enables anonymous sign-ins in the hosted Supabase project.
+
+## v6.1.1 — Clearer Account Creation Feedback
+
+- Detects Supabase's privacy-preserving repeated-signup response and directs existing users to sign in instead of claiming a new account was created.
+- Explains the hosted email provider's temporary signup-email limit and recommends custom SMTP for production-scale account creation.
+- Replaces raw authentication errors with actionable messages for invalid credentials and invalid email addresses.
+
+## v6.1.0 — Complete GM Invitations
+
+- Replaced the permanent per-game share-code shortcut with persisted, owner-created invitations.
+- Added secure server-side invite generation, permission selection, expiration, usage limits, revocation, and active-invite management.
+- Added atomic redemption with a locked invite row, permanent shared-game membership, and no game duplication.
+- Added owner, GM, and Viewer member management with permission changes, safe removal, audit records, and realtime refresh.
+- Split the Games screen into My Games, Shared With Me, and Archived Games.
+- Added friendly invitation errors and server diagnostics that never log raw invite codes.
+- Backfilled owner memberships and added database constraints, indexes, RLS, least-privilege grants, and regression coverage.
+
+## v6.0.0 — Word Document Game Importer
+
+- Added `.docx` validation, structured Mammoth parsing, and a staged review workflow.
+- Added editable import previews for game information, factions, roles, abilities, rules, and parser warnings.
+- Added Ability Encyclopedia matching, selective section/item import, duplicate-role review, and relationship validation.
+- Added private Supabase Storage for source documents, RLS-protected import metadata, atomic import/re-import RPCs, and audit history.
+- Added safe re-import comparisons and merge choices without silently deleting existing roles or other game content.
+- Added editable faction details and preserved imported data in the normal game document architecture.
+- Added browser smoke coverage plus automated parser, DOCX, validation, matching, comparison, static, and regression tests.
+
 ## v5.0.0 — Shared GM Collaboration
 
 - Replaced browser-only persistence as the shared authority with authenticated Supabase persistence.

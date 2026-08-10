@@ -1,3 +1,6 @@
+import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeImportName,parseDocxFile,validateGameImport} from './document-import.js';
+import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js';
+
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
 const GAME_INDEX_KEY='gm_command_center_games_v4';
 const GAME_DATA_PREFIX='gm_command_center_game_v4:';
@@ -7,6 +10,7 @@ const validStatuses=new Set(['SETUP','ACTIVE','PAUSED','COMPLETED','ARCHIVED']);
 const id=()=>crypto.randomUUID();
 const now=()=>new Date().toISOString();
 const normalized=(value='')=>String(value).trim().toLowerCase();
+const usernamePattern=/^[A-Za-z0-9][A-Za-z0-9_-]{2,29}$/;
 const $=elementId=>document.getElementById(elementId);
 const esc=(value='')=>String(value).replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 const standardAbilities=()=>[
@@ -52,11 +56,14 @@ function option(value,label=value){const element=document.createElement('option'
 function formatDate(value){if(!value)return '—';return new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(new Date(value))}
 function formatDateTime(value){if(!value)return 'Never';return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value))}
 function baseGameData(gameId){
-  return {version:4,gameId,lastSavedAt:null,settings:{labels:{VILLAGER:'Villagers',DEN:'Den',NEUTRAL:'Neutrals'},allowMultiDen:true,roleEditingAuthorized:true},factions:[
+  return {version:6,gameId,lastSavedAt:null,settings:{labels:{VILLAGER:'Villagers',DEN:'Den',NEUTRAL:'Neutrals'},allowMultiDen:true,roleEditingAuthorized:true},factions:[
     {id:id(),gameId,name:'Villagers',class:'VILLAGER',alias:'village',teamNumber:1},
     {id:id(),gameId,name:'Den',class:'DEN',alias:'den',teamNumber:1},
     {id:id(),gameId,name:'Neutrals',class:'NEUTRAL',alias:'neutral',teamNumber:1}
-  ],roles:[],players:[],actions:[],rules:[],abilities:standardAbilities().map(ability=>({...ability,gameId})),history:[]};
+  ].map(faction=>normalizeFaction(faction,gameId)),roles:[],players:[],actions:[],rules:[],abilities:standardAbilities().map(ability=>({...ability,gameId})),history:[],imports:[]};
+}
+function normalizeFaction(faction,gameId){
+  return {...faction,id:faction.id||id(),gameId,name:String(faction.name||'Untitled Faction'),class:['VILLAGER','DEN','NEUTRAL'].includes(faction.class)?faction.class:'VILLAGER',alias:String(faction.alias||''),teamNumber:Math.max(1,Number(faction.teamNumber)||1),alignment:String(faction.alignment||''),description:String(faction.description||''),winCondition:String(faction.winCondition||''),notes:String(faction.notes||'')};
 }
 function normalizeRole(role,gameId){
   const createdAt=role.createdAt||now();
@@ -71,7 +78,7 @@ function migrateGameData(input,gameId){
   const base=baseGameData(gameId);
   const settings={...base.settings,...(data.settings||{}),labels:{...base.settings.labels,...(data.settings?.labels||{})}};
   const withGameId=list=>(Array.isArray(list)?list:[]).map(record=>({...record,gameId}));
-  const factions=withGameId(Array.isArray(data.factions)?data.factions:base.factions);
+  const factions=withGameId(Array.isArray(data.factions)?data.factions:base.factions).map(faction=>normalizeFaction(faction,gameId));
   const roles=withGameId(data.roles).map(role=>normalizeRole(role,gameId));
   const players=withGameId(data.players);
   const actions=withGameId(data.actions);
@@ -83,7 +90,7 @@ function migrateGameData(input,gameId){
     return {...ability,gameId,defaultName:ability.builtIn?(ability.defaultName||template?.name||ability.name):undefined,mechanics:Array.isArray(ability.mechanics)?ability.mechanics:[],revisions};
   });
   const rules=withGameId(data.rules).map((rule,index)=>normalizeRule(rule,gameId,index));
-  return {version:5,gameId,lastSavedAt:data.lastSavedAt||null,settings,factions,roles,players,actions,rules,abilities,history:withGameId(data.history)};
+  return {version:6,gameId,lastSavedAt:data.lastSavedAt||null,settings,factions,roles,players,actions,rules,abilities,history:withGameId(data.history),imports:Array.isArray(data.imports)?data.imports:[]};
 }
 function normalizeMeta(meta){
   const createdAt=meta.createdAt||now();
@@ -116,7 +123,7 @@ function loadGameData(gameId){
 }
 
 let gameIndex=loadGameIndex();
-const deviceGameSnapshot=gameIndex.games.map(game=>({...game}));
+let deviceGameSnapshot=gameIndex.games.map(game=>({...game}));
 let state=gameIndex.activeGameId&&gameIndex.games.some(game=>game.id===gameIndex.activeGameId)?loadGameData(gameIndex.activeGameId):null;
 let editingAbilityId=null;
 let editingRoleId=null;
@@ -124,11 +131,20 @@ let editingRoleVersion=null;
 let editingRuleId=null;
 let editingRuleVersion=null;
 let editingGameId=null;
+let editingFactionId=null;
 let selectedRoleAbilityIds=new Set();
-let cloudAvailable=false,cloudSession=null,cloudContext=null,cloudVersion=0,cloudChannelGameId=null;
+let cloudAvailable=false,cloudSession=null,cloudContext=null,cloudVersion=0,cloudChannelGameId=null,authInitialized=false;
 let cloudAudit=[];
+let cloudImports=[];
+let cloudInvites=[];
 let availableRoleTemplates=[];
+let importDraft=null,importSourceFile=null,importCatalog=[],importMode='initial',importReviewTab='overview',importComparison=null,importReviewOpen=false,importReturnGameId=null,importSuccessGameId=null;
+let joinedGameId=null;
 let cloudSaveTimer=null,cloudSaveInFlight=false,cloudDirty=false,pendingAudit={action:'Game updated',entityType:'game',entityId:null};
+const copilotThreads=new Map();
+let copilotPending=false;
+let loginFailures=0,loginCooldownUntil=0,loginCooldownTimer=null;
+const pendingInviteCode=String(new URLSearchParams(location.search).get('invite')||'').trim().toUpperCase().slice(0,40);
 
 function currentGame(){return gameIndex.games.find(game=>game.id===gameIndex.activeGameId)||null}
 function belongsToCurrent(record){return Boolean(record&&currentGame()&&record.gameId===currentGame().id)}
@@ -138,6 +154,53 @@ function playerById(recordId){return state?.players.find(record=>record.id===rec
 function rolesUsingAbility(ability){return state.roles.filter(role=>belongsToCurrent(role)&&role.tags.some(tag=>normalized(tag)===normalized(ability.name)))}
 function canEditGame(){return Boolean(cloudSession&&currentGame()&&currentGame().memberRole!=='viewer')}
 function canEditRoles(){return canEditGame()}
+function permissionLabel(role){return role==='owner'?'Owner':role==='gm'?'GM':'Viewer'}
+function friendlyInviteError(error){
+  const message=String(error?.message||error||'');
+  const matches=(token)=>message.includes(token);
+  if(matches('INVITE_NOT_FOUND'))return ['Invalid Invite Code',"We couldn't find that invitation."];
+  if(matches('INVITE_EXPIRED'))return ['Invite Expired','This invitation has expired. Ask the game owner for a new code.'];
+  if(matches('INVITE_MAX_USES'))return ['Invite Already Used','This invitation has reached its usage limit.'];
+  if(matches('INVITE_REVOKED'))return ['Invitation Revoked','This invitation is no longer valid.'];
+  if(matches('ALREADY_JOINED'))return ['Already Joined','You are already a member of this game.'];
+  if(matches('ACCESS_DENIED')||error?.code==='42501')return ['Access Denied',"You don't have permission to perform this invitation action."];
+  if(matches('AUTHENTICATION_REQUIRED'))return ['Sign In Required','Sign in before using a game invitation.'];
+  return ['Invitation Error','The invitation request could not be completed. Please try again.'];
+}
+function friendlyAuthError(error){
+  const message=String(error?.message||error||'').trim(),code=String(error?.code||'').toLowerCase(),normalizedMessage=message.toLowerCase();
+  if(code==='username_taken'||code==='user_already_exists'||normalizedMessage.includes('already registered')||normalizedMessage.includes('already taken')||normalizedMessage.includes('already exists'))return 'Username already taken.';
+  if(code==='invalid_credentials'||normalizedMessage.includes('invalid login credentials'))return 'Invalid username or password.';
+  if(code==='invalid_username')return 'Username must be 3–30 characters, begin with a letter or number, and contain only letters, numbers, underscores, or hyphens.';
+  if(code==='weak_password'||normalizedMessage.includes('password')&&normalizedMessage.includes('weak'))return 'Choose a stronger password with at least 8 characters.';
+  if(code==='over_request_rate_limit'||code==='over_email_send_rate_limit'||normalizedMessage.includes('rate limit')||normalizedMessage.includes('too many requests'))return 'Too many account attempts. Wait a moment and try again.';
+  if(code==='signup_disabled')return 'Account creation is temporarily unavailable.';
+  return 'Authentication could not be completed. Please try again.';
+}
+function setNotice(element,message,type=''){
+  element.textContent=message;element.classList.toggle('error',type==='error');element.classList.toggle('success',type==='success');
+}
+function validUsername(value){return usernamePattern.test(String(value||'').trim())}
+function validPassword(value){return typeof value==='string'&&value.length>=8&&value.length<=256}
+function setAuthMode(mode){
+  const login=mode==='login';$('loginForm').hidden=!login;$('createAccountForm').hidden=login;$('showLoginTabBtn').classList.toggle('active',login);$('showCreateTabBtn').classList.toggle('active',!login);$('showLoginTabBtn').setAttribute('aria-selected',String(login));$('showCreateTabBtn').setAttribute('aria-selected',String(!login));setNotice($('authMessage'),'');setTimeout(()=>$(login?'loginUsername':'createUsername').focus(),0);
+}
+function togglePasswordFields(fieldIds,visible){fieldIds.forEach(fieldId=>$(fieldId).type=visible?'text':'password')}
+function updateLoginCooldown(){
+  clearTimeout(loginCooldownTimer);const remaining=Math.ceil((loginCooldownUntil-Date.now())/1000),button=$('loginBtn');
+  if(remaining<=0){button.disabled=false;button.textContent='Log In';return}
+  button.disabled=true;button.textContent='Try Again in '+remaining+'s';loginCooldownTimer=setTimeout(updateLoginCooldown,1000);
+}
+function registerLoginFailure(){
+  loginFailures++;
+  if(loginFailures>=5){const seconds=Math.min(60,10*Math.pow(2,Math.min(2,loginFailures-5)));loginCooldownUntil=Date.now()+seconds*1000;updateLoginCooldown()}
+}
+async function copyText(value){
+  if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(value);return}
+  const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.append(field);field.select();const copied=document.execCommand('copy');field.remove();if(!copied)throw new Error('Clipboard unavailable.');
+}
+function inviteIsActive(invite){return !invite.revoked&&(!invite.expires_at||new Date(invite.expires_at)>new Date())&&(invite.max_uses==null||invite.use_count<invite.max_uses)}
+function inviteExpiryLabel(invite){if(!invite.expires_at)return 'Never expires';const milliseconds=new Date(invite.expires_at)-new Date();if(milliseconds<=0)return 'Expired';const hours=Math.ceil(milliseconds/3600000);return hours<=48?'Expires in '+hours+' hour'+(hours===1?'':'s'):'Expires in '+Math.ceil(hours/24)+' days'}
 function phaseLabel(game=currentGame()){return game?game.currentPhase+' '+game.currentDay:'No phase'}
 function addHistory(message,type='UPDATE'){
   const game=currentGame();if(!state||!game)return;
@@ -155,7 +218,7 @@ function save(message,type='UPDATE',entityId=null){
 }
 function scheduleCloudSave(action,entityType='game',entityId=null){
   if(!cloudSession||!state||!canEditGame())return;
-  pendingAudit={action:String(action||'Game updated').slice(0,120),entityType:['role','rule','player','faction','ability','action','game'].includes(entityType)?entityType:'game',entityId};
+  pendingAudit={action:String(action||'Game updated').slice(0,120),entityType:['role','rule','player','faction','ability','action','game','import'].includes(entityType)?entityType:'game',entityId};
   cloudDirty=true;setConnection('syncing','Saving');clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(flushCloudSave,750);
 }
 async function flushCloudSave(){
@@ -173,8 +236,17 @@ function removeById(list,itemId,message){
   state[list]=state[list].filter(record=>record.id!==itemId||record.gameId!==game.id);
   save(message,'DELETE');
 }
+function clearAuthenticatedState(){
+  clearTimeout(cloudSaveTimer);cloudDirty=false;cloudSaveInFlight=false;cloudChannelGameId=null;
+  const cachedIds=new Set([...gameIndex.games,...deviceGameSnapshot].map(game=>game.id));cachedIds.forEach(gameId=>localStorage.removeItem(gameDataKey(gameId)));
+  localStorage.removeItem(GAME_INDEX_KEY);localStorage.removeItem(LEGACY_STORAGE_KEY);gameIndex={version:4,activeGameId:null,games:[]};deviceGameSnapshot=[];state=null;cloudContext=null;cloudAudit=[];cloudImports=[];cloudInvites=[];joinedGameId=null;copilotThreads.clear();
+}
+function clearAccountFields(){['loginUsername','loginPassword','createUsername','createPassword','confirmPassword','currentPassword','newPassword','confirmNewPassword','legacyUsername','legacyPassword','legacyConfirmPassword'].forEach(fieldId=>{if($(fieldId))$(fieldId).value=''});['showLoginPassword','showCreatePassword','showChangePasswords','showLegacyPasswords'].forEach(fieldId=>{if($(fieldId))$(fieldId).checked=false});togglePasswordFields(['loginPassword','createPassword','confirmPassword','currentPassword','newPassword','confirmNewPassword','legacyPassword','legacyConfirmPassword'],false)}
+function closeAccountMenu(){$('accountMenuDropdown').hidden=true;$('accountMenuButton').setAttribute('aria-expanded','false')}
+function openAccountView(showPassword=false){showView('accountView');$('changePasswordPanel').hidden=!showPassword;closeAccountMenu();if(showPassword)setTimeout(()=>$('currentPassword').focus(),0)}
 function showView(viewId){
-  if(viewId!=='gamesView'&&!state)viewId='gamesView';
+  if(viewId!=='gamesView'&&viewId!=='accountView'&&!state)viewId='gamesView';
+  if(viewId==='accountView'&&!cloudSession)viewId='gamesView';
   document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===viewId));
   document.querySelectorAll('.view').forEach(view=>view.classList.toggle('active',view.id===viewId));
   if(viewId==='gamesView')renderGames();
@@ -187,11 +259,14 @@ function resetEditorContext(){
 }
 async function openGame(gameId,viewId='dashboardView'){
   const game=gameIndex.games.find(item=>item.id===gameId);if(!game)return;
-  cloudAudit=[];gameIndex.activeGameId=gameId;state=loadGameData(gameId);resetEditorContext();saveIndex();renderAll();showView(viewId);
+  cloudAudit=[];cloudImports=[];cloudInvites=[];$('inviteResult').hidden=true;$('inviteFormPanel').hidden=true;gameIndex.activeGameId=gameId;state=loadGameData(gameId);resetEditorContext();saveIndex();renderAll();showView(viewId);
   await refreshOpenGame();await subscribeToOpenGame();
 }
 function unloadCurrentGame(){
-  GMCloud.unsubscribe();cloudChannelGameId=null;cloudAudit=[];gameIndex.activeGameId=null;state=null;resetEditorContext();saveIndex();renderAll();showView('gamesView');
+  GMCloud.unsubscribe();cloudChannelGameId=null;cloudAudit=[];cloudImports=[];cloudInvites=[];gameIndex.activeGameId=null;state=null;resetEditorContext();saveIndex();renderAll();showView('gamesView');
+}
+function loseGameAccess(gameId){
+  const game=gameIndex.games.find(item=>item.id===gameId);localStorage.removeItem(gameDataKey(gameId));copilotThreads.delete(gameId);gameIndex.games=gameIndex.games.filter(item=>item.id!==gameId);if(gameIndex.activeGameId===gameId){GMCloud.unsubscribe();cloudChannelGameId=null;gameIndex.activeGameId=null;state=null;cloudContext=null;cloudAudit=[];cloudImports=[];cloudInvites=[]}saveIndex();renderAll();showView('gamesView');alert('Your access to '+(game?.name||'this game')+' was removed. Protected game data is no longer available in this session.');
 }
 
 function openGameForm(game=null){
@@ -262,26 +337,25 @@ function resetCurrentGame(){
   game.currentDay=game.startingDay;game.currentPhase='Day';game.status='SETUP';state=reset;addHistory('Gameplay progress reset; setup was preserved.','RESET');save();
 }
 
-function gameCard(game,group){
-  const current=game.id===gameIndex.activeGameId?' current':'';
-  let actions='';
-  if(group==='active')actions='<button data-game-action=\"open\">Open Game</button><button class=\"secondary\" data-game-action=\"edit\">Edit Game</button><button class=\"secondary\" data-game-action=\"archive\">Archive / Close</button>';
-  if(group==='saved')actions='<button data-game-action=\"open\">Load Game</button><button class=\"secondary\" data-game-action=\"edit\">Edit Game</button><button class=\"secondary\" data-game-action=\"duplicate\">Duplicate</button><button class=\"secondary\" data-game-action=\"archive\">Archive</button><button class=\"danger\" data-game-action=\"delete\">Delete</button>';
-  if(group==='archived')actions='<button data-game-action=\"view\">View Game</button><button class=\"secondary\" data-game-action=\"restore\">Restore</button><button class=\"secondary\" data-game-action=\"duplicate\">Duplicate</button><button class=\"danger\" data-game-action=\"delete\">Delete</button>';
-  return '<article class=\"game-card'+current+'\" data-game-id=\"'+esc(game.id)+'\"><div class=\"section-heading\"><div><h3>'+esc(game.name)+'</h3><div class=\"game-theme\">'+esc(game.theme||'No theme')+'</div></div><span class=\"status-badge '+game.status+'\">'+game.status+'</span></div><div class=\"game-card-meta\"><span>'+game.playerCount+' players</span><span>'+esc(phaseLabel(game))+'</span><span>Created '+esc(formatDate(game.createdAt))+'</span><span>Updated '+esc(formatDateTime(game.updatedAt))+'</span><span class=\"game-id\">ID: '+esc(game.id)+'</span></div><div class=\"game-card-actions\">'+actions+'</div></article>';
+function gameCard(game){
+  const current=game.id===gameIndex.activeGameId?' current':'',owner=game.memberRole==='owner',editor=owner||game.memberRole==='gm',archived=game.status==='ARCHIVED';
+  let actions='<button data-game-action="open">'+(game.memberRole==='viewer'?'View Game':'Open Game')+'</button>';
+  if(editor&&!archived)actions+='<button class="secondary" data-game-action="edit">Edit Game</button>';
+  if(owner){actions+=archived?'<button class="secondary" data-game-action="restore">Restore</button>':'<button class="secondary" data-game-action="archive">Archive</button>';actions+='<button class="secondary" data-game-action="duplicate">Duplicate</button><button class="danger" data-game-action="delete">Delete</button>'}
+  return '<article class="game-card'+current+'" data-game-id="'+esc(game.id)+'"><div class="section-heading"><div><h3>'+esc(game.name)+'</h3><div class="game-theme">'+esc(game.theme||'No theme')+'</div></div><div><span class="permission-badge">'+esc(permissionLabel(game.memberRole))+'</span> <span class="status-badge '+game.status+'">'+game.status+'</span></div></div><div class="game-card-meta"><span>'+game.playerCount+' players</span><span>'+esc(phaseLabel(game))+'</span><span>Created '+esc(formatDate(game.createdAt))+'</span><span>Updated '+esc(formatDateTime(game.updatedAt))+'</span><span class="game-id">ID: '+esc(game.id)+'</span></div><div class="game-card-actions">'+actions+'</div></article>';
 }
 function renderGames(){
   const query=normalized($('gamesSearch').value),sort=$('gamesSort').value,total=gameIndex.games.length;
   $('gamesEmptyState').hidden=total!==0;$('gamesManagerContent').hidden=total===0;
   const sorter=(a,b)=>sort==='NAME'?a.name.localeCompare(b.name):sort==='CREATED'?new Date(b.createdAt)-new Date(a.createdAt):sort==='STATUS'?a.status.localeCompare(b.status):new Date(b.updatedAt)-new Date(a.updatedAt);
   const filtered=gameIndex.games.filter(game=>normalized(game.name+' '+game.theme).includes(query)).sort(sorter);
-  const groups={active:filtered.filter(game=>game.status==='ACTIVE'),saved:filtered.filter(game=>['SETUP','PAUSED','COMPLETED'].includes(game.status)),archived:filtered.filter(game=>game.status==='ARCHIVED')};
-  [['active','activeGamesList'],['saved','savedGamesList'],['archived','archivedGamesList']].forEach(([group,targetId])=>{
-    $(targetId).innerHTML=groups[group].map(game=>gameCard(game,group)).join('')||'<div class=\"empty-state\">No matching '+group+' games.</div>';
+  const groups={mine:filtered.filter(game=>game.memberRole==='owner'&&game.status!=='ARCHIVED'),shared:filtered.filter(game=>game.memberRole!=='owner'&&game.status!=='ARCHIVED'),archived:filtered.filter(game=>game.status==='ARCHIVED')};
+  [['mine','myGamesList','owned'],['shared','sharedGamesList','shared'],['archived','archivedGamesList','archived']].forEach(([group,targetId,label])=>{
+    $(targetId).innerHTML=groups[group].map(game=>gameCard(game)).join('')||'<div class="empty-state">No matching '+label+' games.</div>';
   });
   document.querySelectorAll('[data-game-action]').forEach(button=>button.onclick=event=>{
     event.stopPropagation();const card=button.closest('[data-game-id]'),gameId=card.dataset.gameId,action=button.dataset.gameAction;
-    if(action==='open'||action==='view')openGame(gameId);
+    if(action==='open')openGame(gameId);
     if(action==='edit')openGameForm(gameIndex.games.find(game=>game.id===gameId));
     if(action==='duplicate')cloneSetup(gameId);
     if(action==='archive')archiveGame(gameId);
@@ -291,17 +365,25 @@ function renderGames(){
 }
 function renderChrome(){
   const game=currentGame(),hasGame=Boolean(game&&state);
+  document.body.classList.remove('auth-pending');document.body.classList.toggle('authenticated',Boolean(cloudSession));document.body.classList.toggle('signed-out',!cloudSession);
   $('currentGameLabel').textContent=hasGame?'CURRENT GAME: '+game.name:'No game open';
   $('lastSavedLabel').textContent=hasGame?'Last Saved: '+formatDateTime(game.lastSavedAt):'Not saved';
   $('saveGameBtn').disabled=!hasGame||!canEditGame();$('exportBtn').disabled=!hasGame;
-  $('currentUserLabel').textContent=cloudSession?(cloudSession.user.user_metadata?.display_name||cloudSession.user.email||'Signed in'):'';$('signOutBtn').hidden=!cloudSession;
-  $('authPanel').hidden=Boolean(cloudSession);$('authPanel').style.display=cloudSession?'none':'';$('joinGamePanel').hidden=!cloudSession;$('joinGamePanel').style.display=cloudSession?'':'none';
+  const account=GMCloud.user?.(),legacyAccount=Boolean(account?.isAnonymous&&account?.isLegacyAccount);$('currentUserLabel').textContent=account?.username||'Account';$('accountMenu').hidden=!cloudSession;$('legacyUpgradePanel').hidden=!legacyAccount;
+  $('authPanel').hidden=Boolean(cloudSession);$('showJoinGameBtn').hidden=!cloudSession;if(!cloudSession){$('joinGamePanel').hidden=true;closeAccountMenu()}
   const hasDeviceOnlySaves=Boolean(cloudSession&&deviceGameSnapshot.some(saved=>!gameIndex.games.some(game=>game.id===saved.id)));$('uploadDeviceGamesBtn').hidden=!hasDeviceOnlySaves;
   document.querySelectorAll('.game-tab').forEach(tab=>tab.disabled=!hasGame);
   const switcher=$('gameSwitcher'),selected=game?.id||'';switcher.innerHTML='';switcher.append(option('','No game open'));
   [...gameIndex.games].sort((a,b)=>a.name.localeCompare(b.name)).forEach(item=>switcher.append(option(item.id,item.name+(item.status==='ARCHIVED'?' (Archived)':''))));
   switcher.value=selected;document.title=hasGame?game.name+' — GM Command Center':'Games — GM Command Center';
-  const readOnly=hasGame&&!canEditGame();['addFactionBtn','addPlayerBtn','addActionBtn','addAbilityBtn','saveSettingsBtn','resetCurrentGameBtn','archiveCurrentGameBtn','deleteCurrentGameBtn','browseRoleTemplatesBtn','addRoleTemplateBtn'].forEach(key=>{if($(key))$(key).disabled=readOnly});
+  $('createGameBtn').disabled=legacyAccount;$('emptyCreateGameBtn').disabled=legacyAccount;$('showJoinGameBtn').disabled=legacyAccount;$('importWordBtn').disabled=legacyAccount;const readOnly=hasGame&&!canEditGame(),owner=hasGame&&game.memberRole==='owner';
+  ['factionName','factionClass','factionAlias','factionTeamNumber','factionAlignment','factionDescription','factionWinCondition','factionNotes','addFactionBtn','cancelFactionEditBtn','playerName','playerRole','addPlayerBtn','actionCategory','actionActor','actionTarget','actionName','addActionBtn','abilityName','abilityCategory','abilityDefinition','abilityPhase','abilityMechanics','addAbilityBtn','cancelAbilityEditBtn','ruleTitle','ruleDescription','ruleCategory','ruleVisibility','ruleNotes','ruleEnabled','saveRuleBtn','cancelRuleEditBtn','gameName','gameTheme','gameDescription','gameStatus','currentDay','currentPhase','gameNotes','villagerLabel','denLabel','neutralLabel','allowMultiDen','saveSettingsBtn','resetCurrentGameBtn','browseRoleTemplatesBtn','addRoleTemplateBtn'].forEach(key=>{if($(key))$(key).disabled=readOnly});
+  ['archiveCurrentGameBtn','deleteCurrentGameBtn'].forEach(key=>{if($(key))$(key).disabled=!owner});
+}
+function renderAccount(){
+  const account=GMCloud.user?.();if(!account)return;
+  const owned=gameIndex.games.filter(game=>game.memberRole==='owner').length,shared=gameIndex.games.filter(game=>game.memberRole!=='owner').length;
+  $('accountHeading').textContent=account.username;$('accountUsername').textContent=account.username;$('accountMemberSince').textContent=formatDate(account.createdAt);$('accountGamesOwned').textContent=String(owned);$('accountSharedGames').textContent=String(shared);
 }
 
 function renderSelects(){
@@ -361,8 +443,18 @@ function renderDashboard(){
   $('metrics').innerHTML=[['Factions',state.factions.length],['Roles',state.roles.length],['Players',state.players.length],['Known Abilities',state.abilities.length]].map(([label,value])=>'<div class=\"metric\"><strong>'+value+'</strong><span>'+label+'</span></div>').join('');
   $('factionOverview').innerHTML=state.factions.map(faction=>{const roles=state.roles.filter(role=>role.factionId===faction.id),players=state.players.filter(player=>roles.some(role=>role.id===player.roleId));return '<div class=\"item-card\"><h3>'+esc(faction.name)+'</h3><span class=\"badge '+faction.class+'\">'+faction.class+'</span><p>'+roles.length+' roles • '+players.length+' players • '+players.filter(player=>player.alive).length+' alive</p></div>'}).join('');
 }
+function clearFactionForm(){
+  editingFactionId=null;$('addFactionBtn').textContent='Add Faction';$('cancelFactionEditBtn').hidden=true;$('factionClass').value='VILLAGER';$('factionTeam').value='1';['factionName','factionAlias','factionAlignment','factionDescription','factionWinCondition','factionNotes'].forEach(key=>$(key).value='');
+}
+function factionFormValues(){
+  const name=$('factionName').value.trim(),className=$('factionClass').value;if(!name)return alert('Enter a faction name.');if(state.factions.some(faction=>normalized(faction.name)===normalized(name)&&faction.id!==editingFactionId))return alert('A faction with this name already exists.');if(className==='DEN'&&!state.settings.allowMultiDen&&state.factions.some(faction=>faction.class==='DEN'&&faction.id!==editingFactionId))return alert('Multiple Den factions are disabled.');return {name,class:className,alias:$('factionAlias').value.trim(),teamNumber:Number($('factionTeam').value)||1,alignment:$('factionAlignment').value.trim(),description:$('factionDescription').value.trim(),winCondition:$('factionWinCondition').value.trim(),notes:$('factionNotes').value.trim()};
+}
+function beginFactionEdit(factionId){
+  if(!canEditGame())return;const faction=factionById(factionId);if(!faction)return;editingFactionId=faction.id;$('addFactionBtn').textContent='Save Faction';$('cancelFactionEditBtn').hidden=false;$('factionName').value=faction.name;$('factionClass').value=faction.class;$('factionAlias').value=faction.alias;$('factionTeam').value=faction.teamNumber;$('factionAlignment').value=faction.alignment;$('factionDescription').value=faction.description;$('factionWinCondition').value=faction.winCondition;$('factionNotes').value=faction.notes;$('factionName').focus();
+}
 function renderFactions(){
-  $('factionList').innerHTML=state.factions.map(faction=>'<div class=\"item-card\"><h3>'+esc(faction.name)+'</h3><span class=\"badge '+faction.class+'\">'+faction.class+'</span><p>Alias: '+esc(faction.alias||'—')+' • Team '+(faction.teamNumber||1)+'</p><button class=\"danger delete-faction\" data-id=\"'+esc(faction.id)+'\">Delete</button></div>').join('');
+  $('factionList').innerHTML=state.factions.map(faction=>'<div class=\"item-card\"><h3>'+esc(faction.name)+'</h3><span class=\"badge '+faction.class+'\">'+faction.class+'</span><p>Alias: '+esc(faction.alias||'—')+' • Team '+(faction.teamNumber||1)+(faction.alignment?' • '+esc(faction.alignment):'')+'</p>'+(faction.description?'<p class=\"faction-detail\">'+esc(faction.description)+'</p>':'')+(faction.winCondition?'<p><strong>Win condition:</strong> '+esc(faction.winCondition)+'</p>':'')+(faction.notes?'<p class=\"muted faction-detail\">'+esc(faction.notes)+'</p>':'')+'<div class=\"faction-actions\">'+(canEditGame()?'<button class=\"secondary edit-faction\" data-id=\"'+esc(faction.id)+'\">Edit</button><button class=\"danger delete-faction\" data-id=\"'+esc(faction.id)+'\">Delete</button>':'<span class=\"muted\">Read only</span>')+'</div></div>').join('');
+  document.querySelectorAll('.edit-faction').forEach(button=>button.onclick=()=>beginFactionEdit(button.dataset.id));
   document.querySelectorAll('.delete-faction').forEach(button=>button.onclick=()=>{if(state.roles.some(role=>role.factionId===button.dataset.id))return alert('Move this faction’s roles first.');const faction=factionById(button.dataset.id);removeById('factions',button.dataset.id,'Faction deleted: '+faction.name+'.')});
 }
 function renderRolesLegacy(){
@@ -395,6 +487,72 @@ function renderQueue(){
   $('queueList').innerHTML=sorted.map((action,index)=>'<div class=\"queue-row\"><strong>'+(index+1)+'</strong><div><strong>'+esc(action.name)+'</strong><div class=\"muted\">'+esc(playerById(action.actorId)?.name||'Unknown')+' → '+esc(playerById(action.targetId)?.name||'Unknown')+' • '+esc(action.category)+'</div></div><button class=\"danger delete-action\" data-id=\"'+esc(action.id)+'\">Remove</button></div>').join('')||'<p class=\"muted\">No queued actions.</p>';
   document.querySelectorAll('.delete-action').forEach(button=>button.onclick=()=>removeById('actions',button.dataset.id,'Queued action removed.'));
 }
+function currentCopilotThread(){
+  const game=currentGame();if(!game)return [];
+  if(!copilotThreads.has(game.id))copilotThreads.set(game.id,[]);
+  return copilotThreads.get(game.id);
+}
+function friendlyCopilotError(error){
+  const code=String(error?.code||'');
+  if(code==='OPENAI_CREDITS_REQUIRED')return 'OpenAI API credits are required before the AI GM can answer.';
+  if(code==='GM_ACCESS_REQUIRED')return 'Only the owner or an authorized GM can use the AI GM.';
+  if(code==='AUTH_REQUIRED')return 'Your session expired. Log in again before using the AI GM.';
+  if(code==='RATE_LIMITED'||code==='OPENAI_RATE_LIMIT')return 'The AI GM is receiving too many requests. Wait a minute and try again.';
+  if(code==='GAME_CONTEXT_ERROR')return 'This saved game could not be prepared for the AI GM.';
+  return String(error?.message||'The AI GM could not complete this request.');
+}
+function setCopilotStatus(message='',kind=''){
+  const element=$('copilotStatus');if(!element)return;element.textContent=message;element.className='form-notice copilot-status'+(kind?' '+kind:'');
+}
+function copilotList(title,items,className=''){
+  if(!items?.length)return '';
+  return '<div class="copilot-detail '+className+'"><strong>'+esc(title)+'</strong><ul>'+items.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul></div>';
+}
+function renderCopilot(){
+  const conversation=$('copilotConversation');if(!conversation||!state)return;
+  const thread=currentCopilotThread(),editable=canEditGame();
+  $('copilotPrompt').maxLength=COPILOT_MAX_MESSAGE_LENGTH;$('copilotPrompt').disabled=copilotPending||!editable;$('copilotTask').disabled=copilotPending||!editable;$('copilotDepth').disabled=copilotPending||!editable;$('copilotAskBtn').disabled=copilotPending||!editable;$('copilotResolveQueueBtn').disabled=copilotPending||!editable||!state.actions.length;$('copilotClearBtn').disabled=copilotPending||!thread.length;
+  $('copilotAskBtn').textContent=copilotPending?'Thinking…':'Ask AI GM';
+  const messages=thread.map((entry,index)=>{
+    if(entry.role==='user')return '<article class="copilot-message copilot-user"><div class="copilot-message-heading">You</div><p>'+esc(entry.content)+'</p></article>';
+    const result=entry.result,review=validateCopilotChanges(result.proposed_changes,state),stale=Number(entry.gameVersion)!==Number(cloudVersion),modelName=entry.model==='gpt-5.6-sol'?'Sol deep reasoning':'Terra standard';
+    const changes=review.valid.length?'<div class="copilot-proposal"><div class="copilot-message-heading">Proposed game changes</div><ol>'+review.valid.map(change=>'<li><strong>'+esc(copilotChangeLabel(change,state))+'</strong>'+(change.reason?'<span>'+esc(change.reason)+'</span>':'')+'</li>').join('')+'</ol>'+(entry.applied?'<span class="copilot-applied">Applied by a GM</span>':editable?'<button class="copilot-apply" data-copilot-apply="'+index+'">Review &amp; Apply '+review.valid.length+' Change'+(review.valid.length===1?'':'s')+'</button>':'<span class="muted">Read-only access cannot apply changes.</span>')+'</div>':'';
+    const rejected=review.rejected.length?copilotList('Outdated or invalid proposals',review.rejected.map(item=>item.reason),'copilot-warning'):'';
+    return '<article class="copilot-message copilot-assistant"><div class="copilot-message-heading"><span>AI GM • '+esc(modelName)+'</span><span class="confidence '+esc(result.confidence)+'">'+esc(result.confidence)+' confidence</span></div><p class="copilot-answer">'+esc(result.answer)+'</p>'+copilotList('Ruling basis',result.ruling_basis)+copilotList('Warnings',result.warnings,'copilot-warning')+copilotList('Questions to confirm',result.follow_up_questions)+changes+rejected+(stale?'<p class="copilot-stale">The game changed after this answer. Proposals were revalidated against the current game before display.</p>':'')+'</article>';
+  }).join('');
+  conversation.innerHTML=messages||'<div class="copilot-empty"><h3>Ask about this saved game</h3><p>The AI GM reads its roles, linked abilities, rules, players, phase, and action queue. It can explain rulings or propose changes for you to approve.</p></div>';
+  document.querySelectorAll('[data-copilot-apply]').forEach(button=>button.onclick=()=>applyCopilotResult(Number(button.dataset.copilotApply)));
+  conversation.scrollTop=conversation.scrollHeight;
+}
+async function askCopilot(messageOverride='',taskOverride=''){
+  if(copilotPending||!canEditGame())return;
+  const message=String(messageOverride||$('copilotPrompt').value).trim(),task=taskOverride||$('copilotTask').value,depth=$('copilotDepth').value,thread=currentCopilotThread();
+  let request;
+  try{request=normalizeCopilotRequest({message,task,depth,history:thread.map(entry=>({role:entry.role,content:entry.content||entry.result?.answer||''}))})}catch(error){return setCopilotStatus(error.message,'error')}
+  thread.push({role:'user',content:request.message});$('copilotPrompt').value='';copilotPending=true;setCopilotStatus(depth==='deep'?'Sol is reviewing the complete saved game…':'Terra is reviewing the saved game…');renderCopilot();
+  try{
+    const response=await GMCloud.askCopilot(currentGame().id,request),result=normalizeCopilotResponse(response?.result||{});
+    thread.push({role:'assistant',content:result.answer,result,model:response.model,gameVersion:response.gameVersion,generatedAt:response.generatedAt,applied:false});setCopilotStatus('Answer ready. Review any proposed changes before applying them.','success');
+  }catch(error){setCopilotStatus(friendlyCopilotError(error),'error')}
+  finally{copilotPending=false;renderCopilot()}
+}
+function applyCopilotResult(index){
+  if(!canEditGame())return alert('Only an owner or authorized GM can apply AI proposals.');
+  const entry=currentCopilotThread()[index];if(!entry?.result||entry.applied)return;
+  const {valid,rejected}=validateCopilotChanges(entry.result.proposed_changes,state);
+  if(!valid.length)return alert(rejected.length?'These proposals are no longer valid for the current game.':'There are no proposed changes to apply.');
+  const summary=valid.map((change,itemIndex)=>(itemIndex+1)+'. '+copilotChangeLabel(change,state)).join('\n');
+  if(!confirm('Review the AI GM proposal before applying it:\n\n'+summary+'\n\nApply these changes to the shared game?'))return;
+  for(const change of valid){
+    if(change.kind==='remove_action')state.actions=state.actions.filter(action=>action.id!==change.target_id);
+    if(change.kind==='set_player_alive')playerById(change.target_id).alive=change.value==='true';
+    if(change.kind==='set_player_role')playerById(change.target_id).roleId=change.value;
+    if(change.kind==='add_history')addHistory(change.value,'AI_RULING');
+    if(change.kind==='set_game_phase')currentGame().currentPhase=change.value;
+    if(change.kind==='set_game_day')currentGame().currentDay=Number(change.value);
+  }
+  entry.applied=true;save('AI GM proposal approved and applied ('+valid.length+' change'+(valid.length===1?'':'s')+').','AI');setCopilotStatus('The approved changes were applied and queued for secure cloud save.','success');
+}
 function renderStats(){
   const factionFilter=$('statsFactionFilter').value,aliveOnly=$('aliveOnlyStats').checked;let roles=state.roles.filter(role=>factionFilter==='ALL'||role.factionId===factionFilter);
   if(aliveOnly){const activeRoleIds=new Set(state.players.filter(player=>player.alive).map(player=>player.roleId));roles=roles.filter(role=>activeRoleIds.has(role.id))}
@@ -425,18 +583,102 @@ function renderRules(){
   document.querySelectorAll('.edit-rule').forEach(button=>button.onclick=()=>beginRuleEdit(button.dataset.id));document.querySelectorAll('.duplicate-rule').forEach(button=>button.onclick=()=>duplicateRule(button.dataset.id));document.querySelectorAll('.up-rule').forEach(button=>button.onclick=()=>moveRule(button.dataset.id,-1));document.querySelectorAll('.down-rule').forEach(button=>button.onclick=()=>moveRule(button.dataset.id,1));document.querySelectorAll('.delete-rule').forEach(button=>button.onclick=()=>{const rule=state.rules.find(item=>item.id===button.dataset.id);if(rule&&confirm('Delete rule "'+rule.title+'"?')){state.rules=state.rules.filter(item=>item.id!==rule.id);state.rules.sort((a,b)=>a.sortOrder-b.sortOrder).forEach((item,index)=>item.sortOrder=index);save('Rule deleted: '+rule.title+'.','RULE',rule.id)}});
 }
 
+function standardAbilityCatalog(){return standardAbilities().map(ability=>({key:'standard:'+normalizeImportName(ability.name),...ability,sourceGameName:'Built-in Encyclopedia'}))}
+function importInput(type,index,field,label,value,options={}){
+  const attributes=' data-import-type="'+type+'" data-import-index="'+index+'" data-import-field="'+field+'"';if(options.kind==='textarea')return '<label class="'+(options.wide?'wide':'')+'">'+label+'<textarea rows="'+(options.rows||2)+'"'+attributes+'>'+esc(value??'')+'</textarea></label>';if(options.kind==='select')return '<label class="'+(options.wide?'wide':'')+'">'+label+'<select'+attributes+'>'+options.items.map(item=>'<option value="'+esc(item.value)+'" '+(String(item.value)===String(value)?'selected':'')+'>'+esc(item.label)+'</option>').join('')+'</select></label>';return '<label class="'+(options.wide?'wide':'')+'">'+label+'<input'+attributes+(options.inputType?' type="'+options.inputType+'"':'')+' value="'+esc(value??'')+'"></label>';
+}
+function importStatus(change){if(!change)return '';const label=change.status,statusClass=label.startsWith('MISSING')?'MISSING':label;return '<span class="import-status '+statusClass+'">'+esc(label)+'</span>'}
+function importDifferences(change){if(!change?.differences?.length)return '';return '<ul class="import-differences">'+change.differences.map(item=>'<li><strong>'+esc(item.field)+':</strong> current '+esc(Array.isArray(item.current)?item.current.join(', '):item.current||'—')+' → document '+esc(Array.isArray(item.document)?item.document.join(', '):item.document||'—')+'</li>').join('')+'</ul>'}
+function importDecision(kind,index,change){
+  if(importMode!=='reimport'||!change||change.status==='UNCHANGED')return '';let items;if(change.status==='NEW')items=[['add','Add'],['skip','Skip']];else if(change.status.startsWith('MISSING'))items=kind==='roles'?[['keep','Keep Role'],['archive','Archive Role']]:[['keep','Keep Current']];else items=[['keep','Keep Current'],['document','Use Document Version']];return '<label>Merge decision<select data-import-change-kind="'+kind+'" data-import-change-index="'+index+'">'+items.map(item=>'<option value="'+item[0]+'" '+(change.decision===item[0]?'selected':'')+'>'+item[1]+'</option>').join('')+'</select></label>';
+}
+function comparisonChange(kind,item){
+  if(!importComparison)return null;const collection=importComparison[kind]||[],field=kind==='rules'?'title':'name',key=normalizeImportName(item[field]);return collection.find(change=>change.key===key)||null;
+}
+function renderImportOverview(){
+  const summary=importSummary(importDraft),factionCounts=importDraft.factions.filter(item=>item.selected).map(faction=>faction.name+' — '+importDraft.roles.filter(role=>role.selected&&role.factionTempId===faction.tempId).length+' roles');
+  return '<div class="import-record"><h3>Detected Game</h3><p><strong>'+esc(importDraft.game.name)+'</strong></p><p>'+esc(importDraft.game.description||'No description was confidently detected.')+'</p></div><div class="import-record"><h3>Selective Import</h3><div class="import-overview-list">'+['game','factions','roles','abilities','rules'].map(key=>'<label class="check"><input type="checkbox" data-import-section="'+key+'" '+(importDraft.sections[key]!==false?'checked':'')+'> '+esc(key==='game'?'Game Information':key[0].toUpperCase()+key.slice(1))+'</label>').join('')+'</div></div><div class="grid2"><div class="import-record"><h3>Detected Factions</h3><ul>'+factionCounts.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul></div><div class="import-record"><h3>Detected Totals</h3><p>'+summary.roles+' roles • '+summary.abilities+' abilities • '+summary.rules+' rules • '+summary.warnings+' warnings</p></div></div>'+(importMode==='reimport'?'<div class="import-record"><h3>Re-import Safety</h3><p>Existing records default to <strong>Keep Current</strong>. Missing roles are never deleted automatically. Review each changed item before applying the document.</p></div>':'');
+}
+function renderImportGame(){
+  const change=importComparison?.game;return '<article class="import-record"><div class="import-record-header"><h3>Game Information</h3>'+importStatus(change)+'</div>'+importDifferences(change)+'<div class="import-record-grid">'+importInput('game',0,'name','Game name',importDraft.game.name)+importInput('game',0,'theme','Theme',importDraft.game.theme)+importInput('game',0,'playerCount','Expected players',importDraft.game.playerCount??'',{inputType:'number'})+importInput('game',0,'startingPhase','Starting phase',importDraft.game.startingPhase,{kind:'select',items:[{value:'Day',label:'Day'},{value:'Night',label:'Night'}]})+importInput('game',0,'description','Description',importDraft.game.description,{kind:'textarea',wide:true,rows:4})+importInput('game',0,'notes','General notes',importDraft.game.notes,{kind:'textarea',wide:true,rows:3})+'</div>'+importDecision('game',0,change)+'</article>';
+}
+function renderImportFactions(){
+  const classItems=['VILLAGER','DEN','NEUTRAL'].map(value=>({value,label:value}));return importDraft.factions.map((faction,index)=>{const change=comparisonChange('factions',faction);return '<article class="import-record '+(faction.selected?'':'unselected')+'"><div class="import-record-header"><label class="check"><input type="checkbox" data-import-type="factions" data-import-index="'+index+'" data-import-field="selected" '+(faction.selected?'checked':'')+'> <strong>'+esc(faction.name||'Untitled Faction')+'</strong></label>'+importStatus(change)+'</div>'+importDifferences(change)+'<div class="import-record-grid">'+importInput('factions',index,'name','Faction name',faction.name)+importInput('factions',index,'className','Standard class',faction.className,{kind:'select',items:classItems})+importInput('factions',index,'alignment','Alignment / type',faction.alignment)+importInput('factions',index,'expectedRoleCount','Expected role count',faction.expectedRoleCount??'',{inputType:'number'})+importInput('factions',index,'description','Description',faction.description,{kind:'textarea',wide:true})+importInput('factions',index,'winCondition','Faction win condition',faction.winCondition,{kind:'textarea',wide:true})+importInput('factions',index,'notes','Faction notes',faction.notes,{kind:'textarea',wide:true})+'</div>'+importDecision('factions',importComparison?.factions?.indexOf(change),change)+'</article>'}).join('')||'<div class="empty-state">No factions were detected.</div>';
+}
+function renderImportRoles(){
+  const factionItems=[{value:'',label:'UNASSIGNED'},...importDraft.factions.filter(item=>item.selected).map(item=>({value:item.tempId,label:item.name}))];return importDraft.roles.map((role,index)=>{const change=comparisonChange('roles',role),duplicate=role.duplicateOfTempId?'<label>Possible duplicate<select data-import-duplicate-index="'+index+'"><option value="merge" '+(role.duplicateDecision==='merge'?'selected':'')+'>Merge / skip duplicate</option><option value="separate" '+(role.duplicateDecision==='separate'?'selected':'')+'>Keep separate</option></select></label>':'';return '<article class="import-record '+(role.selected?'':'unselected')+'"><div class="import-record-header"><label class="check"><input type="checkbox" data-import-type="roles" data-import-index="'+index+'" data-import-field="selected" '+(role.selected?'checked':'')+'> <strong>'+esc(role.name||'Untitled Role')+'</strong></label>'+importStatus(change)+'</div>'+importDifferences(change)+'<div class="import-record-grid">'+importInput('roles',index,'name','Role name',role.name)+importInput('roles',index,'factionTempId','Faction',role.factionTempId||'',{kind:'select',items:factionItems})+importInput('roles',index,'alignment','Alignment',role.alignment)+importInput('roles',index,'abilityUses','Ability uses',role.abilityUses??'',{inputType:'number'})+importInput('roles',index,'description','Description',role.description,{kind:'textarea',wide:true})+importInput('roles',index,'abilityNames','Abilities (comma separated)',role.abilityNames.join(', '),{wide:true})+importInput('roles',index,'activeAbilityName','Primary active ability',role.activeAbilityName)+importInput('roles',index,'passiveAbilityName','Primary passive ability',role.passiveAbilityName)+importInput('roles',index,'cooldowns','Cooldowns',role.cooldowns)+importInput('roles',index,'immunities','Immunities (comma separated)',role.immunities.join(', '))+importInput('roles',index,'restrictions','Restrictions (comma separated)',role.restrictions.join(', '),{wide:true})+importInput('roles',index,'winCondition','Role win condition',role.winCondition,{kind:'textarea',wide:true})+importInput('roles',index,'notes','Role notes',role.notes,{kind:'textarea',wide:true})+importInput('roles',index,'gmNotes','GM-only notes',role.gmNotes,{kind:'textarea',wide:true})+importInput('roles',index,'tags','Tags (comma separated)',role.tags.join(', '),{wide:true})+'</div>'+duplicate+importDecision('roles',importComparison?.roles?.indexOf(change),change)+'</article>'}).join('')||'<div class="empty-state">No roles were detected.</div>';
+}
+function renderImportAbilities(){
+  const categoryItems=['Investigation','Harmful','Protection','Support','Control','Communication','Passive','Other'].map(value=>({value,label:value})),phaseItems=['Night','Day','Any','Passive'].map(value=>({value,label:value}));return importDraft.abilities.map((ability,index)=>{const change=comparisonChange('abilities',ability),matchItems=[{value:'create-new',label:'Create new ability'},...ability.possibleMatches.map(match=>({value:'existing:'+match.key,label:'Use '+match.name+(match.sourceGameName?' — '+match.sourceGameName:'')+(match.score<1?' (possible match)':'')}))],decisionValue=ability.decision==='use-existing'?'existing:'+ability.matchKey:'create-new';return '<article class="import-record '+(ability.selected?'':'unselected')+'"><div class="import-record-header"><label class="check"><input type="checkbox" data-import-type="abilities" data-import-index="'+index+'" data-import-field="selected" '+(ability.selected?'checked':'')+'> <strong>'+esc(ability.name||'Untitled Ability')+'</strong></label><div>'+importStatus(change)+' <span class="badge">'+esc(ability.matchStatus)+'</span></div></div>'+importDifferences(change)+'<div class="import-record-grid">'+importInput('abilities',index,'name','Ability name',ability.name)+importInput('abilities',index,'matchDecision','Encyclopedia decision',decisionValue,{kind:'select',items:matchItems})+importInput('abilities',index,'category','Category',ability.category,{kind:'select',items:categoryItems})+importInput('abilities',index,'phase','Usual phase',ability.phase,{kind:'select',items:phaseItems})+importInput('abilities',index,'definition','Definition',ability.definition,{kind:'textarea',wide:true,rows:3})+importInput('abilities',index,'mechanics','Related mechanics (comma separated)',ability.mechanics.join(', '),{wide:true})+'</div>'+importDecision('abilities',importComparison?.abilities?.indexOf(change),change)+'</article>'}).join('')||'<div class="empty-state">No abilities were detected.</div>';
+}
+function renderImportRules(){return importDraft.rules.map((rule,index)=>{const change=comparisonChange('rules',rule);return '<article class="import-record '+(rule.selected?'':'unselected')+'"><div class="import-record-header"><label class="check"><input type="checkbox" data-import-type="rules" data-import-index="'+index+'" data-import-field="selected" '+(rule.selected?'checked':'')+'> <strong>'+esc(rule.title||'Untitled Rule')+'</strong></label>'+importStatus(change)+'</div>'+importDifferences(change)+'<div class="import-record-grid">'+importInput('rules',index,'title','Rule title',rule.title)+importInput('rules',index,'category','Category',rule.category)+importInput('rules',index,'visibility','Visibility',rule.visibility,{kind:'select',items:[{value:'public',label:'Public'},{value:'gm',label:'GM-only'}]})+importInput('rules',index,'description','Description',rule.description,{kind:'textarea',wide:true,rows:3})+importInput('rules',index,'notes','Notes',rule.notes,{kind:'textarea',wide:true})+'</div>'+importDecision('rules',importComparison?.rules?.indexOf(change),change)+'</article>'}).join('')||'<div class="empty-state">No rules were detected.</div>'}
+function renderImportWarnings(){return importDraft.warnings.map(warning=>'<article class="import-record import-warning '+esc(warning.severity)+'"><strong>'+esc(warning.severity.toUpperCase())+'</strong><p>'+esc(warning.message)+'</p></article>').join('')||'<div class="empty-state">No parsing warnings.</div>'}
+function bindImportReview(){
+  document.querySelectorAll('[data-import-tab]').forEach(button=>button.onclick=()=>{importReviewTab=button.dataset.importTab;importReviewOpen=true;renderDocumentImport()});
+  document.querySelectorAll('[data-import-section]').forEach(input=>input.onchange=()=>{importDraft.sections[input.dataset.importSection]=input.checked;renderDocumentImport()});
+  document.querySelectorAll('[data-import-type]').forEach(input=>input.onchange=()=>{const type=input.dataset.importType,index=Number(input.dataset.importIndex),field=input.dataset.importField,target=type==='game'?importDraft.game:importDraft[type][index];if(!target)return;const previous=target[field];if(input.type==='checkbox')target[field]=input.checked;else if(['abilityNames','immunities','restrictions','tags','mechanics'].includes(field))target[field]=input.value.split(/[,;|]/).map(value=>value.trim()).filter(Boolean);else if(['abilityUses','expectedRoleCount','playerCount'].includes(field))target[field]=input.value===''?null:Math.max(0,Number(input.value)||0);else if(field==='matchDecision'){if(input.value==='create-new'){target.decision='create-new';target.matchKey=''}else{target.decision='use-existing';target.matchKey=input.value.slice(9)}return}else target[field]=input.value;if(type==='factions'&&field==='name')importDraft.roles.filter(role=>role.factionTempId===target.tempId).forEach(role=>role.factionName=target.name);if(type==='roles'&&field==='factionTempId')target.factionName=importDraft.factions.find(faction=>faction.tempId===target.factionTempId)?.name||'';if(type==='abilities'&&field==='name')importDraft.roles.forEach(role=>{role.abilityNames=role.abilityNames.map(name=>normalizeImportName(name)===normalizeImportName(previous)?target.name:name);if(normalizeImportName(role.activeAbilityName)===normalizeImportName(previous))role.activeAbilityName=target.name;if(normalizeImportName(role.passiveAbilityName)===normalizeImportName(previous))role.passiveAbilityName=target.name});if(type==='roles'&&field==='abilityNames'){target.abilityNames.forEach(name=>{if(!importDraft.abilities.some(ability=>normalizeImportName(ability.name)===normalizeImportName(name)))importDraft.abilities.push({tempId:id(),name,definition:'',category:'Other',phase:'Any',mechanics:[],selected:true,confidence:.5,matchStatus:'new',matchKey:'',decision:'create-new',possibleMatches:[],sourceText:name})});matchImportAbilities(importDraft,importCatalog)}if(field==='selected'||field==='name'||field==='factionTempId'||field==='abilityNames')renderDocumentImport()});
+  document.querySelectorAll('[data-import-duplicate-index]').forEach(select=>select.onchange=()=>{const role=importDraft.roles[Number(select.dataset.importDuplicateIndex)];role.duplicateDecision=select.value;role.selected=select.value==='separate';renderDocumentImport()});
+  document.querySelectorAll('[data-import-change-kind]').forEach(select=>select.onchange=()=>{const kind=select.dataset.importChangeKind,index=Number(select.dataset.importChangeIndex),change=kind==='game'?importComparison.game:importComparison[kind][index];if(change)change.decision=select.value});
+}
+function renderMissingReimportRoles(){
+  if(importMode!=='reimport'||!importComparison)return '';return importComparison.roles.map((change,index)=>({change,index})).filter(item=>item.change.status.startsWith('MISSING')).map(({change,index})=>'<article class="import-record"><div class="import-record-header"><strong>'+esc(change.current.name)+'</strong>'+importStatus(change)+'</div><p class="muted">This role is still in the live game but was not found in the updated document.</p>'+importDecision('roles',index,change)+'</article>').join('');
+}
+function renderDocumentImport(){
+  const panel=$('documentImportPanel');if(!importDraft){panel.hidden=true;return}panel.hidden=false;$('documentImportTitle').textContent=importMode==='reimport'?'Re-import Updated Word Document':'Document Import Preview';$('documentImportStatus').textContent=importDraft.source.fileName+' • Parsed '+formatDateTime(importDraft.source.parsedAt);$('documentImportError').hidden=true;const summary=importSummary(importDraft);$('documentImportSummary').innerHTML=Object.entries(summary).map(([key,value])=>'<div class="import-summary-card"><strong>'+value+'</strong><span>'+esc(key[0].toUpperCase()+key.slice(1))+'</span></div>').join('');$('documentImportTabs').hidden=!importReviewOpen;$('documentImportActions').hidden=false;$('reviewDocumentImportBtn').hidden=importReviewOpen;$('confirmDocumentImportBtn').textContent=importMode==='reimport'?'Apply Selected Changes':'Import Game';document.querySelectorAll('[data-import-tab]').forEach(button=>button.classList.toggle('active',button.dataset.importTab===importReviewTab));const selectedTab=importReviewOpen?importReviewTab:'overview',renderers={overview:renderImportOverview,game:renderImportGame,factions:renderImportFactions,roles:renderImportRoles,abilities:renderImportAbilities,rules:renderImportRules,warnings:renderImportWarnings};$('documentImportContent').innerHTML=(renderers[selectedTab]||renderImportOverview)()+(selectedTab==='roles'?renderMissingReimportRoles():'');bindImportReview();
+}
+async function startWordImport(file,mode){
+  if(mode==='reimport'&&!canEditGame())return alert('Only an owner or GM can re-import this game.');importMode=mode;importReturnGameId=mode==='reimport'?currentGame()?.id:null;importSourceFile=file;importDraft=null;importComparison=null;importReviewOpen=false;importReviewTab='overview';importSuccessGameId=null;showView('gamesView');$('documentImportPanel').hidden=false;$('documentImportTitle').textContent=mode==='reimport'?'Reading Updated Document':'Reading Word Document';$('documentImportStatus').textContent='Parsing headings, lists, paragraphs, bold labels, and tables…';$('documentImportSummary').innerHTML='';$('documentImportContent').innerHTML='';$('documentImportActions').hidden=true;$('documentImportError').hidden=true;
+  try{const parsed=await parseDocxFile(file,window.mammoth),remote=await GMCloud.abilityTemplates().catch(()=>[]);importCatalog=[...standardAbilityCatalog(),...(state?.abilities||[]).map(ability=>({key:'current:'+ability.id,...ability,sourceGameId:currentGame()?.id,sourceGameName:currentGame()?.name||'Current Game'})),...remote];importDraft=analyzeDocumentBlocks(parsed.blocks,parsed.source);parsed.messages.forEach(message=>importDraft.warnings.push({id:id(),code:'docx-parser',message,severity:'info'}));matchImportAbilities(importDraft,importCatalog);if(mode==='reimport')importComparison=compareGameImport(importDraft,gameDocument());renderDocumentImport()}catch(error){$('documentImportError').textContent=error.message||'The document could not be imported.';$('documentImportError').hidden=false;$('documentImportStatus').textContent='Import stopped safely.';$('documentImportActions').hidden=true}
+}
+function cancelDocumentImport(){const returnId=importReturnGameId;importDraft=null;importSourceFile=null;importComparison=null;importReturnGameId=null;$('documentImportPanel').hidden=true;if(returnId&&currentGame()?.id===returnId)showView('settingsView')}
+function catalogAbilityFor(imported){return importCatalog.find(item=>item.key===imported.matchKey)||null}
+function materializeAbility(imported,gameId,abilities,abilityByName){
+  const key=normalized(imported.name);if(abilityByName.has(key))return abilityByName.get(key);const source=imported.decision==='use-existing'?catalogAbilityFor(imported):null,matched=source&&abilityByName.get(normalized(source.name));if(matched){abilityByName.set(key,matched);return matched}const newAbility={id:id(),gameId,name:source?.name||imported.name,category:source?.category||imported.category||'Other',definition:source?.definition||imported.definition||'',phase:source?.phase||imported.phase||'Any',mechanics:[...(source?.mechanics||imported.mechanics||[])],builtIn:false,revisions:[]};abilities.push(newAbility);abilityByName.set(key,newAbility);abilityByName.set(normalized(newAbility.name),newAbility);return newAbility;
+}
+function createImportedDocument(importId){
+  const result=validateGameImport(importDraft);if(!result.valid)throw new Error(result.errors.join(' '));const gameId=id(),timestamp=now(),game=normalizeMeta({id:gameId,name:importDraft.game.name,theme:importDraft.game.theme,description:importDraft.game.description,status:'SETUP',startingDay:0,currentDay:0,currentPhase:importDraft.game.startingPhase,notes:importDraft.game.notes,createdAt:timestamp,updatedAt:timestamp}),data=baseGameData(gameId),factionIds=new Map();data.factions=importDraft.factions.filter(item=>item.selected).map((faction,index)=>{const record=normalizeFaction({id:id(),gameId,name:faction.name,class:faction.className,alias:normalized(faction.name).replace(/\s+/g,'-'),teamNumber:index+1,alignment:faction.alignment,description:faction.description,winCondition:faction.winCondition,notes:faction.notes,sourceImportId:importId,importConfidence:faction.confidence},gameId);factionIds.set(faction.tempId,record.id);return record});const abilityByName=new Map(data.abilities.map(ability=>[normalized(ability.name),ability]));importDraft.abilities.filter(item=>item.selected).forEach(ability=>materializeAbility(ability,gameId,data.abilities,abilityByName));data.roles=importDraft.roles.filter(role=>role.selected).map(role=>{const timestampRole=now(),names=role.abilityNames.filter(name=>abilityByName.has(normalized(name))),active=abilityByName.get(normalized(role.activeAbilityName)),passive=abilityByName.get(normalized(role.passiveAbilityName));return normalizeRole({id:id(),gameId,name:role.name,factionId:factionIds.get(role.factionTempId),alignment:role.alignment,description:role.description,activeAbilityId:active?.id||'',passiveAbilityId:passive?.id||'',tags:names.map(name=>abilityByName.get(normalized(name)).name),abilityUses:role.abilityUses,cooldowns:role.cooldowns,restrictions:role.restrictions,immunities:role.immunities,winCondition:role.winCondition,notes:role.notes,gmNotes:role.gmNotes,labels:role.tags,enabled:role.enabled,sourceImportId:importId,sourceText:role.sourceText,importConfidence:role.confidence,createdAt:timestampRole,updatedAt:timestampRole,updatedBy:GMCloud.user()?.id||null},gameId)});data.rules=importDraft.rules.filter(rule=>rule.selected).map((rule,index)=>normalizeRule({id:id(),gameId,title:rule.title,description:rule.description,category:rule.category,visibility:rule.visibility,notes:rule.notes,enabled:rule.enabled,sortOrder:index,sourceImportId:importId,sourceText:rule.sourceText,importConfidence:rule.confidence},gameId,index));const summary=importSummary(importDraft),sourceRecord={id:importId,kind:'initial',fileName:importDraft.source.fileName,fileSize:importDraft.source.fileSize,sha256:importDraft.source.sha256,importedAt:timestamp,summary,warnings:importDraft.warnings.map(item=>item.message)};data.imports=[sourceRecord];data.history.push({id:id(),gameId,type:'IMPORT',entityId:importId,message:'Game imported from '+importDraft.source.fileName+': '+summary.roles+' roles, '+summary.factions+' factions, '+summary.abilities+' abilities, '+summary.rules+' rules, '+summary.warnings+' warnings.',day:0,phase:game.currentPhase,timestamp});data.lastSavedAt=timestamp;game.lastSavedAt=timestamp;return {game,data,sourceRecord,summary};
+}
+function incomingRoleRecord(role,next,abilityByName,factionByName,existing=null){const timestamp=now(),names=role.abilityNames.filter(name=>abilityByName.has(normalized(name))),active=abilityByName.get(normalized(role.activeAbilityName)),passive=abilityByName.get(normalized(role.passiveAbilityName));return normalizeRole({...existing,id:existing?.id||id(),gameId:next.game.id,name:role.name,factionId:factionByName.get(normalized(role.factionName))?.id||'',alignment:role.alignment,description:role.description,activeAbilityId:active?.id||'',passiveAbilityId:passive?.id||'',tags:names.map(name=>abilityByName.get(normalized(name)).name),abilityUses:role.abilityUses,cooldowns:role.cooldowns,restrictions:role.restrictions,immunities:role.immunities,winCondition:role.winCondition,notes:role.notes,gmNotes:role.gmNotes,labels:role.tags,enabled:role.enabled,archivedAt:null,version:existing?(existing.version||1)+1:1,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null},next.game.id)}
+function createReimportDocument(importId){
+  const validation=validateGameImport(importDraft);if(!validation.valid)throw new Error(validation.errors.join(' '));const next=JSON.parse(JSON.stringify(gameDocument())),timestamp=now();if(importComparison.game.decision==='document')Object.assign(next.game,importComparison.game.document,{updatedAt:timestamp});const factionByName=new Map(next.data.factions.map(item=>[normalized(item.name),item]));importComparison.factions.forEach(change=>{if(change.status==='NEW'&&change.decision==='add'){const source=change.document._record,record=normalizeFaction({id:id(),gameId:next.game.id,name:source.name,class:source.className,alignment:source.alignment,description:source.description,winCondition:source.winCondition,notes:source.notes,alias:normalized(source.name).replace(/\s+/g,'-'),teamNumber:next.data.factions.length+1},next.game.id);next.data.factions.push(record);factionByName.set(normalized(record.name),record)}else if(change.status==='CHANGED'&&change.decision==='document'){const source=change.document._record,target=factionByName.get(change.key);Object.assign(target,{name:source.name,class:source.className,alignment:source.alignment,description:source.description,winCondition:source.winCondition,notes:source.notes})}});const abilityByName=new Map(next.data.abilities.map(item=>[normalized(item.name),item]));importComparison.abilities.forEach(change=>{if(change.status==='NEW'&&change.decision==='add')materializeAbility(change.document._record,next.game.id,next.data.abilities,abilityByName);else if(change.status==='CHANGED'&&change.decision==='document'){const source=change.document._record,target=abilityByName.get(change.key);Object.assign(target,{name:source.name,definition:source.definition,category:source.category,phase:source.phase,mechanics:[...source.mechanics]})}});const roleByName=new Map(next.data.roles.map(item=>[normalized(item.name),item]));importComparison.roles.forEach(change=>{if(change.status==='NEW'&&change.decision==='add'){const role=incomingRoleRecord(change.document._record,next,abilityByName,factionByName);next.data.roles.push(role);roleByName.set(change.key,role)}else if(change.status==='CHANGED'&&change.decision==='document'){const existing=roleByName.get(change.key),replacement=incomingRoleRecord(change.document._record,next,abilityByName,factionByName,existing),index=next.data.roles.findIndex(item=>item.id===existing.id);next.data.roles[index]=replacement}else if(change.status.startsWith('MISSING')&&change.decision==='archive'){const role=roleByName.get(change.key);role.archivedAt=timestamp;role.enabled=false;role.version=(role.version||1)+1;role.updatedAt=timestamp}});const ruleByName=new Map(next.data.rules.map(item=>[normalized(item.title),item]));importComparison.rules.forEach(change=>{if(change.status==='NEW'&&change.decision==='add'){const source=change.document._record;next.data.rules.push(normalizeRule({...source,id:id(),gameId:next.game.id,sortOrder:next.data.rules.length},next.game.id,next.data.rules.length))}else if(change.status==='CHANGED'&&change.decision==='document'){const source=change.document._record,target=ruleByName.get(change.key);Object.assign(target,{title:source.title,description:source.description,category:source.category,visibility:source.visibility,notes:source.notes,enabled:source.enabled,version:(target.version||1)+1,updatedAt:timestamp})}});const summary=importSummary(importDraft),sourceRecord={id:importId,kind:'reimport',fileName:importDraft.source.fileName,fileSize:importDraft.source.fileSize,sha256:importDraft.source.sha256,importedAt:timestamp,summary,warnings:importDraft.warnings.map(item=>item.message)};next.data.imports=[...(next.data.imports||[]),sourceRecord];next.data.history.push({id:id(),gameId:next.game.id,type:'IMPORT',entityId:importId,message:'Document re-import reviewed from '+importDraft.source.fileName+'. GM merge choices were applied; no missing role was deleted.',day:next.game.currentDay,phase:next.game.currentPhase,timestamp});next.data.lastSavedAt=timestamp;return {document:next,sourceRecord,summary};
+}
+function showImportSuccess(gameName,summary,gameId,reimport=false){importSuccessGameId=gameId;$('documentImportTitle').textContent=reimport?'RE-IMPORT COMPLETED':'GAME CREATED SUCCESSFULLY';$('documentImportStatus').textContent=gameName;$('documentImportSummary').innerHTML=Object.entries(summary).map(([key,value])=>'<div class="import-summary-card"><strong>'+value+'</strong><span>'+esc(key[0].toUpperCase()+key.slice(1))+'</span></div>').join('');$('documentImportTabs').hidden=true;$('documentImportActions').hidden=true;$('documentImportContent').innerHTML='<div class="success-panel"><h3>'+esc(gameName)+'</h3><p>The Word document is now a source reference. The GM Command Center version is fully editable and is the live source of truth.</p><button id="openImportedGameBtn">Open Game</button></div>';$('openImportedGameBtn').onclick=()=>{cancelDocumentImport();openGame(gameId,'dashboardView')}}
+function validateReimportChoices(){
+  if(importMode!=='reimport'||!importComparison)return [];const errors=[],availableFactions=new Set((state.factions||[]).map(item=>normalized(item.name))),availableAbilities=new Set((state.abilities||[]).map(item=>normalized(item.name)));importComparison.factions.forEach(change=>{if(change.status==='NEW'&&change.decision==='add')availableFactions.add(change.key)});importComparison.abilities.forEach(change=>{if(change.status==='NEW'&&change.decision==='add')availableAbilities.add(change.key)});importComparison.roles.forEach(change=>{const usesDocument=change.status==='NEW'&&change.decision==='add'||change.status==='CHANGED'&&change.decision==='document';if(!usesDocument)return;const role=change.document._record;if(!availableFactions.has(normalized(role.factionName)))errors.push(role.name+' needs its document faction to be added.');role.abilityNames.forEach(name=>{if(!availableAbilities.has(normalized(name)))errors.push(role.name+' needs the '+name+' ability to be added.')})});return [...new Set(errors)];
+}
+async function confirmDocumentImport(){
+  if(!importDraft||!importSourceFile)return;if(!cloudSession){$('documentImportError').textContent='Sign in before confirming this shared-game import. Your preview is still available.';$('documentImportError').hidden=false;return}const validation=validateGameImport(importDraft),choiceErrors=validateReimportChoices(),errors=[...validation.errors,...choiceErrors];if(errors.length){$('documentImportError').textContent=errors.join(' ');$('documentImportError').hidden=false;importReviewOpen=true;importReviewTab='warnings';return}const button=$('confirmDocumentImportBtn');button.disabled=true;button.textContent=importMode==='reimport'?'Applying…':'Importing…';const importId=id();try{if(importMode==='initial'){const createdDocument=createImportedDocument(importId),created=await GMCloud.createImportedGame({game:createdDocument.game,data:createdDocument.data},importSourceFile,createdDocument.sourceRecord);const game=createdDocument.game;game.memberRole='owner';game.shareCode=created[0]?.share_code||'';cloudVersion=created[0]?.version||1;localStorage.setItem(gameDataKey(game.id),JSON.stringify(createdDocument.data));gameIndex.games.push(game);saveIndex();renderAll();showImportSuccess(game.name,createdDocument.summary,game.id)}else{const reimport=createReimportDocument(importId),saved=await GMCloud.reimportGame(currentGame().id,cloudVersion,reimport.document,importSourceFile,reimport.sourceRecord);cloudVersion=saved.version;state=migrateGameData(saved.document.data,currentGame().id);Object.assign(currentGame(),normalizeMeta({...currentGame(),...saved.document.game,lastSavedAt:saved.updated_at}));localStorage.setItem(gameDataKey(currentGame().id),JSON.stringify(state));saveIndex();await refreshOpenGame();showImportSuccess(currentGame().name,reimport.summary,currentGame().id,true)}}catch(error){$('documentImportError').textContent='Import failed safely: '+error.message;$('documentImportError').hidden=false}finally{button.disabled=false;button.textContent=importMode==='reimport'?'Apply Selected Changes':'Import Game'}}
+
 function renderHistory(){
   if(cloudAudit.length){$('historyList').innerHTML=cloudAudit.map(event=>'<article class=\"history-entry\"><div class=\"history-phase\">'+esc(event.entity_type)+'</div><div><strong>'+esc(event.action)+'</strong><div class=\"muted\">'+esc(event.profiles?.display_name||'System')+(event.entity_id?' • '+esc(event.entity_id):'')+'</div></div><time class=\"history-time\">'+esc(formatDateTime(event.created_at))+'</time></article>').join('');return}
   $('historyList').innerHTML=[...state.history].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).map(event=>'<article class=\"history-entry\"><div class=\"history-phase\">'+esc(event.phase+' '+event.day)+'</div><div>'+esc(event.message)+'</div><time class=\"history-time\">'+esc(formatDateTime(event.timestamp))+'</time></article>').join('')||'<div class=\"empty-state\">No history events yet.</div>';
 }
+function memberAccessCard(member,ownerView){
+  const role=member.member_role,name=member.profiles?.display_name||'GM',actions=ownerView&&role!=='owner'?'<div class="member-entry-actions"><button class="secondary change-member-role" data-user="'+esc(member.user_id)+'" data-role="'+(role==='gm'?'viewer':'gm')+'">Make '+(role==='gm'?'Viewer':'GM')+'</button><button class="danger remove-game-member" data-user="'+esc(member.user_id)+'" data-name="'+esc(name)+'">Remove From Game</button></div>':'';
+  return '<article class="member-entry"><div class="member-entry-header"><div><strong>'+esc(name)+'</strong><div class="invite-meta">Joined '+esc(formatDateTime(member.created_at))+'</div></div><span class="permission-badge">'+esc(permissionLabel(role))+'</span></div>'+actions+'</article>';
+}
+function inviteAccessCard(invite){
+  const uses=invite.max_uses==null?invite.use_count+' uses • Unlimited':invite.use_count+' of '+invite.max_uses+' use'+(invite.max_uses===1?'':'s');
+  return '<article class="invite-entry" data-invite-id="'+esc(invite.id)+'"><div class="invite-entry-header"><div><code class="invite-code">'+esc(invite.code)+'</code><div class="invite-meta">'+esc(permissionLabel(invite.permission))+' • '+esc(uses)+' • '+esc(inviteExpiryLabel(invite))+'</div></div><span class="permission-badge">'+esc(permissionLabel(invite.permission))+'</span></div><div class="invite-entry-actions"><button class="secondary copy-invite-code" data-code="'+esc(invite.code)+'">Copy</button><button class="danger revoke-invite" data-id="'+esc(invite.id)+'">Revoke</button></div></article>';
+}
+function renderGmAccess(){
+  const owner=currentGame().memberRole==='owner',members=cloudContext?.members||[];$('showInviteFormBtn').hidden=!owner;$('activeInvitesSection').hidden=!owner;$('gmAccessNotice').hidden=owner;$('gmAccessNotice').textContent=owner?'':currentGame().memberRole==='gm'?'You can edit normal game content. Only the owner can invite or manage members.':'You have Viewer access. You receive live updates but cannot modify this game.';if(!owner)$('inviteFormPanel').hidden=true;
+  const groups={owner:members.filter(item=>item.member_role==='owner'),gm:members.filter(item=>item.member_role==='gm'),viewer:members.filter(item=>item.member_role==='viewer')};$('ownerMemberList').innerHTML=groups.owner.map(item=>memberAccessCard(item,owner)).join('')||'<p class="muted">Owner unavailable.</p>';$('gmMemberList').innerHTML=groups.gm.map(item=>memberAccessCard(item,owner)).join('')||'<p class="muted">No additional GMs.</p>';$('viewerMemberList').innerHTML=groups.viewer.map(item=>memberAccessCard(item,owner)).join('')||'<p class="muted">No viewers.</p>';
+  const active=cloudInvites.filter(inviteIsActive);$('activeInviteList').innerHTML=active.map(inviteAccessCard).join('')||'<p class="muted">No active invitations.</p>';
+  document.querySelectorAll('.change-member-role').forEach(button=>button.onclick=async()=>{if(!confirm('Change this member to '+permissionLabel(button.dataset.role)+'?'))return;try{await GMCloud.setMemberRole(currentGame().id,button.dataset.user,button.dataset.role);await refreshOpenGame()}catch(error){const [,message]=friendlyInviteError(error);alert(message)}});
+  document.querySelectorAll('.remove-game-member').forEach(button=>button.onclick=async()=>{if(!confirm('Remove '+button.dataset.name+' from this game? They will immediately lose protected access.'))return;try{await GMCloud.removeMember(currentGame().id,button.dataset.user);await refreshOpenGame()}catch(error){const [,message]=friendlyInviteError(error);alert(message)}});
+  document.querySelectorAll('.copy-invite-code').forEach(button=>button.onclick=async()=>{try{await copyText(button.dataset.code);button.textContent='Copied';setTimeout(()=>button.textContent='Copy',1200)}catch{alert('Could not access the clipboard. Select and copy the code manually.')}});
+  document.querySelectorAll('.revoke-invite').forEach(button=>button.onclick=async()=>{if(!confirm('Revoke this invitation? It will stop working immediately.'))return;try{await GMCloud.revokeInvite(button.dataset.id);await refreshOpenGame()}catch(error){const [,message]=friendlyInviteError(error);alert(message)}});
+}
 function renderSettings(){
   const game=currentGame();$('gameName').value=game.name;$('gameTheme').value=game.theme;$('gameDescription').value=game.description;$('gameStatus').value=game.status;$('currentDay').value=game.currentDay;$('currentPhase').value=game.currentPhase;$('gameNotes').value=game.notes;
   $('villagerLabel').value=state.settings.labels.VILLAGER;$('denLabel').value=state.settings.labels.DEN;$('neutralLabel').value=state.settings.labels.NEUTRAL;$('allowMultiDen').checked=state.settings.allowMultiDen;$('roleEditingAuthorized').checked=canEditRoles();
-  $('gameShareCode').textContent=cloudContext?.game?.share_code||currentGame().shareCode||'—';const owner=currentGame().memberRole==='owner';$('memberList').innerHTML=(cloudContext?.members||[]).map(member=>'<span class="presence-chip">'+esc(member.profiles?.display_name||'GM')+' • '+esc(member.member_role)+(owner&&member.member_role!=='owner'?' <button class="member-role-btn secondary" data-user="'+member.user_id+'" data-role="'+(member.member_role==='gm'?'viewer':'gm')+'">Make '+(member.member_role==='gm'?'Viewer':'GM')+'</button>':'')+'</span>').join('')||'<span class="muted">Members load when connected.</span>';document.querySelectorAll('.member-role-btn').forEach(button=>button.onclick=async()=>{try{await GMCloud.setMemberRole(currentGame().id,button.dataset.user,button.dataset.role);await refreshOpenGame()}catch(error){alert(error.message)}});
+  renderGmAccess();
+  const documentImports=cloudImports.length?cloudImports:[...(state.imports||[])].reverse(),latest=documentImports[0];$('sourceDocumentInfo').innerHTML=latest?'<p class="source-document-name"><strong>'+esc(latest.source_file_name||latest.fileName)+'</strong></p><p class="muted">Imported '+esc(formatDateTime(latest.created_at||latest.importedAt))+' • '+esc(latest.import_kind||latest.kind||'initial')+'</p>':'<p class="muted">This game was not created from a Word document.</p>';$('reimportWordBtn').disabled=!canEditGame();$('importHistoryList').innerHTML=documentImports.map((item,index)=>{const summary=item.summary||{},warnings=item.warnings||[];return '<article class="import-history-entry"><strong>'+esc(item.source_file_name||item.fileName)+'</strong><p class="muted">'+esc(formatDateTime(item.created_at||item.importedAt))+' • '+esc(item.import_kind||item.kind||'initial')+'</p><button class="secondary view-import-summary" data-index="'+index+'">View Import Summary</button> '+(item.storage_path?'<button class="secondary download-source-document" data-index="'+index+'">Download Original</button>':'')+'<div class="import-summary-detail" data-summary-index="'+index+'" hidden><p>'+esc((summary.roles||0)+' roles • '+(summary.factions||0)+' factions • '+(summary.abilities||0)+' abilities • '+(summary.rules||0)+' rules')+'</p><ul>'+warnings.map(message=>'<li>'+esc(message)+'</li>').join('')+'</ul></div></article>'}).join('');document.querySelectorAll('.view-import-summary').forEach(button=>button.onclick=()=>{const detail=document.querySelector('[data-summary-index="'+button.dataset.index+'"]');detail.hidden=!detail.hidden});document.querySelectorAll('.download-source-document').forEach(button=>button.onclick=async()=>{const item=documentImports[Number(button.dataset.index)];try{await GMCloud.downloadImport(item)}catch(error){alert('Could not download the source document: '+error.message)}});
 }
 function renderAll(){
-  renderChrome();renderGames();if(!state)return;
-  renderSelects();renderRoleAbilityPicker();renderRoleEditorAccess();renderDashboard();renderFactions();renderRoles();renderPlayers();renderQueue();renderStats();renderRules();renderEncyclopedia();renderHistory();renderSettings();
+  renderChrome();renderGames();renderAccount();if(!state)return;
+  renderSelects();renderRoleAbilityPicker();renderRoleEditorAccess();renderDashboard();renderFactions();renderRoles();renderPlayers();renderQueue();renderCopilot();renderStats();renderRules();renderEncyclopedia();renderHistory();renderSettings();
 }
 
 function metaFromCloud(row,existing={}){return normalizeMeta({...existing,id:row.id,name:row.name,theme:row.theme,description:row.description,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at,shareCode:row.share_code,memberRole:row.member_role||existing.memberRole||'viewer'})}
@@ -451,30 +693,86 @@ function applyCloudDocument(row,updatedByName='Another GM'){
   const server=row.document||row,serverGame=server.game;if(!serverGame||!server.data)return;const existing=gameIndex.games.find(game=>game.id===serverGame.id)||{},meta=normalizeMeta({...existing,...serverGame,shareCode:cloudContext?.game?.share_code||existing.shareCode,memberRole:cloudContext?.members?.find(m=>m.user_id===GMCloud.user()?.id)?.member_role||existing.memberRole});const index=gameIndex.games.findIndex(game=>game.id===meta.id);if(index>=0)gameIndex.games[index]=meta;else gameIndex.games.push(meta);gameIndex.activeGameId=meta.id;state=migrateGameData(server.data,meta.id);cloudVersion=row.version||cloudVersion;state.lastSavedAt=row.updated_at||state.lastSavedAt;meta.lastSavedAt=state.lastSavedAt;localStorage.setItem(gameDataKey(meta.id),JSON.stringify(state));saveIndex();renderAll();$('roleLiveNotice').textContent=row.updated_by&&row.updated_by!==GMCloud.user()?.id?'Updated by '+updatedByName+' at '+new Date(row.updated_at).toLocaleTimeString():'';
 }
 async function refreshOpenGame(showConflict=false){
-  if(!cloudSession||!currentGame())return;try{const [loaded,audit]=await Promise.all([GMCloud.loadGame(currentGame().id),GMCloud.history(currentGame().id)]);cloudContext=loaded;cloudAudit=audit;const mine=loaded.members.find(member=>member.user_id===GMCloud.user().id);currentGame().memberRole=mine?.member_role||'viewer';currentGame().shareCode=loaded.game.share_code;applyCloudDocument(loaded.document);setConnection('live','Live');if(showConflict)$('roleLiveNotice').textContent='The authoritative server version was reloaded after a concurrent edit.'}catch(error){setConnection('offline',navigator.onLine?'Sync error':'Offline');console.error(error)}
+  if(!cloudSession||!currentGame())return;const gameId=currentGame().id;try{const loaded=await GMCloud.loadGame(gameId),mine=loaded.members.find(member=>member.user_id===GMCloud.user().id);if(!mine)return loseGameAccess(gameId);const [audit,imports,invites]=await Promise.all([GMCloud.history(gameId),GMCloud.imports(gameId),mine.member_role==='owner'?GMCloud.invites(gameId):Promise.resolve([])]);cloudContext=loaded;cloudAudit=audit;cloudImports=imports;cloudInvites=invites;currentGame().memberRole=mine.member_role;applyCloudDocument(loaded.document);setConnection('live','Live');if(showConflict)$('roleLiveNotice').textContent='The authoritative server version was reloaded after a concurrent edit.'}catch(error){if(error?.code==='42501'||error?.code==='PGRST116')return loseGameAccess(gameId);setConnection('offline',navigator.onLine?'Sync error':'Offline');console.error(error)}
 }
 function renderPresence(presence){const entries=Object.values(presence).flat(),unique=[...new Map(entries.map(entry=>[entry.userId,entry])).values()];$('presenceList').innerHTML=unique.map(entry=>'<span class="presence-chip">'+esc(entry.name)+(entry.editing?' • editing '+esc(entry.editing):'')+'</span>').join('')||'<span class="muted">No connected GMs.</span>'}
 async function subscribeToOpenGame(){
-  if(!cloudSession||!currentGame()||cloudChannelGameId===currentGame().id)return;cloudChannelGameId=currentGame().id;setConnection('syncing','Connecting');await GMCloud.subscribe(currentGame().id,{onDocument:async row=>{if(row.version<=cloudVersion)return;if(row.updated_by===GMCloud.user()?.id){cloudVersion=Math.max(cloudVersion,row.version);return}if(cloudDirty||cloudSaveInFlight){alert('Another GM saved a newer change while you had unsaved edits. The newest server version will be loaded.');cloudDirty=false;await refreshOpenGame(true);return}const updater=cloudContext?.members?.find(member=>member.user_id===row.updated_by)?.profiles?.display_name||'Another GM';applyCloudDocument(row,updater)},onPresence:renderPresence,onStatus:async status=>{if(status==='SUBSCRIBED'){setConnection('live','Live');await refreshOpenGame()}else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setConnection('offline','Reconnecting');else if(status==='CLOSED')setConnection('offline','Offline')}})
+  if(!cloudSession||!currentGame()||cloudChannelGameId===currentGame().id)return;cloudChannelGameId=currentGame().id;setConnection('syncing','Connecting');await GMCloud.subscribe(currentGame().id,{onDocument:async row=>{if(row.version<=cloudVersion)return;if(row.updated_by===GMCloud.user()?.id){cloudVersion=Math.max(cloudVersion,row.version);return}if(cloudDirty||cloudSaveInFlight){alert('Another GM saved a newer change while you had unsaved edits. The newest server version will be loaded.');cloudDirty=false;await refreshOpenGame(true);return}const updater=cloudContext?.members?.find(member=>member.user_id===row.updated_by)?.profiles?.display_name||'Another GM';applyCloudDocument(row,updater)},onMembership:async payload=>{const changed=payload.new?.user_id?payload.new:payload.old;if(payload.eventType==='DELETE'&&changed?.user_id===GMCloud.user()?.id)return loseGameAccess(currentGame().id);await refreshOpenGame()},onInvites:async()=>{if(currentGame()?.memberRole==='owner')await refreshOpenGame()},onPresence:renderPresence,onStatus:async status=>{if(status==='SUBSCRIBED'){setConnection('live','Live');await refreshOpenGame()}else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setConnection('offline','Reconnecting');else if(status==='CLOSED')setConnection('offline','Offline')}})
 }
 async function handleCloudAuth(session){
-  cloudSession=session;cloudChannelGameId=null;if(!session){gameIndex.activeGameId=null;state=null;cloudContext=null;setConnection('offline','Offline');renderAll();return}
-  setConnection('syncing','Connecting');try{await refreshCloudGames();setConnection('live','Live')}catch(error){setConnection('offline','Sync error');$('authMessage').textContent='Could not load shared games: '+error.message;console.error(error)}
+  const previousUserId=cloudSession?.user?.id;cloudSession=session;cloudChannelGameId=null;
+  if(!session){if(authInitialized&&previousUserId){clearAuthenticatedState();clearAccountFields();setAuthMode('login')}authInitialized=true;setConnection('offline','Offline');renderAll();showView('gamesView');return}
+  if(previousUserId&&previousUserId!==session.user.id)clearAuthenticatedState();authInitialized=true;
+  setConnection('syncing','Connecting');try{await refreshCloudGames();setNotice($('authMessage'),'');setConnection('live','Live');if(pendingInviteCode){showView('gamesView');$('joinGamePanel').hidden=false;$('joinGameCode').value=pendingInviteCode}}catch(error){setConnection('offline','Sync error');setNotice($('authMessage'),'Could not load shared games. Please try again.','error');console.error(error)}
 }
 async function initializeCloud(){
-  try{const result=await GMCloud.init(handleCloudAuth);cloudAvailable=result.available;if(!cloudAvailable){$('authMessage').textContent='The shared database client could not load. Check your network connection.';setConnection('offline','Offline');return}await handleCloudAuth(result.session)}catch(error){$('authMessage').textContent=error.message;setConnection('offline','Offline')}
+  try{const result=await GMCloud.init(handleCloudAuth);cloudAvailable=result.available;if(!cloudAvailable){setNotice($('authMessage'),'The shared database client could not load. Check your network connection.','error');setConnection('offline','Offline');document.body.classList.remove('auth-pending');return}await handleCloudAuth(result.session)}catch(error){setNotice($('authMessage'),'The account service could not be reached. Please try again.','error');setConnection('offline','Offline');document.body.classList.remove('auth-pending');console.error(error)}
+}
+
+async function submitLogin(event){
+  event.preventDefault();const username=$('loginUsername').value.trim(),password=$('loginPassword').value,button=$('loginBtn');
+  if(Date.now()<loginCooldownUntil)return updateLoginCooldown();
+  if(!validUsername(username)||!validPassword(password)){setNotice($('authMessage'),'Invalid username or password.','error');return}
+  button.disabled=true;button.textContent='Logging In…';
+  try{await GMCloud.passwordSignIn(username,password);loginFailures=0;loginCooldownUntil=0;$('loginPassword').value='';setNotice($('authMessage'),'Logged in.','success')}
+  catch(error){registerLoginFailure();setNotice($('authMessage'),friendlyAuthError(error),'error')}
+  finally{if(Date.now()>=loginCooldownUntil){button.disabled=false;button.textContent='Log In'}}
+}
+async function submitCreateAccount(event){
+  event.preventDefault();const username=$('createUsername').value.trim(),password=$('createPassword').value,confirmation=$('confirmPassword').value,button=$('createAccountBtn');
+  if(!validUsername(username)){setNotice($('authMessage'),'Username must be 3–30 characters, begin with a letter or number, and contain only letters, numbers, underscores, or hyphens.','error');return}
+  if(!validPassword(password)){setNotice($('authMessage'),'Password must contain at least 8 characters.','error');return}
+  if(password!==confirmation){setNotice($('authMessage'),'Passwords do not match.','error');return}
+  button.disabled=true;button.textContent='Creating Account…';
+  try{await GMCloud.createAccount(username,password);$('createPassword').value='';$('confirmPassword').value='';setNotice($('authMessage'),'Account created and logged in.','success')}
+  catch(error){setNotice($('authMessage'),friendlyAuthError(error),'error')}
+  finally{button.disabled=false;button.textContent='Create Account'}
+}
+async function submitLegacyUpgrade(event){
+  event.preventDefault();const username=$('legacyUsername').value.trim(),password=$('legacyPassword').value,confirmation=$('legacyConfirmPassword').value,button=$('upgradeLegacyAccountBtn'),notice=$('legacyUpgradeMessage');
+  if(!validUsername(username)){setNotice(notice,'Username must be 3–30 characters, begin with a letter or number, and contain only letters, numbers, underscores, or hyphens.','error');return}
+  if(!validPassword(password)){setNotice(notice,'Password must contain at least 8 characters.','error');return}
+  if(password!==confirmation){setNotice(notice,'Passwords do not match.','error');return}
+  button.disabled=true;button.textContent='Upgrading Account…';
+  try{await GMCloud.upgradeLegacyAccount(username,password);clearAccountFields();setNotice(notice,'Account upgraded. Your existing games remain connected.','success');await refreshCloudGames();renderAll()}
+  catch(error){setNotice(notice,friendlyAuthError(error),'error')}
+  finally{button.disabled=false;button.textContent='Upgrade Account'}
+}
+async function performSignOut(){
+  closeAccountMenu();const buttons=[$('signOutBtn'),$('accountLogOutBtn')];buttons.forEach(button=>button.disabled=true);
+  try{await GMCloud.signOut()}catch(error){console.error(error);setNotice($('authMessage'),'The server session could not be fully revoked, but this browser was logged out.','error')}finally{buttons.forEach(button=>button.disabled=false)}
+}
+async function submitPasswordChange(event){
+  event.preventDefault();const current=$('currentPassword').value,next=$('newPassword').value,confirmation=$('confirmNewPassword').value,button=$('changePasswordSubmitBtn'),notice=$('changePasswordMessage');
+  if(!validPassword(current)){setNotice(notice,'Enter your current password.','error');return}
+  if(!validPassword(next)){setNotice(notice,'New password must contain at least 8 characters.','error');return}
+  if(next!==confirmation){setNotice(notice,'New passwords do not match.','error');return}
+  if(next===current){setNotice(notice,'Choose a new password that differs from the current password.','error');return}
+  button.disabled=true;button.textContent='Changing Password…';
+  try{await GMCloud.changePassword(current,next);$('currentPassword').value='';$('newPassword').value='';$('confirmNewPassword').value='';setNotice(notice,'Password changed. Other sessions were signed out.','success')}
+  catch(error){const invalid=String(error?.code||'').toLowerCase()==='invalid_credentials'||String(error?.message||'').toLowerCase().includes('invalid login credentials');setNotice(notice,invalid?'Current password is incorrect.':friendlyAuthError(error),'error')}
+  finally{button.disabled=false;button.textContent='Change Password'}
 }
 
 document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{showView(tab.dataset.view);if(currentGame())GMCloud.track({view:tab.dataset.view,editing:null})}));
 $('createGameBtn').onclick=()=>openGameForm();$('emptyCreateGameBtn').onclick=()=>openGameForm();$('cancelGameFormBtn').onclick=closeGameForm;$('saveGameFormBtn').onclick=submitGameForm;
+$('importWordBtn').onclick=()=>$('importWordFile').click();
+$('importWordFile').onchange=event=>{const file=event.target.files[0];if(file)startWordImport(file,'initial');event.target.value=''};
+$('reimportWordBtn').onclick=()=>{if(!canEditGame())return alert('Only an owner or GM can re-import this game.');$('reimportWordFile').click()};
+$('reimportWordFile').onchange=event=>{const file=event.target.files[0];if(file)startWordImport(file,'reimport');event.target.value=''};
+$('cancelDocumentImportBtn').onclick=cancelDocumentImport;$('reviewDocumentImportBtn').onclick=()=>{importReviewOpen=true;importReviewTab='game';renderDocumentImport()};$('confirmDocumentImportBtn').onclick=confirmDocumentImport;
 $('uploadDeviceGamesBtn').onclick=uploadDeviceGames;
 $('gamesSearch').addEventListener('input',renderGames);$('gamesSort').addEventListener('input',renderGames);
 $('gameSwitcher').onchange=()=>{$('gameSwitcher').value?openGame($('gameSwitcher').value):unloadCurrentGame()};
 $('saveGameBtn').onclick=()=>save('Manual save completed.','SAVE');
-$('addFactionBtn').onclick=()=>{const name=$('factionName').value.trim(),className=$('factionClass').value;if(!name)return alert('Enter a faction name.');if(className==='DEN'&&!state.settings.allowMultiDen&&state.factions.some(faction=>faction.class==='DEN'))return alert('Multiple Den factions are disabled.');state.factions.push({id:id(),gameId:currentGame().id,name,class:className,alias:$('factionAlias').value.trim(),teamNumber:Number($('factionTeam').value)||1});$('factionName').value='';$('factionAlias').value='';save('Faction added: '+name+'.','FACTION')};
+$('addFactionBtn').onclick=()=>{const fields=factionFormValues();if(!fields)return;if(editingFactionId){const faction=factionById(editingFactionId);Object.assign(faction,fields);save('Faction updated: '+faction.name+'.','FACTION',faction.id)}else{const faction=normalizeFaction({id:id(),gameId:currentGame().id,...fields},currentGame().id);state.factions.push(faction);save('Faction added: '+faction.name+'.','FACTION',faction.id)}clearFactionForm()};
+$('cancelFactionEditBtn').onclick=clearFactionForm;
 $('addRoleBtn').onclick=()=>{const fields=roleFormValues();if(!fields)return;const timestamp=now();if(editingRoleId){const role=roleById(editingRoleId);if(role.version!==editingRoleVersion)return showRoleError('This role was updated by another GM while you were editing. Review the latest version before saving.');Object.assign(role,fields,{version:role.version+1,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null});save('Role updated: '+role.name+'.','ROLE',role.id)}else{const role=normalizeRole({id:id(),gameId:currentGame().id,...fields,createdAt:timestamp,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null},currentGame().id);state.roles.push(role);save('Role added: '+fields.name+'.','ROLE',role.id)}clearRoleForm();GMCloud.track({view:'roles',editing:null})};
 $('addPlayerBtn').onclick=()=>{const name=$('playerName').value.trim(),roleId=$('playerRole').value;if(!name||!roleById(roleId))return alert('Enter a player name and valid role.');state.players.push({id:id(),gameId:currentGame().id,name,roleId,alive:true});$('playerName').value='';save('Player added: '+name+'.','PLAYER')};
 $('addActionBtn').onclick=()=>{const actor=playerById($('actionActor').value),target=playerById($('actionTarget').value);if(!actor||!target)return alert('Select valid living players.');const name=$('actionName').value.trim()||$('actionCategory').value;state.actions.push({id:id(),gameId:currentGame().id,actorId:actor.id,targetId:target.id,name,category:$('actionCategory').value});$('actionName').value='';save(actor.name+' queued '+name+' on '+target.name+'.','ACTION')};
+$('copilotForm').onsubmit=event=>{event.preventDefault();askCopilot()};
+$('copilotResolveQueueBtn').onclick=()=>{if(!state.actions.length)return setCopilotStatus('Add at least one action to the queue first.','error');askCopilot('Resolve every queued action in the configured resolution order. Explain the outcome of each action, identify any ambiguity, and propose only the game changes supported by the saved roles, abilities, and rules.','resolve_actions')};
+$('copilotClearBtn').onclick=()=>{const game=currentGame();if(!game)return;copilotThreads.set(game.id,[]);setCopilotStatus('Conversation cleared.');renderCopilot()};
 $('addAbilityBtn').onclick=()=>{const name=$('abilityName').value.trim(),definition=$('abilityDefinition').value.trim();if(!name||!definition)return alert('Ability name and definition are required.');if(state.abilities.some(ability=>normalized(ability.name)===normalized(name)&&ability.id!==editingAbilityId))return alert('An ability with this name already exists.');const fields={name,category:$('abilityCategory').value,definition,phase:$('abilityPhase').value,mechanics:$('abilityMechanics').value.split(',').map(item=>item.trim().toLowerCase()).filter(Boolean)};if(editingAbilityId){const ability=state.abilities.find(item=>item.id===editingAbilityId),oldName=ability.name;ability.revisions.push(snapshotAbility(ability));Object.assign(ability,fields);if(normalized(oldName)!==normalized(name))state.roles.forEach(role=>role.tags=role.tags.map(tag=>normalized(tag)===normalized(oldName)?name:tag));save('Ability updated: '+name+'.','ABILITY')}else{state.abilities.push({id:id(),gameId:currentGame().id,...fields,builtIn:false,revisions:[]});save('Ability added: '+name+'.','ABILITY')}clearAbilityForm()};
 $('cancelRoleEditBtn').onclick=()=>{clearRoleForm();GMCloud.track({view:'roles',editing:null})};$('cancelAbilityEditBtn').onclick=clearAbilityForm;
 $('saveRuleBtn').onclick=()=>{if(!canEditGame())return alert('This game is read only.');const title=$('ruleTitle').value.trim(),description=$('ruleDescription').value.trim(),category=$('ruleCategory').value.trim();if(!title||!description||!category){$('ruleFormError').textContent='Title, description, and category are required.';$('ruleFormError').hidden=false;return}const timestamp=now(),fields={title,description,category,visibility:$('ruleVisibility').value,notes:$('ruleNotes').value.trim(),enabled:$('ruleEnabled').checked};if(editingRuleId){const rule=state.rules.find(item=>item.id===editingRuleId);if(!rule||rule.version!==editingRuleVersion){$('ruleFormError').textContent='This rule was updated by another GM. Review the latest version before saving.';$('ruleFormError').hidden=false;return}Object.assign(rule,fields,{version:rule.version+1,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null});save('Rule edited: '+rule.title+'.','RULE',rule.id)}else{const rule=normalizeRule({id:id(),gameId:currentGame().id,...fields,sortOrder:state.rules.length,createdAt:timestamp,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null},currentGame().id,state.rules.length);state.rules.push(rule);save('Rule created: '+rule.title+'.','RULE',rule.id)}clearRuleForm();GMCloud.track({view:'rules',editing:null})};$('cancelRuleEditBtn').onclick=()=>{clearRuleForm();GMCloud.track({view:'rules',editing:null})};
@@ -483,12 +781,20 @@ $('allowMultiDen').onchange=()=>{state.settings.allowMultiDen=$('allowMultiDen')
 $('roleEditingAuthorized').onchange=()=>{state.settings.roleEditingAuthorized=$('roleEditingAuthorized').checked;if(!canEditRoles())clearRoleForm();save('Role editing access changed.','SETTINGS')};
 $('resetCurrentGameBtn').onclick=resetCurrentGame;$('archiveCurrentGameBtn').onclick=()=>archiveGame(currentGame().id);$('deleteCurrentGameBtn').onclick=()=>deleteGame(currentGame().id);
 ['roleSearch','roleFactionFilter','roleStatusFilter','roleSort'].forEach(elementId=>$(elementId).addEventListener('input',renderRoles));$('roleAbilitySearch').addEventListener('input',renderRoleAbilityPicker);['ruleSearch','ruleStatusFilter'].forEach(elementId=>$(elementId).addEventListener('input',renderRules));['playerSearch','playerLifeFilter'].forEach(elementId=>$(elementId).addEventListener('input',renderPlayers));['statsFactionFilter','aliveOnlyStats'].forEach(elementId=>$(elementId).addEventListener('input',renderStats));['abilitySearch','abilityCategoryFilter'].forEach(elementId=>$(elementId).addEventListener('input',renderEncyclopedia));
-$('sendMagicLinkBtn').onclick=async()=>{const email=$('authEmail').value.trim(),name=$('authDisplayName').value.trim();if(!email)return $('authMessage').textContent='Enter your email address.';$('sendMagicLinkBtn').disabled=true;try{await GMCloud.signIn(email,name);$('authMessage').textContent='Check your email for the secure sign-in link.'}catch(error){$('authMessage').textContent=error.message}finally{$('sendMagicLinkBtn').disabled=false}};
-$('passwordSignInBtn').onclick=async()=>{const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<8)return $('authMessage').textContent='Enter an email and a password of at least 8 characters.';$('passwordSignInBtn').disabled=true;try{await GMCloud.passwordSignIn(email,password);$('authMessage').textContent='Signed in.'}catch(error){$('authMessage').textContent=error.message}finally{$('passwordSignInBtn').disabled=false}};
-$('createAccountBtn').onclick=async()=>{const email=$('authEmail').value.trim(),password=$('authPassword').value,name=$('authDisplayName').value.trim();if(!email||password.length<8||!name)return $('authMessage').textContent='Display name, email, and an 8+ character password are required.';$('createAccountBtn').disabled=true;try{const result=await GMCloud.createAccount(email,password,name);$('authMessage').textContent=result.session?'Account created and signed in.':'Account created. Check your email to confirm it.'}catch(error){$('authMessage').textContent=error.message}finally{$('createAccountBtn').disabled=false}};
-$('signOutBtn').onclick=()=>GMCloud.signOut();
-$('joinGameBtn').onclick=async()=>{const code=$('joinGameCode').value.trim();if(!code)return;try{const gameId=await GMCloud.joinGame(code);await refreshCloudGames();await openGame(gameId)}catch(error){alert(error.message)}};
-$('copyShareCodeBtn').onclick=async()=>{const code=cloudContext?.game?.share_code;if(!code)return alert('No invite code is available.');await navigator.clipboard.writeText(code);$('copyShareCodeBtn').textContent='Copied';setTimeout(()=>$('copyShareCodeBtn').textContent='Copy Invite Code',1200)};
+$('showLoginTabBtn').onclick=()=>setAuthMode('login');$('showCreateTabBtn').onclick=()=>setAuthMode('create');$('loginForm').onsubmit=submitLogin;$('createAccountForm').onsubmit=submitCreateAccount;
+$('legacyUpgradeForm').onsubmit=submitLegacyUpgrade;$('showLoginPassword').onchange=()=>togglePasswordFields(['loginPassword'],$('showLoginPassword').checked);$('showCreatePassword').onchange=()=>togglePasswordFields(['createPassword','confirmPassword'],$('showCreatePassword').checked);$('showChangePasswords').onchange=()=>togglePasswordFields(['currentPassword','newPassword','confirmNewPassword'],$('showChangePasswords').checked);$('showLegacyPasswords').onchange=()=>togglePasswordFields(['legacyPassword','legacyConfirmPassword'],$('showLegacyPasswords').checked);
+$('accountMenuButton').onclick=event=>{event.stopPropagation();const opening=$('accountMenuDropdown').hidden;$('accountMenuDropdown').hidden=!opening;$('accountMenuButton').setAttribute('aria-expanded',String(opening))};document.addEventListener('click',event=>{if(!$('accountMenu').contains(event.target))closeAccountMenu()});
+$('showAccountBtn').onclick=()=>openAccountView(false);$('showChangePasswordBtn').onclick=()=>openAccountView(true);$('accountChangePasswordBtn').onclick=()=>openAccountView(true);$('cancelChangePasswordBtn').onclick=()=>{$('changePasswordPanel').hidden=true;setNotice($('changePasswordMessage'),'')};$('changePasswordForm').onsubmit=submitPasswordChange;
+$('showMyGamesBtn').onclick=()=>{showView('gamesView');closeAccountMenu();setTimeout(()=>$('myGamesList').scrollIntoView({behavior:'smooth',block:'start'}),0)};$('showSharedGamesBtn').onclick=()=>{showView('gamesView');closeAccountMenu();setTimeout(()=>$('sharedGamesList').scrollIntoView({behavior:'smooth',block:'start'}),0)};$('accountBackToGamesBtn').onclick=()=>showView('gamesView');
+$('signOutBtn').onclick=performSignOut;$('accountLogOutBtn').onclick=performSignOut;
+$('showJoinGameBtn').onclick=()=>{$('joinGamePanel').hidden=false;$('joinGameForm').hidden=false;$('joinGameSuccess').hidden=true;$('joinGameError').hidden=true;$('joinGameCode').value='';$('joinGameCode').focus()};
+$('closeJoinGameBtn').onclick=()=>{$('joinGamePanel').hidden=true;$('joinGameError').hidden=true};
+$('joinGameBtn').onclick=async()=>{const code=$('joinGameCode').value.trim().toUpperCase();$('joinGameError').hidden=true;if(!code){$('joinGameError').textContent='Enter an invitation code.';$('joinGameError').hidden=false;return}const button=$('joinGameBtn');button.disabled=true;button.textContent='Joining…';try{const joined=await GMCloud.joinGame(code);joinedGameId=joined.game_id;await refreshCloudGames();$('joinedGameName').textContent=joined.game_name;$('joinedGamePermission').textContent=permissionLabel(joined.member_role);$('joinGameForm').hidden=true;$('joinGameSuccess').hidden=false}catch(error){const [title,message]=friendlyInviteError(error);$('joinGameError').innerHTML='<strong>'+esc(title)+'</strong><br>'+esc(message);$('joinGameError').hidden=false}finally{button.disabled=false;button.textContent='Join Game'}};
+$('joinGameCode').addEventListener('keydown',event=>{if(event.key==='Enter')$('joinGameBtn').click()});
+$('openJoinedGameBtn').onclick=()=>{if(joinedGameId){$('joinGamePanel').hidden=true;openGame(joinedGameId)}};
+$('showInviteFormBtn').onclick=()=>{if(currentGame()?.memberRole!=='owner')return;$('inviteFormPanel').hidden=false;$('inviteFormError').hidden=true;$('inviteResult').hidden=true;$('invitePermission').focus()};
+$('cancelInviteFormBtn').onclick=()=>{$('inviteFormPanel').hidden=true;$('inviteFormError').hidden=true};
+$('generateInviteBtn').onclick=async()=>{if(currentGame()?.memberRole!=='owner')return;const permission=$('invitePermission').value,expiration=$('inviteExpiration').value,uses=$('inviteUses').value,button=$('generateInviteBtn');button.disabled=true;button.textContent='Generating…';$('inviteFormError').hidden=true;try{const invite=await GMCloud.generateInvite(currentGame().id,permission,expiration===''?null:Number(expiration),uses===''?null:Number(uses));await refreshOpenGame();$('inviteFormPanel').hidden=true;$('inviteResult').innerHTML='<h3>Invite GM — '+esc(currentGame().name)+'</h3><span class="invite-code">'+esc(invite.code)+'</span><p>Permission: <strong>'+esc(permissionLabel(invite.permission))+'</strong></p><p>'+esc(inviteExpiryLabel(invite))+' • '+(invite.max_uses==null?'Multiple uses (Unlimited)':'One use')+'</p><div class="invite-entry-actions"><button id="copyGeneratedInviteBtn" class="secondary">Copy Code</button><button id="revokeGeneratedInviteBtn" class="danger">Revoke</button></div>';$('inviteResult').hidden=false;$('copyGeneratedInviteBtn').onclick=async()=>{try{await copyText(invite.code);$('copyGeneratedInviteBtn').textContent='Copied'}catch{alert('Could not access the clipboard. Select and copy the code manually.')}};$('revokeGeneratedInviteBtn').onclick=async()=>{if(!confirm('Revoke this invitation?'))return;try{await GMCloud.revokeInvite(invite.id);$('inviteResult').hidden=true;await refreshOpenGame()}catch(error){const [,message]=friendlyInviteError(error);alert(message)}}}catch(error){const [title,message]=friendlyInviteError(error);$('inviteFormError').innerHTML='<strong>'+esc(title)+'</strong><br>'+esc(message);$('inviteFormError').hidden=false}finally{button.disabled=false;button.textContent='Generate Invite'}};
 $('browseRoleTemplatesBtn').onclick=browseRoleTemplates;$('addRoleTemplateBtn').onclick=addSelectedRoleTemplate;
 $('exportBtn').onclick=()=>{const game=currentGame();if(!game)return;const blob=new Blob([JSON.stringify({format:'gm-command-center-game-v4',version:4,game,data:state},null,2)],{type:'application/json'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=normalized(game.name).replace(/[^a-z0-9]+/g,'-')+'-game.json';link.click();URL.revokeObjectURL(link.href)};
 $('importFile').onchange=event=>{const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async()=>{try{if(!cloudSession)throw new Error('Sign in before importing a shared game.');const imported=JSON.parse(reader.result),source=imported.data||imported,sourceMeta=imported.game||{},gameId=id(),createdAt=now(),data=migrateGameData(source,gameId),game=normalizeMeta({...sourceMeta,id:gameId,name:sourceMeta.name||source.settings?.gameName||'Imported Game',createdAt,updatedAt:createdAt,playerCount:data.players.length});data.gameId=gameId;data.lastSavedAt=createdAt;data.history.push({id:id(),gameId,type:'IMPORT',message:'Game imported as a separate saved game.',day:game.currentDay,phase:game.currentPhase,timestamp:createdAt});game.lastSavedAt=createdAt;const created=await GMCloud.createGame({game,data});game.memberRole='owner';game.shareCode=created[0]?.share_code||'';cloudVersion=created[0]?.version||1;localStorage.setItem(gameDataKey(gameId),JSON.stringify(data));gameIndex.games.push(game);gameIndex.activeGameId=gameId;state=data;saveIndex();renderAll();showView('dashboardView');await refreshOpenGame();await subscribeToOpenGame()}catch(error){alert(error.message||'Invalid game file.')}event.target.value=''};reader.readAsText(file)};

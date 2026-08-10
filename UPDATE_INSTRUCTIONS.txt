@@ -1,22 +1,29 @@
-GM COMMAND CENTER — VERSION 5.0.0
+GM COMMAND CENTER — VERSION 8.0.0
 
-This replaces v4.0.1.
+This replaces v7.0.0.
 
 1. Copy every file and folder into the GitHub repository.
 2. Replace existing files.
-3. Commit: Publish GM Command Center v5.0 shared collaboration
+3. Commit: Publish GM Command Center v8.0 AI GM Copilot
 4. Push origin.
 5. Wait 1–2 minutes and refresh the site.
 
 SUPABASE:
 1. The migrations in supabase/migrations are already applied to the configured project.
-2. Add the deployed site URL to Supabase Authentication Redirect URLs.
-3. Create the first GM account from the sign-in panel.
-4. Create a game, then share its invite code with another authenticated GM.
+2. Keep Confirm email disabled.
+3. Keep Allow anonymous sign-ins disabled.
+4. Set the minimum password length to at least 8 and require the current password for password changes.
+5. Deploy the `gm-copilot` Edge Function with JWT verification enabled.
+6. Add `OPENAI_API_KEY` as a Supabase Edge Function secret. Never put it in browser JavaScript.
+7. Create the first username/password GM account from the account screen.
+8. Create a game, then share its invite code with another authenticated GM.
 
 TEST:
-1. Open the same game in two signed-in browser sessions.
-2. Edit a role, rule, and current phase in one session.
-3. Confirm the second session updates without refreshing.
-4. Attempt a stale save and confirm it is rejected with a conflict message.
-5. Open another game and confirm it receives no updates from the first game.
+1. Create Owner, GM, and Viewer accounts with usernames and passwords.
+2. Confirm only the Owner sees the game before invitations are redeemed.
+3. Invite the GM and Viewer and confirm their memberships persist after logout/login.
+4. Confirm the GM can edit and the Viewer remains read-only.
+5. Open the same game in two signed-in browser sessions and confirm live updates.
+6. Attempt a guessed game ID from a non-member and confirm the database rejects access.
+7. Ask the AI GM a rules question with Terra, then resolve a complex action queue with Sol.
+8. Confirm a Viewer cannot call the AI GM and no proposed change is applied without the confirmation dialog.

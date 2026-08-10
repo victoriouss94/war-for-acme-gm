@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=5.0.0">
+  <link rel="stylesheet" href="css/main.css?v=8.0.0">
 </head>
-<body>
+<body class="auth-pending">
 <header class="topbar">
   <div>
     <h1>GM Command Center</h1>
@@ -17,8 +17,16 @@
     <button id="saveGameBtn" disabled>Save Game</button>
     <span id="lastSavedLabel" class="save-indicator">Not saved</span>
     <span id="connectionStatus" class="connection-status offline" title="Shared database connection">● Offline</span>
-    <span id="currentUserLabel" class="muted"></span>
-    <button id="signOutBtn" class="secondary" hidden>Sign out</button>
+    <div id="accountMenu" class="account-menu" hidden>
+      <button id="accountMenuButton" class="secondary account-menu-button" type="button" aria-haspopup="menu" aria-expanded="false"><span id="currentUserLabel">Account</span> <span aria-hidden="true">▾</span></button>
+      <div id="accountMenuDropdown" class="account-menu-dropdown" role="menu" hidden>
+        <button id="showAccountBtn" class="account-menu-item" type="button" role="menuitem">Account</button>
+        <button id="showMyGamesBtn" class="account-menu-item" type="button" role="menuitem">My Games</button>
+        <button id="showSharedGamesBtn" class="account-menu-item" type="button" role="menuitem">Shared Games</button>
+        <button id="showChangePasswordBtn" class="account-menu-item" type="button" role="menuitem">Change Password</button>
+        <button id="signOutBtn" class="account-menu-item danger-text" type="button" role="menuitem">Log Out</button>
+      </div>
+    </div>
     <button id="exportBtn" class="secondary" disabled>Export</button>
     <label class="file-btn secondary">Import<input id="importFile" type="file" accept="application/json" hidden></label>
   </div>
@@ -31,6 +39,7 @@
   <button class="tab game-tab" data-view="playersView">Players</button>
   <button class="tab game-tab" data-view="rolesView">Roles</button>
   <button class="tab game-tab" data-view="queueView">Action Queue</button>
+  <button class="tab game-tab" data-view="copilotView">AI GM</button>
   <button class="tab game-tab" data-view="statisticsView">Statistics</button>
   <button class="tab game-tab" data-view="rulesView">Rules</button>
   <button class="tab game-tab" data-view="encyclopediaView">📚 Abilities</button>
@@ -39,15 +48,74 @@
 </nav>
 
 <main>
-  <section id="authPanel" class="panel auth-panel">
-    <div><h2>Connect to the shared command center</h2><p class="muted">Sign in by email so saved games and live GM edits are authorized and permanently stored.</p></div>
-    <div class="auth-fields"><label>GM display name<input id="authDisplayName" maxlength="80" placeholder="Arrow"></label><label>Email<input id="authEmail" type="email" placeholder="gm@example.com"></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password"></label><button id="passwordSignInBtn">Sign in</button><button id="createAccountBtn" class="secondary">Create account</button><button id="sendMagicLinkBtn" class="secondary">Email sign-in link</button></div>
-    <p id="authMessage" class="form-notice" aria-live="polite"></p>
+  <section id="authPanel" class="panel auth-panel account-gateway">
+    <div class="auth-brand"><p class="eyebrow">GM COMMAND CENTER</p><h2>Welcome back, GM</h2><p class="muted">Log in to your permanent account or create one with only a username and password.</p></div>
+    <div class="auth-card">
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button id="showLoginTabBtn" class="auth-tab active" type="button" role="tab" aria-selected="true" aria-controls="loginForm">Log In</button>
+        <button id="showCreateTabBtn" class="auth-tab" type="button" role="tab" aria-selected="false" aria-controls="createAccountForm">Create Account</button>
+      </div>
+      <form id="loginForm" class="auth-form" novalidate>
+        <h2>Log In</h2>
+        <label>Username<input id="loginUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+        <label>Password<input id="loginPassword" type="password" minlength="8" maxlength="256" autocomplete="current-password" required></label>
+        <label class="check show-password"><input id="showLoginPassword" type="checkbox"> Show Password</label>
+        <button id="loginBtn" type="submit">Log In</button>
+      </form>
+      <form id="createAccountForm" class="auth-form" novalidate hidden>
+        <h2>Create Account</h2>
+        <label>Username<input id="createUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="usernameHelp" required></label>
+        <p id="usernameHelp" class="field-help">3–30 characters. Use letters, numbers, underscores, or hyphens; begin with a letter or number.</p>
+        <label>Password<input id="createPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" aria-describedby="passwordHelp" required></label>
+        <p id="passwordHelp" class="field-help">At least 8 characters. Long passphrases and password-manager passwords are welcome.</p>
+        <label>Confirm Password<input id="confirmPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+        <label class="check show-password"><input id="showCreatePassword" type="checkbox"> Show Passwords</label>
+        <button id="createAccountBtn" type="submit">Create Account</button>
+      </form>
+      <p id="authMessage" class="form-notice" role="status" aria-live="polite"></p>
+      <p class="muted no-recovery-notice">No email is collected. If you forget your password, automatic email recovery is unavailable.</p>
+    </div>
+  </section>
+  <section id="legacyUpgradePanel" class="panel legacy-upgrade-panel" hidden>
+    <div><p class="eyebrow">ACCOUNT UPGRADE REQUIRED</p><h2>Keep your existing games</h2><p>Your earlier device account is still connected to its games. Choose a permanent username and password now so you can log back in from any session.</p></div>
+    <form id="legacyUpgradeForm" class="legacy-upgrade-form" novalidate>
+      <label>Username<input id="legacyUsername" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,29}" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label>Password<input id="legacyPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+      <label>Confirm Password<input id="legacyConfirmPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+      <label class="check show-password"><input id="showLegacyPasswords" type="checkbox"> Show Passwords</label>
+      <button id="upgradeLegacyAccountBtn" type="submit">Upgrade Account</button>
+      <p id="legacyUpgradeMessage" class="form-notice" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+  <section id="accountView" class="view">
+    <div class="section-heading account-heading"><div><p class="eyebrow">ACCOUNT</p><h2 id="accountHeading">GM Account</h2><p class="muted">Your permanent command-center identity.</p></div><button id="accountBackToGamesBtn" class="secondary" type="button">Back to Games</button></div>
+    <div class="grid2 account-grid">
+      <article class="panel account-summary">
+        <dl>
+          <div><dt>Username</dt><dd id="accountUsername">—</dd></div>
+          <div><dt>Member Since</dt><dd id="accountMemberSince">—</dd></div>
+          <div><dt>Games Owned</dt><dd id="accountGamesOwned">0</dd></div>
+          <div><dt>Shared Games</dt><dd id="accountSharedGames">0</dd></div>
+        </dl>
+        <div class="form-actions"><button id="accountChangePasswordBtn" type="button">Change Password</button><button id="accountLogOutBtn" class="secondary" type="button">Log Out</button></div>
+      </article>
+      <article id="changePasswordPanel" class="panel" hidden>
+        <h2>Change Password</h2>
+        <form id="changePasswordForm" novalidate>
+          <label>Current Password<input id="currentPassword" type="password" minlength="8" maxlength="256" autocomplete="current-password" required></label>
+          <label>New Password<input id="newPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+          <label>Confirm New Password<input id="confirmNewPassword" type="password" minlength="8" maxlength="256" autocomplete="new-password" required></label>
+          <label class="check show-password"><input id="showChangePasswords" type="checkbox"> Show Passwords</label>
+          <div class="form-actions"><button id="changePasswordSubmitBtn" type="submit">Change Password</button><button id="cancelChangePasswordBtn" class="secondary" type="button">Cancel</button></div>
+        </form>
+        <p id="changePasswordMessage" class="form-notice" role="status" aria-live="polite"></p>
+      </article>
+    </div>
   </section>
   <section id="gamesView" class="view active">
     <div class="section-heading games-heading">
       <div><h2>Games</h2><p class="muted">Create, resume, duplicate, archive, and manage permanently saved games.</p></div>
-      <div class="form-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="createGameBtn">+ Create New Game</button></div>
+      <div class="form-actions game-create-actions"><button id="uploadDeviceGamesBtn" class="secondary" hidden>Upload Device Saves</button><button id="showJoinGameBtn" class="secondary">Join Game</button><button id="importWordBtn" class="secondary">Import From Word Document</button><input id="importWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><button id="createGameBtn">+ Create New Game</button></div>
     </div>
     <article id="gameFormPanel" class="panel game-form-panel" hidden>
       <div class="section-heading"><h2 id="gameFormTitle">Create New Game</h2><button id="cancelGameFormBtn" class="secondary">Cancel</button></div>
@@ -62,12 +130,33 @@
       <label>Notes<textarea id="gameNotesField" rows="3" maxlength="4000" placeholder="Optional GM notes"></textarea></label>
       <button id="saveGameFormBtn">Create Game</button>
     </article>
-    <article id="joinGamePanel" class="panel join-game-panel" hidden><div><h2>Join a shared game</h2><p class="muted">Ask the owner for the game invite code.</p></div><input id="joinGameCode" maxlength="10" placeholder="Invite code"><button id="joinGameBtn">Join Game</button></article>
+    <article id="documentImportPanel" class="panel document-import-panel" hidden>
+      <div class="section-heading"><div><h2 id="documentImportTitle">Document Import</h2><p id="documentImportStatus" class="muted" aria-live="polite">Choose a .docx file to begin.</p></div><button id="cancelDocumentImportBtn" class="secondary">Cancel</button></div>
+      <p id="documentImportError" class="form-error" role="alert" hidden></p>
+      <div id="documentImportSummary" class="import-summary"></div>
+      <div id="documentImportTabs" class="import-tabs" hidden>
+        <button type="button" class="secondary" data-import-tab="overview">Overview</button>
+        <button type="button" class="secondary" data-import-tab="game">Game Info</button>
+        <button type="button" class="secondary" data-import-tab="factions">Factions</button>
+        <button type="button" class="secondary" data-import-tab="roles">Roles</button>
+        <button type="button" class="secondary" data-import-tab="abilities">Abilities</button>
+        <button type="button" class="secondary" data-import-tab="rules">Rules</button>
+        <button type="button" class="secondary" data-import-tab="warnings">Warnings</button>
+      </div>
+      <div id="documentImportContent" class="import-review-content"></div>
+      <div id="documentImportActions" class="import-actions" hidden><button id="reviewDocumentImportBtn" class="secondary">Review Import</button><button id="confirmDocumentImportBtn">Import Game</button></div>
+    </article>
+    <article id="joinGamePanel" class="panel join-game-panel" hidden>
+      <div class="section-heading"><div><h2>Join a Game</h2><p class="muted">Paste a valid invitation code from the game owner.</p></div><button id="closeJoinGameBtn" class="secondary">Cancel</button></div>
+      <div id="joinGameForm" class="join-game-form"><label>Invite Code<input id="joinGameCode" maxlength="40" autocomplete="off" spellcheck="false" placeholder="JUNGLE-X7K9-PQ2M-H8DZ"></label><button id="joinGameBtn">Join Game</button></div>
+      <p id="joinGameError" class="form-error" role="alert" hidden></p>
+      <div id="joinGameSuccess" class="join-game-success" hidden><h3>Game Joined</h3><p>You joined <strong id="joinedGameName"></strong>.</p><p>Permission: <strong id="joinedGamePermission"></strong></p><button id="openJoinedGameBtn">Open Game</button></div>
+    </article>
     <div id="gamesEmptyState" class="empty-state games-empty" hidden><h2>No Games Yet</h2><p>Create your first game to start using GM Command Center.</p><button id="emptyCreateGameBtn">Create New Game</button></div>
     <div id="gamesManagerContent">
       <div class="panel games-controls"><input id="gamesSearch" placeholder="Search by game name or theme"><select id="gamesSort"><option value="UPDATED">Recently Updated</option><option value="CREATED">Date Created</option><option value="NAME">Name</option><option value="STATUS">Status</option></select></div>
-      <section class="game-group"><h2>Active Games</h2><div id="activeGamesList" class="game-card-grid"></div></section>
-      <section class="game-group"><h2>Saved Games</h2><div id="savedGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>My Games</h2><p class="muted">Games you own.</p><div id="myGamesList" class="game-card-grid"></div></section>
+      <section class="game-group"><h2>Shared With Me</h2><p class="muted">Games where you are a GM or Viewer.</p><div id="sharedGamesList" class="game-card-grid"></div></section>
       <section class="game-group"><h2>Archived Games</h2><div id="archivedGamesList" class="game-card-grid"></div></section>
     </div>
   </section>
@@ -100,7 +189,11 @@
         <label>Standard class<select id="factionClass"><option value="VILLAGER">Villager</option><option value="DEN">Den</option><option value="NEUTRAL">Neutral</option></select></label>
         <label>Short alias<input id="factionAlias" placeholder="Example: den"></label>
         <label>Team number<input id="factionTeam" type="number" min="1" value="1"></label>
-        <button id="addFactionBtn" class="full">Add Faction</button>
+        <label>Alignment / type<input id="factionAlignment" maxlength="120" placeholder="Example: Town-aligned"></label>
+        <label>Description<textarea id="factionDescription" rows="3" maxlength="3000"></textarea></label>
+        <label>Win condition<textarea id="factionWinCondition" rows="2" maxlength="2000"></textarea></label>
+        <label>Notes<textarea id="factionNotes" rows="3" maxlength="3000"></textarea></label>
+        <div class="form-actions"><button id="addFactionBtn" class="full">Add Faction</button><button id="cancelFactionEditBtn" class="secondary full" hidden>Cancel Edit</button></div>
       </aside>
       <div class="panel">
         <div class="section-heading"><div><h2>Faction Instances</h2><p class="muted">Names are customizable; the internal class remains Villager, Den, or Neutral.</p></div></div>
@@ -138,6 +231,43 @@
         <h2>Resolution Order</h2>
         <ol class="priority"><li>Blocks</li><li>Role Control / Swaps</li><li>Protects</li><li>Intel</li><li>Kills / Harmful Actions</li><li>Saves / Heals</li></ol>
         <div id="queueList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="copilotView" class="view">
+    <div class="copilot-layout">
+      <aside class="panel copilot-controls">
+        <p class="eyebrow">AI GAME MASTER</p>
+        <h2>GM Copilot</h2>
+        <p class="muted">Ask about the current saved game or resolve its action queue using its actual roles, abilities, players, and rules.</p>
+        <label>Task
+          <select id="copilotTask">
+            <option value="assistant">Answer a GM question</option>
+            <option value="resolve_actions">Resolve queued actions</option>
+            <option value="explain_role">Explain a role or ability</option>
+            <option value="plan_session">Plan the next phase</option>
+          </select>
+        </label>
+        <label>Reasoning mode
+          <select id="copilotDepth">
+            <option value="standard">Terra — fast, everyday rulings</option>
+            <option value="deep">Sol — deep, complex rulings</option>
+          </select>
+        </label>
+        <button id="copilotResolveQueueBtn" class="full">Resolve Action Queue</button>
+        <button id="copilotClearBtn" class="secondary full">Clear Conversation</button>
+        <div class="copilot-safety"><strong>You stay in control.</strong><p>The AI can only propose a limited set of changes. Nothing changes until an authorized GM reviews and confirms it.</p></div>
+      </aside>
+      <div class="panel copilot-workspace">
+        <div class="section-heading copilot-heading"><div><h2>Game Rulings</h2><p class="muted">The AI reads the authoritative cloud save, not a client-supplied copy.</p></div><span class="permission-badge">OWNER / GM ONLY</span></div>
+        <div id="copilotConversation" class="copilot-conversation" aria-live="polite"></div>
+        <div id="copilotStatus" class="form-notice copilot-status" aria-live="polite"></div>
+        <form id="copilotForm" class="copilot-form">
+          <label for="copilotPrompt">Ask the AI GM</label>
+          <textarea id="copilotPrompt" rows="4" maxlength="6000" placeholder="Example: The Watcher targeted Rowan while a Redirect targeted the Watcher. What information should the Watcher receive?" required></textarea>
+          <div class="copilot-form-actions"><span class="muted">Avoid placing real-world personal information in prompts.</span><button id="copilotAskBtn" type="submit">Ask AI GM</button></div>
+        </form>
       </div>
     </div>
   </section>
@@ -275,7 +405,34 @@
         <label class="check"><input id="roleEditingAuthorized" type="checkbox" disabled> Role editing permission</label>
         <p class="muted">Owners and GMs can edit roles. Viewers remain read-only while still receiving live updates.</p>
       </article>
-      <article class="panel"><h2>Live Collaboration</h2><p>Invite code: <strong id="gameShareCode">—</strong></p><button id="copyShareCodeBtn" class="secondary">Copy Invite Code</button><h3>Currently viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div><h3>Members</h3><div id="memberList" class="presence-list"></div></article>
+      <article id="gmAccessPanel" class="panel gm-access-panel">
+        <div class="section-heading"><div><h2>GM Access</h2><p class="muted">Manage collaborators for this saved game.</p></div><button id="showInviteFormBtn">+ Invite GM</button></div>
+        <p id="gmAccessNotice" class="form-notice" hidden></p>
+        <div id="inviteFormPanel" class="invite-form-panel" hidden>
+          <h3>Generate Invitation</h3>
+          <div class="invite-form-grid">
+            <label>Permission<select id="invitePermission"><option value="gm">GM</option><option value="viewer">Viewer</option></select></label>
+            <label>Expiration<select id="inviteExpiration"><option value="86400">24 Hours</option><option value="604800" selected>7 Days</option><option value="2592000">30 Days</option><option value="">Never</option></select></label>
+            <label>Uses<select id="inviteUses"><option value="1">One Use</option><option value="">Multiple Uses (Unlimited)</option></select></label>
+          </div>
+          <div class="form-actions horizontal-actions"><button id="generateInviteBtn">Generate Invite</button><button id="cancelInviteFormBtn" class="secondary">Cancel</button></div>
+          <p id="inviteFormError" class="form-error" role="alert" hidden></p>
+        </div>
+        <div id="inviteResult" class="invite-result" hidden></div>
+        <div class="member-sections">
+          <section><h3>Owner</h3><div id="ownerMemberList" class="member-list"></div></section>
+          <section><h3>Game Masters</h3><div id="gmMemberList" class="member-list"></div></section>
+          <section><h3>Viewers</h3><div id="viewerMemberList" class="member-list"></div></section>
+        </div>
+        <section id="activeInvitesSection"><h3>Active Invites</h3><div id="activeInviteList" class="invite-list"></div></section>
+        <h3>Currently Viewing</h3><div id="presenceList" class="presence-list"><span class="muted">No connected GMs.</span></div>
+      </article>
+      <article id="sourceDocumentPanel" class="panel">
+        <h2>Source Document</h2>
+        <div id="sourceDocumentInfo"><p class="muted">This game was not created from a Word document.</p></div>
+        <div class="form-actions"><button id="reimportWordBtn" class="secondary">Re-import Document</button><input id="reimportWordFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></div>
+        <div id="importHistoryList" class="import-history-list"></div>
+      </article>
       <article class="panel danger-zone">
         <h2>Danger Zone</h2>
         <p class="muted">These actions affect only the current game.</p>
@@ -288,8 +445,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=5.0.0"></script>
-<script src="js/cloud.js?v=5.0.0"></script>
-<script src="js/app.js?v=5.0.0"></script>
+<script src="js/supabase-config.js?v=8.0.0"></script>
+<script src="js/cloud.js?v=8.0.0"></script>
+<script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
+<script type="module" src="js/app.js?v=8.0.0"></script>
 </body>
 </html>
