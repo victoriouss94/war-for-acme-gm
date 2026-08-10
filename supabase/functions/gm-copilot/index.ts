@@ -116,7 +116,7 @@ Deno.serve(async(req:Request)=>{
   })});
   const aiPayload=await aiResponse.json().catch(()=>({}));
   if(!aiResponse.ok){
-    const apiCode=text(aiPayload?.error?.code,100),isQuota=apiCode==='insufficient_quota'||String(aiPayload?.error?.message||'').toLowerCase().includes('quota');
+    const apiCode=text(aiPayload?.error?.code,100),apiType=text(aiPayload?.error?.type,100),apiMessage=String(aiPayload?.error?.message||'').toLowerCase(),isQuota=[apiCode,apiType].some(value=>['insufficient_quota','billing_hard_limit_reached'].includes(value))||/(quota|billing|credits|credit balance)/.test(apiMessage);
     return json({error:isQuota?'Add OpenAI API credits before using the GM Copilot.':aiResponse.status===429?'The AI service is busy. Wait a moment and try again.':'The AI service could not complete this request.',code:isQuota?'OPENAI_CREDITS_REQUIRED':aiResponse.status===429?'OPENAI_RATE_LIMIT':'OPENAI_ERROR'},isQuota?402:aiResponse.status===429?429:502,origin);
   }
   const outputText=extractOutputText(aiPayload);
