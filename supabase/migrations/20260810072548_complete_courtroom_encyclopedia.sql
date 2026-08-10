@@ -61,7 +61,7 @@ insert into public.official_document_versions(
 select d.id,2,'ACTIVE','ACTIVE','Courtroom_Master_Ability_Encyclopedia.docx',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',40225,
   'd0bf9d20bfd8d07b6001cb77a02a7af10663f01c7e013390c15c812b21369d3f',
-  string_agg(s.sort_order||'. '||s.display_name||' â€” '||s.description,e'\n' order by s.sort_order),
+  string_agg(s.sort_order||'. '||s.display_name||' '||chr(8212)||' '||s.description,e'\n' order by s.sort_order),
   'Complete 32-ability Courtroom source supplied by the GM.',now()
 from public.official_documents d cross join courtroom_ability_seed s
 where d.document_key='courtroom_master_ability_encyclopedia'
@@ -77,11 +77,11 @@ from public.official_documents d
 where d.id=v.document_id and d.document_key='courtroom_master_ability_encyclopedia' and v.version_number=2;
 
 update public.official_documents
-set title='Courtroom â€” Master Ability Encyclopedia',updated_at=now()
+set title='Courtroom '||chr(8212)||' Master Ability Encyclopedia',updated_at=now()
 where document_key='courtroom_master_ability_encyclopedia';
 
 update public.standard_ability_datasets ds
-set name='Courtroom â€” Master Ability Encyclopedia',
+set name='Courtroom '||chr(8212)||' Master Ability Encyclopedia',
     description='The complete official 32-ability Courtroom dataset supplied by the GM.',
     source_document_version_id=v.id
 from public.official_document_versions v
@@ -125,7 +125,7 @@ join public.official_document_versions dv on dv.document_id=d.id and dv.version_
 where v.ability_id=s.ability_id and v.game_id is null and v.version_number=2;
 
 insert into public.official_document_chunks(document_version_id,game_id,chunk_index,heading,source_locator,content,token_estimate)
-select v.id,null,0,'Courtroom standardized abilities','Complete Word source â€” version 2',v.extracted_text,
+select v.id,null,0,'Courtroom standardized abilities','Complete Word source '||chr(8212)||' version 2',v.extracted_text,
   greatest(1,char_length(v.extracted_text)/4)
 from public.official_document_versions v
 join public.official_documents d on d.id=v.document_id
@@ -205,5 +205,4 @@ begin
     raise exception 'COURTROOM_ABILITY_DEFINITION_INCOMPLETE';
   end if;
 end $$;
-
 
