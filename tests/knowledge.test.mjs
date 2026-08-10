@@ -5,6 +5,7 @@ import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,va
 import {normalizeCopilotResponse} from '../js/copilot.js';
 
 const migration=await readFile('supabase/migrations/20260810120000_phase1_ai_knowledge_and_official_abilities.sql','utf8');
+const completedMigration=await readFile('supabase/migrations/20260810072548_complete_courtroom_encyclopedia.sql','utf8');
 const html=await readFile('index.html','utf8'),app=await readFile('js/app.js','utf8'),cloud=await readFile('js/cloud.js','utf8'),copilot=await readFile('supabase/functions/gm-copilot/index.ts','utf8'),ingest=await readFile('supabase/functions/gm-knowledge-ingest/index.ts','utf8');
 
 test('official knowledge uploads accept only bounded DOCX, PDF, and TXT files',()=>{
@@ -26,6 +27,18 @@ test('Courtroom seed contains exactly the requested 32 stable IDs and preserves 
   assert.match(migration,/\('basic_ask','NEEDS_SOURCE_TEXT',null::text/);
   assert.match(migration,/\('personal_instant_kill','DEFINED'/);
   assert.match(migration,/Do not invent missing technical values|must not be invented/);
+});
+
+test('the completed Courtroom source defines all 32 abilities and replaces legacy saved-game copies',()=>{
+  const abilityBlock=app.match(/const standardAbilities=\(\)=>\[([\s\S]*?)\n\]\.map/)?.[1]||'';
+  assert.equal((abilityBlock.match(/^  \['/gm)||[]).length,32);
+  for(const name of ['Action Check','Den Regular Kill','Personal Instant Kill','Super Protect','Steal','Convert'])assert.match(abilityBlock,new RegExp(`\\['${name.replace('/','\\/')}'`));
+  for(const removed of ['Role Check','Visitor Check','Regular Kill','Instant Kill','Redirect','Swap','Silence','Conversion','Recruit'])assert.doesNotMatch(abilityBlock,new RegExp(`\\['${removed.replace('/','\\/')}'`));
+  assert.equal((completedMigration.match(/^\('[a-z_]+','[^']+','(?:Investigation|Harmful|Protection|Support)',\d+,/gm)||[]).length,32);
+  assert.match(completedMigration,/select s\.ability_id,2,'ACTIVE','DEFINED'/);
+  assert.match(completedMigration,/Courtroom Master Ability Encyclopedia installed with exactly 32 abilities/);
+  assert.match(completedMigration,/COURTROOM_ABILITY_COUNT_MISMATCH/);
+  assert.match(completedMigration,/COURTROOM_ABILITY_DEFINITION_INCOMPLETE/);
 });
 
 test('reconciliation reports matches without mutating roles or abilities',()=>{

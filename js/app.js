@@ -1,6 +1,6 @@
-import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=9.0.1';
-import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=9.0.1';
-import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=9.0.1';
+import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=9.1.0';
+import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=9.1.0';
+import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=9.1.0';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
 const GAME_INDEX_KEY='gm_command_center_games_v4';
@@ -14,42 +14,40 @@ const normalized=(value='')=>String(value).trim().toLowerCase();
 const usernamePattern=/^[A-Za-z0-9][A-Za-z0-9_-]{2,29}$/;
 const $=elementId=>document.getElementById(elementId);
 const esc=(value='')=>String(value).replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+// The supplied Courtroom document is the single built-in encyclopedia source.
 const standardAbilities=()=>[
-  ['Basic Ask','Investigation','Receives a basic piece of information about the targeted player, usually their broad faction or alignment.','Night','investigation, alignment'],
-  ['Advanced Ask','Investigation','Receives more detailed information about the targeted player than a Basic Ask, according to the game’s configured investigation results.','Night','investigation, role'],
-  ['Alignment Ask','Investigation','Learns the targeted player’s current faction class or configured alignment result.','Night','investigation, alignment'],
-  ['Role Check','Investigation','Learns the targeted player’s role or the role result configured for that player.','Night','investigation, role'],
-  ['Watch','Investigation','Learns which players visited the selected target during the phase.','Night','investigation, visitor'],
-  ['Track','Investigation','Learns which player or players the selected target visited during the phase.','Night','investigation, visitor'],
-  ['Visitor Check','Investigation','Determines whether the selected player visited anyone during the phase and may reveal the destination when configured.','Night','investigation, visitor'],
-  ['Gravedigger','Investigation','Receives configured information about a dead player, such as their role, faction, actions, or visitors.','Night','investigation, dead player'],
-  ['Map','Investigation','Receives location, grouping, proximity, or movement information defined by the game’s map rules.','Night','investigation, location'],
-  ['Regular Kill','Harmful','Attempts to kill the targeted player using the game’s standard attack strength and can be stopped by compatible protection.','Night','kill, harmful'],
-  ['Instant Kill','Harmful','Immediately attempts to kill the targeted player at the configured instant-kill strength.','Any','kill, harmful'],
-  ['Super Kill','Harmful','A powerful kill that bypasses ordinary protection unless a rule specifically protects against Super Kills.','Any','kill, bypass'],
-  ['Omega Kill','Harmful','The highest standard kill tier, bypassing ordinary and enhanced protection unless an explicit Omega defense applies.','Any','kill, bypass'],
-  ['Poison','Harmful','Applies a delayed harmful status that kills or damages the target after the configured delay unless removed.','Night','delayed, status, kill'],
-  ['Mark','Harmful','Places a mark on the target for a later effect, trigger, bonus, or execution defined by the ability.','Night','status, delayed'],
-  ['Duel / Fight','Harmful','Forces two participants into a contest whose winner, loser, and consequences follow the configured duel rules.','Any','contest, kill'],
-  ['Roleblock','Control','Prevents the targeted player’s compatible active actions from executing during the current phase.','Night','block, control'],
-  ['Redirect','Control','Changes an action’s intended target to another valid target according to the redirect rules.','Night','control, target'],
-  ['Swap','Control','Exchanges two players or targets for compatible actions during the phase.','Night','control, target'],
-  ['Drunk','Communication','Restricts the targeted player to the configured drunk communication method, such as GIFs, stickers, or emojis only.','Any','communication, restriction'],
-  ['Sober','Communication','Restricts the targeted player to text-only communication under the game’s configured rules.','Any','communication, restriction'],
-  ['Silence','Communication','Prevents or limits the targeted player’s communication for the configured period.','Any','communication, restriction'],
-  ['Protect','Protection','Prevents one or more compatible harmful actions from affecting the selected target, according to its configured strength and limits.','Night','protection, kill'],
-  ['Guard','Protection','Defends a selected player and may intercept, absorb, retaliate against, or otherwise respond to attacks as configured.','Night','protection, interception'],
-  ['Save','Protection','Prevents a pending death or removes the target from a lethal outcome when the save conditions are met.','Night','protection, death'],
-  ['Heal','Protection','Removes compatible damage, poison, injury, or harmful statuses and may prevent a resulting death.','Night','protection, cleanse'],
-  ['Death Immunity','Passive','Prevents the player from dying to the kill types covered by the immunity while it is active.','Passive','immunity, death'],
-  ['Bulletproof / Passive Immunity','Passive','Automatically survives compatible attacks without requiring an active selection, subject to its uses and bypass rules.','Passive','immunity, kill'],
-  ['Reflection','Protection','Returns a compatible action to its source or another configured target instead of allowing it to affect the original target.','Night','protection, redirect'],
-  ['Counterattack','Passive','Triggers a retaliatory harmful action when the player is targeted under the configured conditions.','Passive','reaction, kill'],
-  ['Ability Amplify','Support','Increases the strength, number of targets, duration, or effect of a compatible ability for the configured period.','Night','support, boost'],
-  ['Additional Uses','Support','Grants one or more extra uses of a compatible limited-use ability.','Any','support, uses'],
-  ['Action Success Guarantee','Support','Causes a compatible selected action to succeed against ordinary failure, blocking, or chance conditions unless explicitly bypassed.','Night','support, success'],
-  ['Conversion','Control','Changes the targeted player’s faction, team, role relationship, or win condition according to the conversion rules.','Night','faction, recruitment'],
-  ['Recruit','Control','Invites or forces a valid target to join the acting faction or group under the configured recruitment conditions.','Night','faction, recruitment']
+  ['Basic Ask','Investigation','Target one player and learn whether they are Villager, Den, or Neutral. Basic Ask does not bypass protections, disguises, false appearances, redirects, or other effects that interfere with the investigation.','Night','investigation, faction'],
+  ['Advanced Ask','Investigation','Target one player and learn their exact role. For example, if the target is the Corrupt Judge, the result reveals Corrupt Judge.','Night','investigation, role'],
+  ['Alignment Ask','Investigation','Target one player and learn their alignment or faction.','Night','investigation, alignment'],
+  ['Watch','Investigation','Target one player and learn who visited that player during the cycle.','Night','investigation, visitor'],
+  ['Track','Investigation','Target one player and learn who that player visited during the cycle.','Night','investigation, visitor'],
+  ['Action Check','Investigation','Target one player and learn which abilities were used on that player during the cycle. It does not reveal who used those abilities.','Night','investigation, action'],
+  ['Gravedigger','Investigation','Select a dead player and learn that player\'s role.','Night','investigation, dead player, role'],
+  ['Map','Investigation','Learn which abilities are still available among all living players. Map reveals the ability names only and does not reveal which player, role, or faction possesses them. Multiple copies of the same ability do not need to be identified separately.','Night','investigation, ability inventory'],
+  ['Den Regular Kill','Harmful','The Den collectively selects a target. The kill uses the same mechanics as a Personal Instant Kill and counts as a Den action rather than a personal killing ability. A random eligible living Den member performs the action, usually excluding the Den Alpha when another eligible member is available.','Night','kill, den action'],
+  ['Personal Instant Kill','Harmful','Kill one targeted player. The kill can be stopped or manipulated by applicable normal mechanics, including Protect, Guard, Save, Redirect, Reflection, and relevant immunities.','Any','kill, harmful'],
+  ['Super Kill','Harmful','Kill one targeted player while ignoring normal protection. Normal Protect, Guard, and Save do not stop it. Super Protect or applicable Death Immunity can prevent the death.','Any','kill, bypass'],
+  ['Omega Kill','Harmful','Uses the same kill strength as a Super Kill. It hits the targeted player and every player visiting that target during the cycle. It does not automatically hit players whom the target visits.','Any','kill, visitors'],
+  ['Poison','Harmful','Apply a Poison status to a target. The poisoned player dies after 2 days unless successfully Healed before the timer expires. Poison is contagious: any player who visits a poisoned player also becomes Poisoned and begins their own 2-day timer.','Night','delayed, status, kill, contagious'],
+  ['Mark','Harmful','Place a Mark on a targeted player. When the Mark\'s specified requirement is fulfilled, it unlocks a Personal Instant Kill against that player. The Mark itself does not immediately kill the target.','Night','status, delayed, kill'],
+  ['Roleblock','Harmful','Target a player and prevent them from performing any active ability during that cycle. Passive abilities remain active unless a role specifically states otherwise.','Night','block, control'],
+  ['Drunk','Harmful','The targeted player cannot communicate using text in any form. They may communicate only through emojis, GIFs, stickers, and reactions. Drunk affects communication only unless a role states otherwise.','Any','communication, restriction'],
+  ['Sober','Harmful','The targeted player may communicate only through normal text. They cannot use emojis, GIFs, stickers, reactions, or other non-text communication. Sober affects communication only unless a role states otherwise.','Any','communication, restriction'],
+  ['Duel / Fight','Harmful','Challenge a targeted player to a fight to the death. The winner survives and the loser dies. The role possessing the ability determines how the winner is decided, such as a mini-game, trivia, rock-paper-scissors, or another GM-approved challenge.','Any','contest, kill'],
+  ['Convert','Harmful','Target a player and attempt to change that player\'s faction or alignment to the faction performing the conversion. The target keeps their role and abilities unless the role specifically states otherwise. Conversion can fail against applicable conversion immunity or other defensive effects.','Night','faction, conversion'],
+  ['Steal','Harmful','Target a player and steal one available use of an ability from them. The thief gains that use and the original player loses it. For an unlimited or recurring ability, the stolen version is normally treated as one stolen use unless the role states otherwise.','Night','ability, theft, uses'],
+  ['Protect','Protection','Target a player and protect them for that night from most normal harmful abilities directed at them. For example, a protected player survives a Personal Instant Kill. Protect does not stop abilities that explicitly bypass normal protection, such as Super Kill or Omega Kill.','Night','protection, kill'],
+  ['Guard','Protection','Target a player and take an applicable incoming harmful action instead of them. The harmful action is transferred to the Guard rather than simply being cancelled.','Night','protection, interception'],
+  ['Save','Protection','A last-minute reactive ability used when a player is about to die. Save prevents that death and keeps the player alive. Unlike Protect, it is an emergency rescue rather than a protection placed in advance. It does not stop higher kill tiers when those tiers explicitly bypass normal Save.','Any','protection, death, reactive'],
+  ['Heal','Protection','Remove an active status effect from a targeted player. For example, Heal removes Poison and cancels that player\'s Poison death timer. Heal does not protect against new harmful abilities and does not revive a player who is already dead.','Night','protection, cleanse'],
+  ['Super Protect','Protection','Target a player and protect them against Super Kills and Omega Kills. It is stronger than normal Protect.','Night','protection, super kill, omega kill'],
+  ['Death Immunity','Protection','While Death Immunity is active, the player cannot die. The player may still be affected by non-death abilities. A specific mechanic may bypass Death Immunity only if it explicitly says so.','Passive','immunity, death'],
+  ['Reflection','Protection','Acts like a mirror. When the player is targeted by an applicable ability, the incoming ability is sent back to the player who used it. For example, a reflected Personal Instant Kill hits the original attacker instead.','Passive','protection, redirect'],
+  ['Counterattack','Protection','Usually a passive ability tied to a specific immunity. When the player is targeted by an ability they are immune to, Counterattack automatically activates against the attacker. The retaliation is usually a Personal Instant Kill unless the role specifies another effect.','Passive','reaction, kill'],
+  ['Bulletproof / Passive Immunity','Protection','Passive immunity to all abilities targeting the player, including Personal Instant Kill, Super Kill, Omega Kill, and other targeted harmful effects. Bulletproof inherently includes Super Protect-level protection unless a specific ability explicitly bypasses Bulletproof.','Passive','immunity, protection'],
+  ['Ability Amplify','Support','Strengthen an ability by upgrading it to the next power level or a stronger version of its normal effect. Examples: Personal Instant Kill becomes Super Kill; Protect becomes Super Protect. Amplify increases strength, not number of uses.','Night','support, strength'],
+  ['Additional Uses','Support','Give a player an additional use of a specific ability they already possess. Example: a player with one Personal Instant Kill gains a second Personal Instant Kill. It increases the number of uses without increasing the ability\'s strength.','Any','support, uses'],
+  ['Action Success Guarantee','Support','Guarantee that the player can perform their selected action during that cycle. It bypasses Roleblock and other effects that would normally prevent the player from acting. It does not automatically increase the action\'s strength or bypass the target\'s defenses.','Night','support, success']
 ].map(([name,category,definition,phase,mechanics])=>({id:id(),name,defaultName:name,category,definition,phase,mechanics:mechanics.split(',').map(item=>item.trim()),builtIn:true,revisions:[]}));
 
 function gameDataKey(gameId){return GAME_DATA_PREFIX+gameId}

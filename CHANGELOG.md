@@ -1,5 +1,11 @@
 # Changelog
 
+## v9.1.0 — Courtroom Ability Encyclopedia
+
+- Replaced the built-in encyclopedia with the exact 32 abilities from the supplied Courtroom Master Ability Encyclopedia.
+- Completed all 32 official descriptions instead of leaving partial placeholder definitions.
+- Added a live-data migration path that preserves role links by matching standardized ability names.
+
 ## v9.0.1 — Flat DOCX Roster Import Fix
 
 - Recovers faction rosters and role abilities from Word documents that use ordinary paragraphs and lists instead of heading styles or tables.
