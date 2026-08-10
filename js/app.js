@@ -1,5 +1,5 @@
-import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js';
-import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js';
+import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=8.1.1';
+import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=8.1.1';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
 const GAME_INDEX_KEY='gm_command_center_games_v4';
