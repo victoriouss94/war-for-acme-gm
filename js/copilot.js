@@ -14,7 +14,8 @@ export function normalizeCopilotRequest(input={}){
     role:item?.role==='assistant'?'assistant':'user',
     content:cleanText(item?.content,2000)
   })).filter(item=>item.content);
-  return {message,task,depth,history};
+  const conversationId=cleanText(input.conversationId,100);
+  return {message,task,depth,history,conversationId};
 }
 
 export function normalizeCopilotResponse(input={}){
@@ -26,10 +27,14 @@ export function normalizeCopilotResponse(input={}){
     value:cleanText(change?.value,4000),
     reason:cleanText(change?.reason,2000)
   })).filter(change=>change.value||change.kind==='remove_action');
+  const sources=(Array.isArray(input.sources)?input.sources:[]).slice(0,30).map(source=>({id:cleanText(source?.id||source?.source_id,200),kind:cleanText(source?.kind,40),title:cleanText(source?.title,200),version:cleanText(source?.version,40),locator:cleanText(source?.locator,300),excerpt:cleanText(source?.excerpt,1200),claim:cleanText(source?.claim,1000)})).filter(source=>source.id&&source.title);
   return {
     answer:cleanText(input.answer,20000)||'The GM Copilot did not return an answer.',
     confidence,
+    authority:['saved_game','official_sources','mixed','insufficient'].includes(input.authority)?input.authority:'insufficient',
+    requires_gm_decision:Boolean(input.requires_gm_decision),
     ruling_basis:strings(input.ruling_basis),
+    sources,
     warnings:strings(input.warnings),
     follow_up_questions:strings(input.follow_up_questions),
     proposed_changes:proposedChanges

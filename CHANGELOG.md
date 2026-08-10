@@ -1,5 +1,15 @@
 # Changelog
 
+## v9.0.0 — Phase 1 AI GM Knowledge and Official Abilities
+
+- Adds persistent, game-scoped Ask GM Assistant conversations with cited authoritative sources.
+- Adds private DOCX/PDF/TXT knowledge uploads, immutable document versions, hybrid full-text/vector retrieval, and source locators.
+- Imports exactly 32 stable Courtroom standardized ability IDs without attaching them to or changing existing games.
+- Preserves supplied definitions and explicitly marks 15 abilities as needing source text instead of inventing mechanics.
+- Adds explicit dataset activation, game-scoped ability-version editing, role-specific modifier versions, and a read-only reconciliation report.
+- Centralizes OpenAI model configuration and keeps AI-generated persistence behind authenticated Edge Functions.
+- Removes permanent role deletion; roles remain editable and archivable.
+
 ## v8.0.0 — Secure AI GM Copilot
 
 - Adds a game-specific AI GM interface with Terra standard and Sol deep reasoning modes.

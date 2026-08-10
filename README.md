@@ -1,6 +1,16 @@
-# GM Command Center v8.1
+# GM Command Center v9.0
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
+
+## New in v9.0
+
+- Persistent Ask GM Assistant conversations scoped to the current saved game
+- DOCX, PDF, and TXT official-document ingestion with private storage, hybrid retrieval, and source citations
+- Exactly 32 stable Courtroom standardized ability IDs with immutable version history
+- Explicit dataset activation that never changes existing games or roles automatically
+- Game-scoped official ability edits, separate role-specific modifier versions, and a read-only reconciliation report
+- Focused AI context, explicit GM-decision warnings, centralized model configuration, and server-only AI persistence
+- Roles can be edited, duplicated, disabled, or archived but are never permanently deleted
 
 ## New in v8.1
 

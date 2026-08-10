@@ -259,10 +259,21 @@
         <button id="copilotResolveQueueBtn" class="full">Resolve Action Queue</button>
         <button id="copilotClearBtn" class="secondary full">Clear Conversation</button>
         <div class="copilot-safety"><strong>You stay in control.</strong><p>The AI can only propose a limited set of changes. Nothing changes until an authorized GM reviews and confirms it.</p></div>
+        <div class="knowledge-uploader">
+          <p class="eyebrow">OFFICIAL KNOWLEDGE</p>
+          <label>Title<input id="knowledgeTitle" maxlength="200" placeholder="Example: Courtroom Rules"></label>
+          <label>Document type<select id="knowledgeType"><option value="GAME_MASTER_RULESET">Game Master Ruleset</option><option value="CHARACTER_ROLE_GUIDE">Character / Role Guide</option><option value="ABILITY_ENCYCLOPEDIA">Ability Encyclopedia</option><option value="ACTION_RESOLUTION_RULES">Action Resolution Rules</option><option value="PLAYER_FAQ">Player FAQ</option><option value="CUSTOM">Custom</option></select></label>
+          <label>Status<select id="knowledgeStatus"><option value="ACTIVE">Active / authoritative</option><option value="APPROVED">Approved reference</option><option value="DRAFT">Draft</option></select></label>
+          <label class="file-btn secondary full">Choose DOCX, PDF, or TXT<input id="knowledgeFile" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" hidden></label>
+          <span id="knowledgeFileName" class="muted">No document selected.</span>
+          <button id="uploadKnowledgeBtn" class="secondary full" type="button">Upload &amp; Index</button>
+          <p id="knowledgeStatusMessage" class="form-notice" aria-live="polite"></p>
+        </div>
       </aside>
       <div class="panel copilot-workspace">
         <div class="section-heading copilot-heading"><div><h2>Game Rulings</h2><p class="muted">The AI reads the authoritative cloud save, not a client-supplied copy.</p></div><span class="permission-badge">OWNER / GM ONLY</span></div>
         <div id="copilotConversation" class="copilot-conversation" aria-live="polite"></div>
+        <details class="knowledge-library"><summary>Official documents for this game <span id="knowledgeDocumentCount" class="count-pill"></span></summary><div id="knowledgeDocumentList"></div></details>
         <div id="copilotStatus" class="form-notice copilot-status" aria-live="polite"></div>
         <form id="copilotForm" class="copilot-form">
           <label for="copilotPrompt">Ask the AI GM</label>
@@ -317,6 +328,14 @@
         <label>Win condition<textarea id="roleWinCondition" rows="2" maxlength="2000"></textarea></label>
         <label>Notes<textarea id="roleNotes" rows="4" maxlength="2000"></textarea></label>
         <label>GM-only notes<textarea id="roleGmNotes" rows="3" maxlength="4000"></textarea></label>
+        <section id="roleModifierPanel" class="role-modifier-panel" hidden>
+          <p class="eyebrow">OFFICIAL ABILITY MODIFIER</p>
+          <p class="muted">Adds a role-only rule without changing the standardized ability.</p>
+          <label>Standard ability<select id="roleModifierAbility"></select></label>
+          <label>Modifier<textarea id="roleModifierText" rows="3" maxlength="4000" placeholder="Example: Retaliation becomes a Super Kill."></textarea></label>
+          <button id="saveRoleModifierBtn" class="secondary full" type="button">Save New Modifier Version</button>
+          <div id="roleModifierList"></div>
+        </section>
         <label>Tags<input id="roleLabels" maxlength="500" placeholder="investigator, unique"></label>
         <label class="check"><input id="roleEnabled" type="checkbox" checked> Enabled</label>
         <p id="roleSaveMeta" class="muted"></p>
@@ -327,7 +346,7 @@
       </aside>
       <div class="panel">
         <div class="section-heading encyclopedia-heading">
-          <div><h2>Game Roles</h2><p class="muted">Create, edit, copy, archive, and safely delete roles for this game.</p></div>
+          <div><h2>Game Roles</h2><p class="muted">Create, edit, copy, and archive roles for this game. Roles are never permanently deleted.</p></div>
           <span id="roleCount" class="count-pill"></span>
         </div>
         <div class="filters encyclopedia-filters"><input id="roleSearch" placeholder="Search roles, notes, or abilities"><select id="roleFactionFilter"></select><select id="roleStatusFilter"><option value="ALL">All statuses</option><option value="ENABLED">Enabled</option><option value="DISABLED">Disabled</option><option value="ARCHIVED">Archived</option></select><select id="roleSort"><option value="NAME">Name</option><option value="UPDATED">Recently updated</option><option value="FACTION">Faction</option></select></div>
@@ -366,6 +385,25 @@
         <div id="abilityList" class="encyclopedia-list"></div>
       </div>
     </div>
+    <section class="panel official-ability-panel">
+      <div class="section-heading encyclopedia-heading">
+        <div><p class="eyebrow">VERSIONED OFFICIAL DATASET</p><h2>Courtroom — Master Ability Encyclopedia</h2><p class="muted">Stable standardized abilities stay separate from game copies and role-specific modifiers.</p></div>
+        <div class="official-dataset-actions"><span id="officialAbilityCount" class="count-pill"></span><button id="activateOfficialDatasetBtn" class="secondary" type="button">Activate for This Game</button><button id="showAbilityReconciliationBtn" class="secondary" type="button">Reconciliation Report</button></div>
+      </div>
+      <p id="officialDatasetNotice" class="form-notice"></p>
+      <div class="filters encyclopedia-filters"><input id="officialAbilitySearch" placeholder="Search official abilities or stable IDs"><select id="officialAbilityCategory"><option value="ALL">All categories</option><option>Investigation</option><option>Harmful</option><option>Protection</option><option>Support</option></select></div>
+      <div id="abilityReconciliationReport" class="reconciliation-report" hidden></div>
+      <div id="officialAbilityList" class="encyclopedia-list"></div>
+      <article id="officialAbilityEditor" class="official-ability-editor" hidden>
+        <div class="section-heading"><div><h3 id="officialAbilityEditorTitle">Edit Official Ability</h3><p id="officialAbilityEditorMeta" class="muted"></p></div><button id="cancelOfficialAbilityEditBtn" class="secondary" type="button">Cancel</button></div>
+        <label>Official description<textarea id="officialAbilityDescription" rows="8" maxlength="20000"></textarea></label>
+        <label>Structured fields (JSON object)<textarea id="officialAbilityStructuredData" rows="6" spellcheck="false"></textarea></label>
+        <label>Change note<input id="officialAbilityChangeNote" maxlength="1000" placeholder="Why this version changed"></label>
+        <p id="officialAbilityEditError" class="form-error" role="alert" hidden></p>
+        <button id="saveOfficialAbilityVersionBtn" type="button">Save New Version</button>
+        <div id="officialAbilityHistory" class="version-history"></div>
+      </article>
+    </section>
   </section>
 
   <section id="rulesView" class="view">
@@ -446,9 +484,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=8.1.1"></script>
-<script src="js/cloud.js?v=8.1.1"></script>
+<script src="js/supabase-config.js?v=9.0.0"></script>
+<script src="js/cloud.js?v=9.0.0-phase1"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=8.1.1"></script>
+<script type="module" src="js/app.js?v=9.0.0-phase1"></script>
 </body>
 </html>

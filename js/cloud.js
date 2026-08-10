@@ -9,6 +9,7 @@
   const normalizeUsername=value=>String(value||'').trim().toLowerCase();
   const accountEmail=username=>normalizeUsername(username)+'@'+accountDomain;
   const importBucket='game-import-documents';
+  const knowledgeBucket='game-knowledge-documents';
   const safeFileName=name=>String(name||'game.docx').replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(-160)||'game.docx';
 
   function indexedDbStorage(){
@@ -189,6 +190,33 @@
     }
     return data;
   }
+  async function phaseOneContext(gameId){
+    const [documents,abilities,modifiers,conversation]=await Promise.all([
+      unwrap(await required().from('official_documents').select('id,document_key,title,document_type,updated_at,official_document_versions!official_document_versions_document_id_fkey(id,version_number,status,requested_status,source_file_name,content_type,file_size,summary,ingestion_error,created_at,completed_at)').eq('game_id',gameId).order('updated_at',{ascending:false})),
+      unwrap(await required().rpc('list_standard_abilities',{target_game_id:gameId})),
+      unwrap(await required().from('role_ability_modifiers').select('id,role_id,ability_id,version_number,status,modifier_text,created_at').eq('game_id',gameId).eq('status','ACTIVE').order('created_at',{ascending:false})),
+      required().from('ai_conversations').select('id').eq('game_id',gameId).eq('active',true).maybeSingle()
+    ]);
+    let conversationId=conversation.data?.id||null;if(!conversationId&&['owner','gm'].includes((await required().from('game_members').select('member_role').eq('game_id',gameId).eq('user_id',session.user.id).single()).data?.member_role)){conversationId=unwrap(await required().rpc('ensure_ai_conversation',{target_game_id:gameId}))}
+    const messages=conversationId?unwrap(await required().from('ai_messages').select('id,role,content,structured_result,model,game_version,created_at').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(250)):[];
+    return {documents,abilities,modifiers,conversationId,messages};
+  }
+  async function uploadKnowledgeDocument(gameId,file,metadata){
+    const documentId=crypto.randomUUID(),versionId=crypto.randomUUID(),extension=String(file.name||'').toLowerCase().split('.').pop(),contentTypes={docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pdf:'application/pdf',txt:'text/plain'},contentType=contentTypes[extension],safeName=safeFileName(file.name),storagePath=session.user.id+'/'+gameId+'/'+documentId+'/'+safeName;
+    if(!contentType)throw Object.assign(new Error('Choose a DOCX, PDF, or TXT document.'),{code:'INVALID_DOCUMENT'});
+    unwrap(await required().storage.from(knowledgeBucket).upload(storagePath,file,{contentType,cacheControl:'3600',upsert:false}));
+    try{
+      unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE'}));
+    }catch(error){try{unwrap(await required().storage.from(knowledgeBucket).remove([storagePath]))}catch{}throw error}
+    const {data,error}=await required().functions.invoke('gm-knowledge-ingest',{body:{documentVersionId:versionId,depth:metadata.depth||'standard'}});
+    if(error){let payload=null;try{payload=await error.context?.json?.()}catch{}throw Object.assign(new Error(payload?.error||error.message||'Document indexing failed.'),{code:payload?.code||'DOCUMENT_INGESTION_FAILED'})}
+    return data;
+  }
+  async function activateAbilityDataset(gameId,datasetId){return unwrap(await required().rpc('activate_standard_ability_dataset',{target_game_id:gameId,target_dataset_id:datasetId}))}
+  async function createStandardAbilityVersion(gameId,abilityId,description,structuredData,changeNote){return unwrap(await required().rpc('create_standard_ability_version',{target_game_id:gameId,target_ability_id:abilityId,target_description:description,target_structured_data:structuredData,target_change_note:changeNote||''}))}
+  async function standardAbilityHistory(gameId,abilityId){return unwrap(await required().from('standard_ability_versions').select('id,game_id,version_number,status,definition_status,official_description,structured_data,change_note,created_at').eq('ability_id',abilityId).or('game_id.is.null,game_id.eq.'+gameId).order('created_at',{ascending:false}))}
+  async function saveRoleAbilityModifier(gameId,roleId,abilityId,modifierText){return unwrap(await required().rpc('save_role_ability_modifier',{target_game_id:gameId,target_role_id:roleId,target_ability_id:abilityId,target_modifier_text:modifierText}))}
+  async function startNewAiConversation(gameId){return unwrap(await required().rpc('start_new_ai_conversation',{target_game_id:gameId}))}
   async function analyzeWordDocument(request){
     const {data,error}=await required().functions.invoke('gm-document-import',{body:request});
     if(error){
@@ -215,5 +243,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,askCopilot,analyzeWordDocument,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

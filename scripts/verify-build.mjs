@@ -1,9 +1,10 @@
 import {access,readFile} from 'node:fs/promises';
-const files=['index.html','css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/document-import.js','js/copilot.js','js/app.js','supabase/functions/gm-copilot/index.ts','supabase/functions/gm-document-import/index.ts'];
+const files=['index.html','css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/document-import.js','js/copilot.js','js/knowledge.js','js/app.js','supabase/functions/_shared/ai-service.ts','supabase/functions/gm-copilot/index.ts','supabase/functions/gm-document-import/index.ts','supabase/functions/gm-knowledge-ingest/index.ts'];
 await Promise.all(files.map(file=>access(file)));
 const html=await readFile('index.html','utf8');
 for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/app.js'])if(!html.includes(file))throw new Error(`index.html does not load ${file}`);
 const app=await readFile('js/app.js','utf8');
-if(!app.includes("from './document-import.js?v=8.1.1'"))throw new Error('app.js does not load the versioned js/document-import.js');
-if(!app.includes("from './copilot.js?v=8.1.1'"))throw new Error('app.js does not load the versioned js/copilot.js');
+if(!app.includes("from './document-import.js?v=9.0.0'"))throw new Error('app.js does not load the versioned js/document-import.js');
+if(!app.includes("from './copilot.js?v=9.0.0'"))throw new Error('app.js does not load the versioned js/copilot.js');
+if(!app.includes("from './knowledge.js?v=9.0.0'"))throw new Error('app.js does not load the versioned js/knowledge.js');
 console.log('Static build verified:',files.join(', '));
