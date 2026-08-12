@@ -1,5 +1,5 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=9.3.0';
-import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=9.3.0';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=9.4.0';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=9.4.0';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['assistant','resolve_actions','explain_role','plan_session','create_role','create_ability','balance_role']);
@@ -30,7 +30,8 @@ export function normalizeCopilotResponse(input={}){
     value:cleanText(change?.value,4000),
     reason:cleanText(change?.reason,2000)
   })).filter(change=>change.value||change.kind==='remove_action');
-  const sources=(Array.isArray(input.sources)?input.sources:[]).slice(0,30).map(source=>({id:cleanText(source?.id||source?.source_id,200),kind:cleanText(source?.kind,40),title:cleanText(source?.title,200),version:cleanText(source?.version,40),locator:cleanText(source?.locator,300),excerpt:cleanText(source?.excerpt,1200),claim:cleanText(source?.claim,1000)})).filter(source=>source.id&&source.title);
+  const sources=(Array.isArray(input.sources)?input.sources:[]).slice(0,30).map(source=>({id:cleanText(source?.id||source?.source_id,200),kind:cleanText(source?.kind,40),title:cleanText(source?.title,200),version:cleanText(source?.version,40),locator:cleanText(source?.locator,300),excerpt:cleanText(source?.excerpt,1200),claim:cleanText(source?.claim,1000),scope:cleanText(source?.scope,40),origin_game:cleanText(source?.originGame||source?.origin_game,120),applicability:cleanText(source?.applicability,40),authority_layer:cleanText(source?.authorityLayer||source?.authority_layer,80),compatibility_reasons:(Array.isArray(source?.compatibilityReasons||source?.compatibility_reasons)?source.compatibilityReasons||source.compatibility_reasons:[]).slice(0,10).map(item=>cleanText(item,500)).filter(Boolean)})).filter(source=>source.id&&source.title);
+  const rawGlobal=input.global_knowledge&&typeof input.global_knowledge==='object'?input.global_knowledge:{};
   return {
     answer:cleanText(input.answer,20000)||'The GM Copilot did not return an answer.',
     confidence,
@@ -42,7 +43,8 @@ export function normalizeCopilotResponse(input={}){
     follow_up_questions:strings(input.follow_up_questions),
     proposed_changes:proposedChanges,
     resolution:normalizeResolution(input.resolution),
-    draft:normalizeAiDraft(input.draft)
+    draft:normalizeAiDraft(input.draft),
+    global_knowledge:{current_game_precedent_count:Math.max(0,Number(rawGlobal.current_game_precedent_count)||0),global_precedent_count:Math.max(0,Number(rawGlobal.global_precedent_count)||0),compatible_global_precedent_count:Math.max(0,Number(rawGlobal.compatible_global_precedent_count)||0),global_authority_used:Boolean(rawGlobal.global_authority_used),current_game_overrides:strings(rawGlobal.current_game_overrides),conflicts:strings(rawGlobal.conflicts),pattern_summary:cleanText(rawGlobal.pattern_summary,2000)}
   };
 }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## v9.4.0 - Global Master GM AI
+
+- Extends the single AI GM, Resolution Session, GM Precedent, document retrieval, live-status, and audit architectures with layered cross-game knowledge.
+- Adds explicit Teach This Game / Teach All Games approval, global precedent lifecycle controls, current-game-first retrieval, compatibility evidence, and source transparency.
+- Adds GM-approved global mechanical concepts and versioned ability mappings without copying or replacing game abilities.
+- Adds cross-game pattern and conflict views, explicit global-rule promotion, status/role/version-aware checks, RLS, audited mutations, and safe game-specific backfills.
+- Keeps current-game rules, current ability definitions, role exceptions, and live player state authoritative; the GM remains the final decision-maker.
+
 ## v9.3.1 - Interface Encoding Hotfix
 
 - Corrects separator, arrow, ellipsis, and numeric-range characters in the Resolution Sessions and AI Learning interfaces.

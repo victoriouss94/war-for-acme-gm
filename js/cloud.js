@@ -197,7 +197,7 @@
   }
   async function phaseOneContext(gameId){
     const [documents,abilities,modifiers,conversation]=await Promise.all([
-      unwrap(await required().from('official_documents').select('id,document_key,title,document_type,updated_at,official_document_versions!official_document_versions_document_id_fkey(id,version_number,status,requested_status,source_file_name,content_type,file_size,summary,ingestion_error,created_at,completed_at)').eq('game_id',gameId).order('updated_at',{ascending:false})),
+      unwrap(await required().from('official_documents').select('id,document_key,title,document_type,scope,game_id,updated_at,official_document_versions!official_document_versions_document_id_fkey(id,version_number,status,requested_status,source_file_name,content_type,file_size,summary,ingestion_error,created_at,completed_at)').or('game_id.eq.'+gameId+',scope.eq.GLOBAL,scope.eq.SYSTEM_GLOBAL').order('updated_at',{ascending:false})),
       unwrap(await required().rpc('list_standard_abilities',{target_game_id:gameId})),
       unwrap(await required().from('role_ability_modifiers').select('id,role_id,ability_id,version_number,status,modifier_text,created_at').eq('game_id',gameId).eq('status','ACTIVE').order('created_at',{ascending:false})),
       required().from('ai_conversations').select('id').eq('game_id',gameId).eq('active',true).maybeSingle()
@@ -211,7 +211,7 @@
     if(!contentType)throw Object.assign(new Error('Choose a DOCX, PDF, or TXT document.'),{code:'INVALID_DOCUMENT'});
     unwrap(await required().storage.from(knowledgeBucket).upload(storagePath,file,{contentType,cacheControl:'3600',upsert:false}));
     try{
-      unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE'}));
+      unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE',target_scope:metadata.scope||'GAME_SPECIFIC'}));
     }catch(error){try{unwrap(await required().storage.from(knowledgeBucket).remove([storagePath]))}catch{}throw error}
     const {data,error}=await required().functions.invoke('gm-knowledge-ingest',{body:{documentVersionId:versionId,depth:metadata.depth||'standard'}});
     if(error){let payload=null;try{payload=await error.context?.json?.()}catch{}throw Object.assign(new Error(payload?.error||error.message||'Document indexing failed.'),{code:payload?.code||'DOCUMENT_INGESTION_FAILED'})}
@@ -223,23 +223,30 @@
   async function saveRoleAbilityModifier(gameId,roleId,abilityId,modifierText){return unwrap(await required().rpc('save_role_ability_modifier',{target_game_id:gameId,target_role_id:roleId,target_ability_id:abilityId,target_modifier_text:modifierText}))}
   async function startNewAiConversation(gameId){return unwrap(await required().rpc('start_new_ai_conversation',{target_game_id:gameId}))}
   async function resolutionContext(gameId){
-    const [sessions,precedents,drafts,interactions,summary,usage,limit]=await Promise.all([
+    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings]=await Promise.all([
       required().from('resolution_sessions').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
-      required().from('gm_precedents').select('*').eq('game_id',gameId).order('updated_at',{ascending:false}).limit(250),
+      required().from('gm_precedents').select('*').order('updated_at',{ascending:false}).limit(500),
       required().from('ai_drafts').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
       required().from('ability_interactions').select('*').eq('game_id',gameId).eq('active',true).order('updated_at',{ascending:false}).limit(250),
       required().rpc('get_ai_learning_summary',{target_game_id:gameId}),
       required().from('ai_usage_events').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(250),
-      required().from('ai_usage_limits').select('*').eq('game_id',gameId).maybeSingle()
+      required().from('ai_usage_limits').select('*').eq('game_id',gameId).maybeSingle(),
+      required().rpc('get_cross_game_learning_patterns',{target_game_id:gameId}),
+      required().rpc('get_global_ability_concepts',{target_game_id:gameId}),
+      required().from('ability_concept_mappings').select('*,global_ability_concepts(concept_key,name)').eq('game_id',gameId).eq('active',true).order('updated_at',{ascending:false})
     ]);
-    for(const result of [sessions,precedents,drafts,interactions,summary])if(result.error)throw result.error;
-    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null};
+    for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings])if(result.error)throw result.error;
+    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[]};
   }
   async function resolutionEvents(sessionId){return unwrap(await required().from('resolution_session_events').select('*').eq('session_id',sessionId).order('event_order',{ascending:true}))}
   async function startResolutionSession(gameId,gameVersion){return unwrap(await required().rpc('start_resolution_session',{target_game_id:gameId,expected_game_version:gameVersion}))}
-  async function finalizeResolutionSession(sessionId,lockVersion,decision,manualResolution,explanation,teachAi){return unwrap(await required().rpc('finalize_resolution_session',{target_session_id:sessionId,expected_lock_version:lockVersion,target_decision:decision,target_manual_resolution:manualResolution||{},target_gm_explanation:explanation||'',target_teach_ai:Boolean(teachAi)}))}
+  async function finalizeResolutionSession(sessionId,lockVersion,decision,manualResolution,explanation,teachAi,teachScope='GAME_SPECIFIC'){return unwrap(await required().rpc('finalize_resolution_session',{target_session_id:sessionId,expected_lock_version:lockVersion,target_decision:decision,target_manual_resolution:manualResolution||{},target_gm_explanation:explanation||'',target_teach_ai:Boolean(teachAi),target_teach_scope:teachScope}))}
   async function reviewAiDraft(draftId,status){return unwrap(await required().rpc('review_ai_draft',{target_draft_id:draftId,target_status:status}))}
-  async function managePrecedent(precedentId,version,status,supersededBy=null){return unwrap(await required().rpc('manage_gm_precedent',{target_precedent_id:precedentId,expected_version:version,target_status:status,target_superseded_by:supersededBy}))}
+  async function managePrecedent(precedentId,version,status,supersededBy=null,scope=null,authority=null,reason=''){return unwrap(await required().rpc('manage_gm_precedent',{target_precedent_id:precedentId,expected_version:version,target_status:status,target_superseded_by:supersededBy,target_scope:scope,target_authority:authority,target_reason:reason}))}
+  async function promoteGlobalPattern(gameId,precedentIds,reason=''){return unwrap(await required().rpc('promote_global_pattern',{target_game_id:gameId,target_precedent_ids:precedentIds,target_reason:reason}))}
+  async function createGlobalAbilityConcept(gameId,conceptKey,name,description,mechanics={}){return unwrap(await required().rpc('create_global_ability_concept',{target_game_id:gameId,target_concept_key:conceptKey,target_name:name,target_description:description||'',target_mechanics:mechanics||{}}))}
+  async function approveAbilityConceptMapping(gameId,abilityId,conceptId,compatibility,notes='',fingerprint={}){return unwrap(await required().rpc('approve_ability_concept_mapping',{target_game_id:gameId,target_game_ability_id:abilityId,target_global_concept_id:conceptId,target_compatibility_level:compatibility,target_notes:notes||'',target_mechanic_fingerprint:fingerprint||{}}))}
+  async function removeAbilityConceptMapping(mappingId,reason=''){return unwrap(await required().rpc('remove_ability_concept_mapping',{target_mapping_id:mappingId,target_reason:reason||''}))}
   async function setAiUsageLimit(gameId,monthlyLimitUsd,requestsPerMinute){return unwrap(await required().rpc('set_ai_usage_limit',{target_game_id:gameId,target_monthly_limit_usd:monthlyLimitUsd,target_requests_per_minute:requestsPerMinute}))}
   async function analyzeWordDocument(request){
     const {data,error}=await required().functions.invoke('gm-document-import',{body:request});
@@ -259,7 +266,7 @@
     channel.on('postgres_changes',{event:'*',schema:'public',table:'game_invites',filter:'game_id=eq.'+gameId},payload=>onInvites?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'player_status_effects',filter:'game_id=eq.'+gameId},payload=>onStatuses?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'resolution_sessions',filter:'game_id=eq.'+gameId},payload=>onResolution?.(payload));
-    channel.on('postgres_changes',{event:'*',schema:'public',table:'gm_precedents',filter:'game_id=eq.'+gameId},payload=>onLearning?.(payload));
+    channel.on('postgres_changes',{event:'*',schema:'public',table:'gm_precedents'},payload=>onLearning?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'ai_drafts',filter:'game_id=eq.'+gameId},payload=>onLearning?.(payload));
     channel.on('presence',{event:'sync'},()=>onPresence?.(channel.presenceState()));
     channel.subscribe(async status=>{
@@ -271,5 +278,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,managePrecedent,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,managePrecedent,promoteGlobalPattern,createGlobalAbilityConcept,approveAbilityConceptMapping,removeAbilityConceptMapping,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

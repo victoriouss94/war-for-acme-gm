@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=9.3.1">
+  <link rel="stylesheet" href="css/main.css?v=9.4.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -303,6 +303,7 @@
             <label>Conditions that make this ruling apply<textarea id="precedentConditions" rows="3" maxlength="8000"></textarea></label>
             <div class="grid2"><label>Interaction signature<input id="precedentSignature" maxlength="1000" placeholder="ROLEBLOCK + ACTION_SUCCESS_GUARANTEE"></label><label>Signature tokens (one per line)<textarea id="precedentTokens" rows="3" placeholder="roleblock&#10;action_success_guarantee"></textarea></label></div>
             <label class="check"><input id="teachAiFromResolution" type="checkbox"> Teach AI / save this approved decision as a GM precedent</label>
+            <div id="teachAiAudiencePanel" class="teach-audience" hidden><label>Learning audience<select id="teachAiAudience"><option value="GAME_SPECIFIC">This game only (safe default)</option><option value="GLOBAL">All games — authorized GM approval</option></select></label><p class="muted">All-games learning shares only normalized mechanics. Current-game rules, live player state, role exceptions, and one-time rulings still take priority.</p></div>
             <p id="resolutionFormError" class="form-notice" aria-live="polite"></p>
             <button id="finalizeResolutionBtn" type="submit">Save Final Resolution</button>
           </form>
@@ -342,6 +343,7 @@
           <label>Title<input id="knowledgeTitle" maxlength="200" placeholder="Example: Game Master Rules"></label>
           <label>Document type<select id="knowledgeType"><option value="GAME_MASTER_RULESET">Game Master Ruleset</option><option value="CHARACTER_ROLE_GUIDE">Character / Role Guide</option><option value="ABILITY_ENCYCLOPEDIA">Ability Encyclopedia</option><option value="ACTION_RESOLUTION_RULES">Action Resolution Rules</option><option value="PLAYER_FAQ">Player FAQ</option><option value="CUSTOM">Custom</option></select></label>
           <label>Status<select id="knowledgeStatus"><option value="ACTIVE">Active / authoritative</option><option value="APPROVED">Approved reference</option><option value="DRAFT">Draft</option></select></label>
+          <label>Knowledge scope<select id="knowledgeScope"><option value="GAME_SPECIFIC">This game only</option><option value="GLOBAL">All games — authorized GM approval</option></select></label>
           <label class="file-btn secondary full">Choose DOCX, PDF, or TXT<input id="knowledgeFile" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" hidden></label>
           <span id="knowledgeFileName" class="muted">No document selected.</span>
           <button id="uploadKnowledgeBtn" class="secondary full" type="button">Upload &amp; Index</button>
@@ -367,8 +369,11 @@
   <section id="learningView" class="view">
     <div class="section-heading"><div><p class="eyebrow">GM-CONTROLLED LEARNING</p><h2>AI Learning &amp; Usage</h2><p class="muted">Only finalized, explicitly taught GM decisions become precedents. No automatic fine-tuning or autonomous learning occurs.</p></div></div>
     <div id="learningSummary" class="learning-summary"></div>
+    <div class="learning-toolbar"><label>Knowledge view<select id="precedentScopeFilter"><option value="ALL">All knowledge</option><option value="GLOBAL">Global</option><option value="CURRENT_GAME">Current game</option><option value="GAME_SPECIFIC">Game-specific</option><option value="ROLE_SPECIFIC">Role-specific</option><option value="ABILITY_SPECIFIC">Ability-specific</option><option value="ONE_TIME">One-time</option><option value="CONFLICTING">Conflicting</option><option value="SUPERSEDED">Superseded</option></select></label></div>
     <div class="grid2 learning-grid">
       <section class="panel"><div class="section-heading"><div><h2>GM Precedents</h2><p class="muted">Similar approved rulings are retrieved for future action analysis. Conflicts stay visible.</p></div></div><label>Search precedents<input id="precedentSearch" placeholder="Reflection + Guard"></label><div id="precedentList" class="precedent-list"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>Cross-Game Patterns</h2><p class="muted">Consistent patterns and intentional rule differences are detected from the existing precedent history. Promotion is never automatic.</p></div></div><div id="crossGamePatternList"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>Global Ability Concepts</h2><p class="muted">Map game abilities to reusable mechanical concepts only after comparing their definitions.</p></div></div><form id="globalConceptForm"><label>Concept key<input id="globalConceptKey" maxlength="120" placeholder="NORMAL_SINGLE_TARGET_KILL"></label><label>Name<input id="globalConceptName" maxlength="160" placeholder="Normal single-target kill"></label><label>Description<textarea id="globalConceptDescription" rows="3" maxlength="8000"></textarea></label><button type="submit">Create Approved Concept</button><p id="globalConceptStatus" class="form-notice"></p></form><hr><form id="abilityConceptMappingForm"><label>Game ability<select id="mappingAbilityId"></select></label><label>Global concept<select id="mappingConceptId"></select></label><label>Compatibility<select id="mappingCompatibility"><option value="EXACT">Exact</option><option value="STRONG">Strong</option><option value="PARTIAL">Partial</option><option value="INCOMPATIBLE">Incompatible</option></select></label><label>Comparison notes<textarea id="mappingNotes" rows="3" maxlength="8000" placeholder="Compare strength, timing, defenses, statuses, and exceptions."></textarea></label><button type="submit">Approve Mapping</button><p id="mappingStatus" class="form-notice"></p></form><div id="abilityConceptMappingList"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>AI Drafts</h2><p class="muted">Drafts never activate automatically. Edit them in the existing role or ability editor before adding.</p></div></div><div id="aiDraftList" class="draft-list"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>Ability Interaction Matrix</h2><p class="muted">Only official documents, explicit rules, and approved precedents may populate this evidence table.</p></div></div><div id="abilityInteractionList"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>AI Usage</h2><p class="muted">Token counts and estimates are recorded server-side. Only the game owner can see or change spending controls.</p></div></div><div id="aiUsageTotals"></div><form id="aiUsageLimitForm"><div class="grid2"><label>Monthly limit (USD, blank = no limit)<input id="aiMonthlyLimit" type="number" min="0" max="100000" step="0.01"></label><label>Requests per minute<input id="aiRequestsPerMinute" type="number" min="1" max="120" value="12"></label></div><button id="saveAiUsageLimitBtn" type="submit">Save Usage Limits</button><p id="aiUsageLimitStatus" class="form-notice"></p></form><div id="aiUsageList" class="usage-list"></div></section>
@@ -575,9 +580,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=9.3.1"></script>
-<script src="js/cloud.js?v=9.3.1"></script>
+<script src="js/supabase-config.js?v=9.4.0"></script>
+<script src="js/cloud.js?v=9.4.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=9.3.1"></script>
+<script type="module" src="js/app.js?v=9.4.0"></script>
 </body>
 </html>
