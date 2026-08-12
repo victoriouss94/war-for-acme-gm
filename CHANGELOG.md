@@ -1,5 +1,10 @@
 # Changelog
 
+## v9.3.1 - Interface Encoding Hotfix
+
+- Corrects separator, arrow, ellipsis, and numeric-range characters in the Resolution Sessions and AI Learning interfaces.
+- Bumps browser asset versions so deployed clients receive the corrected JavaScript immediately.
+
 ## v9.3.0 - Consolidated AI GM Resolution and Learning
 
 - Removes the invented category-based action priority and explicitly requires an official rule, applicable precedent, or GM decision.
