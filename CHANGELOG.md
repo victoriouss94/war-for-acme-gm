@@ -1,5 +1,14 @@
 # Changelog
 
+## v9.3.0 - Consolidated AI GM Resolution and Learning
+
+- Removes the invented category-based action priority and explicitly requires an official rule, applicable precedent, or GM decision.
+- Adds immutable Resolution Sessions, structured events, manual resolution, AI proposals, approve/modify/reject review, audit attribution, and concurrency-safe finalization.
+- Adds one game-scoped GM Precedent architecture with normalized signatures, retrieval ranking, conflict visibility, lifecycle controls, and optional GM teaching.
+- Adds GM-reviewed AI role and ability drafts that reuse the existing editors and standardized abilities.
+- Adds an evidence-only ability interaction view and owner-only AI token, cost, rate, and monthly limit controls.
+- Extends Realtime, RLS, explicit grants, server-side authorization, and structured AI validation for the new workflows.
+
 ## v9.2.0 - Live Player Status Awareness
 
 - Adds an extensible live status ledger with active, passive, pending, permanent, and resolved effect groups.

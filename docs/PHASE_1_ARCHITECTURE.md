@@ -51,11 +51,13 @@ All new tables have RLS. Global source records are read-only to authenticated us
 
 Foreign keys and RLS columns are indexed. Active-version queries use partial indexes; document search uses GIN full-text indexing and pgvector cosine indexing. New tables receive explicit `authenticated` grants because new Supabase projects may not auto-expose tables through the Data API.
 
-## Later phases (designed, not implemented here)
+## Consolidated extensions implemented in v9.3
 
-- Phase 2 will add immutable resolution-session inputs, ordered resolution events, confidence, unresolved ambiguities, and GM approval. No universal order is encoded until the Master Action Resolution System exists.
-- Phase 3 will add optional precedent promotion, similarity matching, and conflict warnings. A past ruling will never silently become an official rule.
-- Phase 4 will add AI role/ability creators that prefer stable standard IDs and store special behavior as modifiers.
-- Phase 5 will add interaction-matrix views, usage/token reporting, and richer retrieval/evaluation telemetry.
+- Resolution Sessions snapshot queued actions, relevant players, live statuses, and source versions. AI output is a proposal; finalization always requires an authorized GM and an optimistic lock.
+- Structured session events and final outcomes preserve manual decisions without silently mutating live state.
+- Optional "Teach AI" creates a game-scoped GM precedent in the same transaction. Similarity retrieval, conflict states, superseding, archiving, and rule-promotion prefilling all reuse this one precedent system.
+- AI role and ability creators persist drafts only. Approval validates them and adds them through the existing game editors and save path.
+- The ability interaction matrix remains evidence-only: no undefined relationship is seeded.
+- Server-side usage records include model, feature, cached/input/output tokens, current pricing snapshot, estimated cost, latency, durable per-minute limits, and an optional owner-set monthly limit.
 
-This separation lets those phases reference stable game, document-version, ability-version, role, and message IDs without replacing the current save format.
+The existing game-document, status, official-knowledge, standardized-ability, role-modifier, conversation, audit, and Realtime architectures remain in place.

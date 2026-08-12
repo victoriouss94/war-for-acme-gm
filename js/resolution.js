@@ -1,0 +1,40 @@
+export const RESOLUTION_STATES=new Set(['OPEN','AI_ANALYZING','AI_PROPOSED','GM_REVIEW','MODIFIED','APPROVED','FINALIZED','REJECTED']);
+export const GM_DECISIONS=new Set(['APPROVE','MODIFY','REJECT']);
+export const PRECEDENT_STATES=new Set(['ACTIVE','CONFLICTING','SUPERSEDED','ARCHIVED','INCORRECT']);
+
+const text=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
+const strings=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).map(item=>text(item,4000)).filter(Boolean):[];
+const eventTypes=new Set(['SUCCESS','FAILURE','BLOCK','REDIRECT','REFLECT','TRANSFER','PASSIVE_TRIGGER','PROTECTION_USED','DEATH','SURVIVAL','CONVERSION','STATUS_ADDED','STATUS_REMOVED','ABILITY_CONSUMED','STATE_CHANGE','OTHER']);
+
+export function normalizeResolution(input){
+  if(!input||typeof input!=='object'||Array.isArray(input))return null;
+  return {
+    actions_analyzed:strings(input.actions_analyzed),player_states:strings(input.player_states),relevant_rules:strings(input.relevant_rules),relevant_abilities:strings(input.relevant_abilities),role_modifiers:strings(input.role_modifiers),precedents:strings(input.precedents),proposed_order:strings(input.proposed_order),expected_results:strings(input.expected_results),status_changes:strings(input.status_changes),deaths:strings(input.deaths),conversions:strings(input.conversions),abilities_consumed:strings(input.abilities_consumed),reasoning:text(input.reasoning),interaction_signature:text(input.interaction_signature,1000),signature_tokens:[...new Set(strings(input.signature_tokens).map(item=>item.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')).filter(Boolean))],
+    events:(Array.isArray(input.events)?input.events:[]).slice(0,1000).map(item=>({event_type:eventTypes.has(item?.event_type)?item.event_type:'OTHER',actor_player_id:text(item?.actor_player_id,100),target_player_id:text(item?.target_player_id,100),ability_id:text(item?.ability_id,120),summary:text(item?.summary,4000)})).filter(item=>item.summary)
+  };
+}
+
+export function normalizeAiDraft(input){
+  if(!input||typeof input!=='object'||!['ROLE','ABILITY'].includes(input.draft_type)||!input.payload||typeof input.payload!=='object'||Array.isArray(input.payload))return null;
+  const payload=input.payload;
+  return {draft_type:input.draft_type,title:text(input.title,200)||text(payload.name,200)||'Untitled draft',possible_duplicate:Boolean(input.possible_duplicate),duplicate_notes:text(input.duplicate_notes,4000),payload:{
+    name:text(payload.name,120),faction_id:text(payload.faction_id,100),faction_name:text(payload.faction_name,120),description:text(payload.description,8000),standard_ability_ids:strings(payload.standard_ability_ids),role_modifiers:strings(payload.role_modifiers),active_abilities:strings(payload.active_abilities),passive_abilities:strings(payload.passive_abilities),uses:text(payload.uses,200),cooldowns:text(payload.cooldowns,500),immunities:strings(payload.immunities),special_mechanics:strings(payload.special_mechanics),win_condition:text(payload.win_condition,4000),resolution_notes:strings(payload.resolution_notes),potential_interactions:strings(payload.potential_interactions),category:text(payload.category,80),targeting:text(payload.targeting,1000),active_passive:text(payload.active_passive,120),resolution_behavior:text(payload.resolution_behavior,8000),exceptions:strings(payload.exceptions),balance_notes:strings(payload.balance_notes)
+  }};
+}
+
+export function manualResolutionPayload(fields={}){
+  const lines=value=>String(value||'').split(/\r?\n/).map(item=>item.trim()).filter(Boolean).slice(0,1000);
+  const signatureTokens=[...new Set(lines(fields.signatureTokens).map(item=>item.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')).filter(Boolean))];
+  const eventLines=lines(fields.events),events=eventLines.map(summary=>({event_type:'OTHER',actor_player_id:'',target_player_id:'',ability_id:'',summary}));
+  return {title:text(fields.title,200),summary:text(fields.summary,4000),interaction_signature:text(fields.interactionSignature,1000),signature_tokens:signatureTokens,scope:['GENERAL','ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME'].includes(fields.scope)?fields.scope:'GAME_SPECIFIC',conditions:{notes:text(fields.conditions,8000)},ability_ids:[],role_ids:[],status_types:[],tags:[],resolution_order:lines(fields.resolutionOrder),expected_results:lines(fields.results),status_changes:lines(fields.statusChanges),deaths:lines(fields.deaths),conversions:lines(fields.conversions),abilities_consumed:lines(fields.abilitiesConsumed),events,reasoning:text(fields.reasoning,12000),post_resolution_state:{notes:text(fields.postState,12000)}};
+}
+
+export function validateManualResolution(decision,payload,teachAi=false,explanation=''){
+  const errors=[];
+  if(!GM_DECISIONS.has(decision))errors.push('Choose Approve, Modify, or Reject.');
+  if(decision==='MODIFY'&&!payload?.expected_results?.length&&!payload?.events?.length)errors.push('A modified resolution needs at least one expected result or event.');
+  if(teachAi&&String(explanation).trim().length<3)errors.push('Explain why this ruling should become a precedent.');
+  if(teachAi&&!String(payload?.interaction_signature||'').trim())errors.push('Enter an interaction signature before teaching the AI.');
+  if(teachAi&&!payload?.signature_tokens?.length)errors.push('Enter at least one signature token before teaching the AI.');
+  return errors;
+}

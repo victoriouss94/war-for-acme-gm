@@ -1,7 +1,8 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=9.2.0';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=9.3.0';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=9.3.0';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
-export const COPILOT_TASKS=new Set(['assistant','resolve_actions','explain_role','plan_session']);
+export const COPILOT_TASKS=new Set(['assistant','resolve_actions','explain_role','plan_session','create_role','create_ability','balance_role']);
 export const COPILOT_DEPTHS=new Set(['standard','deep']);
 export const COPILOT_CHANGE_KINDS=new Set(['remove_action','set_player_alive','set_player_role','set_player_faction','apply_status','resolve_status','add_history','set_game_phase','set_game_day']);
 
@@ -33,13 +34,15 @@ export function normalizeCopilotResponse(input={}){
   return {
     answer:cleanText(input.answer,20000)||'The GM Copilot did not return an answer.',
     confidence,
-    authority:['saved_game','official_sources','mixed','insufficient'].includes(input.authority)?input.authority:'insufficient',
+    authority:['saved_game','official_sources','gm_precedent','mixed','insufficient'].includes(input.authority)?input.authority:'insufficient',
     requires_gm_decision:Boolean(input.requires_gm_decision),
     ruling_basis:strings(input.ruling_basis),
     sources,
     warnings:strings(input.warnings),
     follow_up_questions:strings(input.follow_up_questions),
-    proposed_changes:proposedChanges
+    proposed_changes:proposedChanges,
+    resolution:normalizeResolution(input.resolution),
+    draft:normalizeAiDraft(input.draft)
   };
 }
 

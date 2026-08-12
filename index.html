@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=9.2.0">
+  <link rel="stylesheet" href="css/main.css?v=9.3.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -39,7 +39,9 @@
   <button class="tab game-tab" data-view="playersView">Players</button>
   <button class="tab game-tab" data-view="rolesView">Roles</button>
   <button class="tab game-tab" data-view="queueView">Action Queue</button>
+  <button class="tab game-tab" data-view="resolutionsView">Resolutions</button>
   <button class="tab game-tab" data-view="copilotView">AI GM</button>
+  <button class="tab game-tab" data-view="learningView">AI Learning</button>
   <button class="tab game-tab" data-view="statisticsView">Statistics</button>
   <button class="tab game-tab" data-view="rulesView">Rules</button>
   <button class="tab game-tab" data-view="encyclopediaView">📚 Abilities</button>
@@ -265,9 +267,46 @@
         <button id="addActionBtn" class="full">Add Action</button>
       </aside>
       <div class="panel">
-        <h2>Resolution Order</h2>
-        <ol class="priority"><li>Blocks</li><li>Role Control / Swaps</li><li>Protects</li><li>Intel</li><li>Kills / Harmful Actions</li><li>Saves / Heals</li></ol>
+        <h2>Submitted Actions</h2>
+        <p class="gm-decision-required"><strong>No universal order is configured.</strong> The AI may propose an order only when an official rule or applicable GM precedent supports it. Otherwise, a GM decision is required.</p>
         <div id="queueList"></div>
+        <button id="startResolutionSessionBtn" class="full" type="button">Start Resolution Session</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="resolutionsView" class="view">
+    <div class="resolution-layout">
+      <aside class="panel resolution-session-sidebar">
+        <div class="section-heading"><div><p class="eyebrow">ACTION RESOLUTION</p><h2>Resolution Sessions</h2></div><button id="newResolutionSessionBtn" type="button">New Session</button></div>
+        <p class="muted">Each session snapshots the queued actions, relevant players, live statuses, and active source versions. Only a GM can finalize it.</p>
+        <div id="resolutionSessionList" class="resolution-session-list"></div>
+      </aside>
+      <div class="panel resolution-workspace">
+        <div id="resolutionEmpty" class="empty-state"><h2>Select a Resolution Session</h2><p>Start one from the action queue, then ask the AI for a cited proposal or resolve it manually.</p></div>
+        <div id="resolutionDetail" hidden>
+          <div class="section-heading"><div><p class="eyebrow">GM REVIEW</p><h2 id="resolutionHeading">Resolution</h2><p id="resolutionMeta" class="muted"></p></div><span id="resolutionStateBadge" class="permission-badge"></span></div>
+          <div id="resolutionConcurrencyNotice" class="form-notice" aria-live="polite"></div>
+          <section class="resolution-snapshot"><h3>Submitted Actions</h3><div id="resolutionActions"></div></section>
+          <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>AI Resolution</h3><button id="analyzeResolutionBtn" type="button">Analyze with AI</button></div><div id="resolutionAiOutput"><p class="muted">No AI proposal yet. Manual resolution is always available.</p></div></section>
+          <form id="manualResolutionForm" class="manual-resolution-form">
+            <div class="section-heading"><div><h3>GM Final Decision</h3><p class="muted">Approve the AI proposal, modify it below, or reject it. Finalization is transactional and cannot happen twice.</p></div></div>
+            <div class="grid2 compact-grid"><label>Decision<select id="resolutionDecision"><option value="APPROVE">Approve AI proposal</option><option value="MODIFY">Modify / manual resolution</option><option value="REJECT">Reject AI proposal</option></select></label><label>Precedent scope<select id="resolutionScope"><option value="GAME_SPECIFIC">Game-specific</option><option value="ABILITY_SPECIFIC">Ability-specific</option><option value="ROLE_SPECIFIC">Role-specific</option><option value="GENERAL">General within this game</option><option value="ONE_TIME">One-time exception</option></select></label></div>
+            <label>Resolution title<input id="resolutionTitle" maxlength="200"></label>
+            <label>Summary<textarea id="resolutionSummary" rows="2" maxlength="4000"></textarea></label>
+            <div class="grid2"><label>Resolution order (one line per step)<textarea id="manualResolutionOrder" rows="5"></textarea></label><label>Expected results (one line per result)<textarea id="manualResolutionResults" rows="5"></textarea></label></div>
+            <div class="grid2"><label>Structured events (one line per event)<textarea id="manualResolutionEvents" rows="4"></textarea></label><label>Status changes (one line per change)<textarea id="manualResolutionStatuses" rows="4"></textarea></label></div>
+            <div class="grid2"><label>Deaths / survivals<textarea id="manualResolutionDeaths" rows="3"></textarea></label><label>Conversions<textarea id="manualResolutionConversions" rows="3"></textarea></label></div>
+            <label>Abilities consumed<textarea id="manualResolutionConsumed" rows="3"></textarea></label>
+            <label>Final player state / notes<textarea id="manualResolutionPostState" rows="4" maxlength="12000"></textarea></label>
+            <label>Why did you resolve it this way?<textarea id="manualResolutionReasoning" rows="4" maxlength="12000"></textarea></label>
+            <label>Conditions that make this ruling apply<textarea id="precedentConditions" rows="3" maxlength="8000"></textarea></label>
+            <div class="grid2"><label>Interaction signature<input id="precedentSignature" maxlength="1000" placeholder="ROLEBLOCK + ACTION_SUCCESS_GUARANTEE"></label><label>Signature tokens (one per line)<textarea id="precedentTokens" rows="3" placeholder="roleblock&#10;action_success_guarantee"></textarea></label></div>
+            <label class="check"><input id="teachAiFromResolution" type="checkbox"> Teach AI / save this approved decision as a GM precedent</label>
+            <p id="resolutionFormError" class="form-notice" aria-live="polite"></p>
+            <button id="finalizeResolutionBtn" type="submit">Save Final Resolution</button>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -284,6 +323,9 @@
             <option value="resolve_actions">Resolve queued actions</option>
             <option value="explain_role">Explain a role or ability</option>
             <option value="plan_session">Plan the next phase</option>
+            <option value="create_role">Create a role draft</option>
+            <option value="create_ability">Create an ability draft</option>
+            <option value="balance_role">Analyze role balance</option>
           </select>
         </label>
         <label>Reasoning mode
@@ -319,6 +361,17 @@
           <div class="copilot-form-actions"><span class="muted">Avoid placing real-world personal information in prompts.</span><button id="copilotAskBtn" type="submit">Ask AI GM</button></div>
         </form>
       </div>
+    </div>
+  </section>
+
+  <section id="learningView" class="view">
+    <div class="section-heading"><div><p class="eyebrow">GM-CONTROLLED LEARNING</p><h2>AI Learning &amp; Usage</h2><p class="muted">Only finalized, explicitly taught GM decisions become precedents. No automatic fine-tuning or autonomous learning occurs.</p></div></div>
+    <div id="learningSummary" class="learning-summary"></div>
+    <div class="grid2 learning-grid">
+      <section class="panel"><div class="section-heading"><div><h2>GM Precedents</h2><p class="muted">Similar approved rulings are retrieved for future action analysis. Conflicts stay visible.</p></div></div><label>Search precedents<input id="precedentSearch" placeholder="Reflection + Guard"></label><div id="precedentList" class="precedent-list"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>AI Drafts</h2><p class="muted">Drafts never activate automatically. Edit them in the existing role or ability editor before adding.</p></div></div><div id="aiDraftList" class="draft-list"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>Ability Interaction Matrix</h2><p class="muted">Only official documents, explicit rules, and approved precedents may populate this evidence table.</p></div></div><div id="abilityInteractionList"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>AI Usage</h2><p class="muted">Token counts and estimates are recorded server-side. Only the game owner can see or change spending controls.</p></div></div><div id="aiUsageTotals"></div><form id="aiUsageLimitForm"><div class="grid2"><label>Monthly limit (USD, blank = no limit)<input id="aiMonthlyLimit" type="number" min="0" max="100000" step="0.01"></label><label>Requests per minute<input id="aiRequestsPerMinute" type="number" min="1" max="120" value="12"></label></div><button id="saveAiUsageLimitBtn" type="submit">Save Usage Limits</button><p id="aiUsageLimitStatus" class="form-notice"></p></form><div id="aiUsageList" class="usage-list"></div></section>
     </div>
   </section>
 
@@ -522,9 +575,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=9.2.0"></script>
-<script src="js/cloud.js?v=9.2.0"></script>
+<script src="js/supabase-config.js?v=9.3.0"></script>
+<script src="js/cloud.js?v=9.3.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=9.2.0"></script>
+<script type="module" src="js/app.js?v=9.3.0"></script>
 </body>
 </html>

@@ -83,7 +83,7 @@ Generic social-deduction game engine with permanent Villager, Den, and Neutral f
 
 - Factions, roles, players, action queue, statistics, and settings
 - Multiple Den support
-- Searchable Role and Ability Encyclopedia with 35 built-in standard abilities
+- Searchable Role and Ability Encyclopedia with exactly 32 standardized abilities
 - JSON import and export
 
 ## Deployment
