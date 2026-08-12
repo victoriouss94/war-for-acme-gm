@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=9.4.1">
+  <link rel="stylesheet" href="css/main.css?v=9.5.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -291,7 +291,7 @@
           <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>AI Resolution</h3><button id="analyzeResolutionBtn" type="button">Analyze with AI</button></div><div id="resolutionAiOutput"><p class="muted">No AI proposal yet. Manual resolution is always available.</p></div></section>
           <form id="manualResolutionForm" class="manual-resolution-form">
             <div class="section-heading"><div><h3>GM Final Decision</h3><p class="muted">Approve the AI proposal, modify it below, or reject it. Finalization is transactional and cannot happen twice.</p></div></div>
-            <div class="grid2 compact-grid"><label>Decision<select id="resolutionDecision"><option value="APPROVE">Approve AI proposal</option><option value="MODIFY">Modify / manual resolution</option><option value="REJECT">Reject AI proposal</option></select></label><label>Precedent scope<select id="resolutionScope"><option value="GAME_SPECIFIC">Game-specific</option><option value="ABILITY_SPECIFIC">Ability-specific</option><option value="ROLE_SPECIFIC">Role-specific</option><option value="GENERAL">General within this game</option><option value="ONE_TIME">One-time exception</option></select></label></div>
+            <label>Decision<select id="resolutionDecision"><option value="APPROVE">Approve AI proposal</option><option value="MODIFY">Modify / manual resolution</option><option value="REJECT">Reject AI proposal</option></select></label>
             <label>Resolution title<input id="resolutionTitle" maxlength="200"></label>
             <label>Summary<textarea id="resolutionSummary" rows="2" maxlength="4000"></textarea></label>
             <div class="grid2"><label>Resolution order (one line per step)<textarea id="manualResolutionOrder" rows="5"></textarea></label><label>Expected results (one line per result)<textarea id="manualResolutionResults" rows="5"></textarea></label></div>
@@ -303,7 +303,7 @@
             <label>Conditions that make this ruling apply<textarea id="precedentConditions" rows="3" maxlength="8000"></textarea></label>
             <div class="grid2"><label>Interaction signature<input id="precedentSignature" maxlength="1000" placeholder="ROLEBLOCK + ACTION_SUCCESS_GUARANTEE"></label><label>Signature tokens (one per line)<textarea id="precedentTokens" rows="3" placeholder="roleblock&#10;action_success_guarantee"></textarea></label></div>
             <label class="check"><input id="teachAiFromResolution" type="checkbox"> Teach AI / save this approved decision as a GM precedent</label>
-            <div id="teachAiAudiencePanel" class="teach-audience" hidden><label>Learning audience<select id="teachAiAudience"><option value="GAME_SPECIFIC">This game only (safe default)</option><option value="GLOBAL">All games — authorized GM approval</option></select></label><p class="muted">All-games learning shares only normalized mechanics. Current-game rules, live player state, role exceptions, and one-time rulings still take priority.</p></div>
+            <div id="teachAiAudiencePanel" class="teach-audience" hidden><label>Learning scope<select id="teachAiAudience"><option value="GLOBAL" selected>Global — All Games (default)</option><option value="GAME_SPECIFIC">This Game Only</option><option value="ABILITY_SPECIFIC">Ability Specific</option><option value="ROLE_SPECIFIC">Role Specific</option><option value="ONE_TIME">One-Time</option></select></label><p class="muted">Global rulings are considered only when mechanics are compatible. Current-game rules, official abilities, role exceptions, and live state always take priority.</p><p id="scopeCompatibilityWarning" class="form-notice"></p></div>
             <p id="resolutionFormError" class="form-notice" aria-live="polite"></p>
             <button id="finalizeResolutionBtn" type="submit">Save Final Resolution</button>
           </form>
@@ -369,7 +369,7 @@
   <section id="learningView" class="view">
     <div class="section-heading"><div><p class="eyebrow">GM-CONTROLLED LEARNING</p><h2>AI Learning &amp; Usage</h2><p class="muted">Only finalized, explicitly taught GM decisions become precedents. No automatic fine-tuning or autonomous learning occurs.</p></div></div>
     <div id="learningSummary" class="learning-summary"></div>
-    <div class="learning-toolbar"><label>Knowledge view<select id="precedentScopeFilter"><option value="ALL">All knowledge</option><option value="GLOBAL">Global</option><option value="CURRENT_GAME">Current game</option><option value="GAME_SPECIFIC">Game-specific</option><option value="ROLE_SPECIFIC">Role-specific</option><option value="ABILITY_SPECIFIC">Ability-specific</option><option value="ONE_TIME">One-time</option><option value="CONFLICTING">Conflicting</option><option value="SUPERSEDED">Superseded</option></select></label></div>
+    <div class="learning-toolbar"><button id="bulkPromoteGlobalBtn" type="button" disabled>PROMOTE SELECTED TO GLOBAL</button><label>Knowledge view<select id="precedentScopeFilter"><option value="ALL">All knowledge</option><option value="GLOBAL">Global</option><option value="CURRENT_GAME">Current game</option><option value="GAME_SPECIFIC">Game-specific</option><option value="ROLE_SPECIFIC">Role-specific</option><option value="ABILITY_SPECIFIC">Ability-specific</option><option value="ONE_TIME">One-time</option><option value="LEGACY_SCOPE_REVIEW">Needs scope review</option><option value="CONFLICTING">Conflicting</option><option value="SUPERSEDED">Superseded</option></select></label></div>
     <div class="grid2 learning-grid">
       <section class="panel"><div class="section-heading"><div><h2>GM Precedents</h2><p class="muted">Similar approved rulings are retrieved for future action analysis. Conflicts stay visible.</p></div></div><label>Search precedents<input id="precedentSearch" placeholder="Reflection + Guard"></label><div id="precedentList" class="precedent-list"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>Cross-Game Patterns</h2><p class="muted">Consistent patterns and intentional rule differences are detected from the existing precedent history. Promotion is never automatic.</p></div></div><div id="crossGamePatternList"></div></section>
@@ -580,9 +580,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=9.4.1"></script>
-<script src="js/cloud.js?v=9.4.1"></script>
+<script src="js/supabase-config.js?v=9.5.0"></script>
+<script src="js/cloud.js?v=9.5.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=9.4.1"></script>
+<script type="module" src="js/app.js?v=9.5.0"></script>
 </body>
 </html>

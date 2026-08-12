@@ -7,6 +7,7 @@ export const COMPATIBILITY_LEVELS=new Set(['EXACT','STRONG','PARTIAL','INCOMPATI
 
 const text=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
 const strings=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).map(item=>text(item,4000)).filter(Boolean):[];
+const records=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).filter(item=>item&&typeof item==='object'&&!Array.isArray(item)):[];
 const eventTypes=new Set(['SUCCESS','FAILURE','BLOCK','REDIRECT','REFLECT','TRANSFER','PASSIVE_TRIGGER','PROTECTION_USED','DEATH','SURVIVAL','CONVERSION','STATUS_ADDED','STATUS_REMOVED','ABILITY_CONSUMED','STATE_CHANGE','OTHER']);
 
 export function normalizeResolution(input){
@@ -29,10 +30,10 @@ export function manualResolutionPayload(fields={}){
   const lines=value=>String(value||'').split(/\r?\n/).map(item=>item.trim()).filter(Boolean).slice(0,1000);
   const signatureTokens=[...new Set(lines(fields.signatureTokens).map(item=>item.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')).filter(Boolean))];
   const eventLines=lines(fields.events),events=eventLines.map(summary=>({event_type:'OTHER',actor_player_id:'',target_player_id:'',ability_id:'',summary}));
-  return {title:text(fields.title,200),summary:text(fields.summary,4000),interaction_signature:text(fields.interactionSignature,1000),signature_tokens:signatureTokens,scope:['GENERAL','ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME'].includes(fields.scope)?fields.scope:'GAME_SPECIFIC',conditions:{notes:text(fields.conditions,8000)},ability_ids:[...new Set(strings(fields.abilityIds))],role_ids:[...new Set(strings(fields.roleIds))],status_types:[...new Set(strings(fields.statusTypes).map(item=>item.toUpperCase()))],tags:strings(fields.tags),resolution_order:lines(fields.resolutionOrder),expected_results:lines(fields.results),status_changes:lines(fields.statusChanges),deaths:lines(fields.deaths),conversions:lines(fields.conversions),abilities_consumed:lines(fields.abilitiesConsumed),events,reasoning:text(fields.reasoning,12000),post_resolution_state:{notes:text(fields.postState,12000)}};
+  return {title:text(fields.title,200),summary:text(fields.summary,4000),interaction_signature:text(fields.interactionSignature,1000),signature_tokens:signatureTokens,scope:['ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME'].includes(fields.scope)?fields.scope:'GAME_SPECIFIC',conditions:{notes:text(fields.conditions,8000)},ability_ids:[...new Set(strings(fields.abilityIds))],role_ids:[...new Set(strings(fields.roleIds))],context_role_ids:[...new Set(strings(fields.contextRoleIds))],status_types:[...new Set(strings(fields.statusTypes).map(item=>item.toUpperCase()))],ability_context:records(fields.abilityContext),role_context:records(fields.roleContext),role_modifier_context:records(fields.roleModifierContext),tags:strings(fields.tags),resolution_order:lines(fields.resolutionOrder),expected_results:lines(fields.results),status_changes:lines(fields.statusChanges),deaths:lines(fields.deaths),conversions:lines(fields.conversions),abilities_consumed:lines(fields.abilitiesConsumed),events,reasoning:text(fields.reasoning,12000),post_resolution_state:{notes:text(fields.postState,12000)}};
 }
 
-export function validateManualResolution(decision,payload,teachAi=false,explanation='',teachScope='GAME_SPECIFIC',canTeachGlobally=false){
+export function validateManualResolution(decision,payload,teachAi=false,explanation='',teachScope='GLOBAL',canTeachGlobally=false){
   const errors=[];
   if(!GM_DECISIONS.has(decision))errors.push('Choose Approve, Modify, or Reject.');
   if(decision==='MODIFY'&&!payload?.expected_results?.length&&!payload?.events?.length)errors.push('A modified resolution needs at least one expected result or event.');

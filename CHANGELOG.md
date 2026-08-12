@@ -1,5 +1,12 @@
 # Changelog
 
+## v9.5.0 - Global Learning Default
+
+- Makes Global — All Games the default for every newly taught ruling, including GM modifications and rejections, while keeping current-game authority first.
+- Adds game-, ability-, role-, and one-time alternatives with a compatibility warning that never silently changes the GM's choice.
+- Preserves historical precedent scopes, marks them for review, and adds authorized-GM bulk promotion through the existing audited precedent workflow.
+- Records structured origin, ability/version, role-modifier, status, condition, outcome, and reasoning context for compatibility checks.
+
 ## v9.4.1 - Global Learning Runtime Fix
 
 - Fixed ambiguous database owner references in learning summaries and cross-game pattern retrieval.
@@ -8,9 +15,9 @@
 ## v9.4.0 - Global Master GM AI
 
 - Extends the single AI GM, Resolution Session, GM Precedent, document retrieval, live-status, and audit architectures with layered cross-game knowledge.
-- Adds explicit Teach This Game / Teach All Games approval, global precedent lifecycle controls, current-game-first retrieval, compatibility evidence, and source transparency.
+- Adds global precedent lifecycle controls, current-game-first retrieval, compatibility evidence, and source transparency.
 - Adds GM-approved global mechanical concepts and versioned ability mappings without copying or replacing game abilities.
-- Adds cross-game pattern and conflict views, explicit global-rule promotion, status/role/version-aware checks, RLS, audited mutations, and safe game-specific backfills.
+- Adds cross-game pattern and conflict views, explicit global-rule promotion, status/role/version-aware checks, RLS, audited mutations, and scope-preserving backfills.
 - Keeps current-game rules, current ability definitions, role exceptions, and live player state authoritative; the GM remains the final decision-maker.
 
 ## v9.3.1 - Interface Encoding Hotfix

@@ -1,4 +1,4 @@
--- Extend the existing consolidated AI GM architecture with owner-scoped,
+-- Extend the existing consolidated AI GM architecture with owner-namespace,
 -- explicitly approved cross-game learning. No existing game, precedent,
 -- resolution, status, document, ability, conversation, or audit data is reset.
 
@@ -12,7 +12,8 @@ alter table public.gm_precedents
   add column global_concept_ids text[] not null default '{}',
   add column source_precedent_ids uuid[] not null default '{}',
   add column correction_metadata jsonb not null default '{}'::jsonb,
-  add column origin_game_name_snapshot text not null default '';
+  add column origin_game_name_snapshot text not null default '',
+  add column legacy_scope_review boolean not null default false;
 alter table public.gm_precedents
   add constraint gm_precedents_scope_check check (scope in ('GENERAL','GLOBAL','ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME')),
   add constraint gm_precedents_authority_check check (authority in ('GM_PRECEDENT','GLOBAL_OFFICIAL_RULE')),
@@ -27,7 +28,8 @@ alter table public.gm_precedents
 
 update public.gm_precedents precedent
 set origin_game_name_snapshot=game.name,
-    approved_for_global_use=(precedent.scope='GLOBAL')
+    approved_for_global_use=(precedent.scope='GLOBAL'),
+    legacy_scope_review=(precedent.scope<>'GLOBAL')
 from public.games game
 where game.id=precedent.game_id and precedent.origin_game_name_snapshot='';
 
@@ -36,6 +38,7 @@ alter table public.resolution_sessions
   add column used_precedent_ids uuid[] not null default '{}';
 alter table public.resolution_sessions
   add constraint resolution_sessions_teach_scope_check check (teach_scope in ('GAME_SPECIFIC','GLOBAL'));
+alter table public.resolution_sessions alter column teach_scope set default 'GLOBAL';
 
 alter table public.official_documents
   add column scope text not null default 'GAME_SPECIFIC',
@@ -232,6 +235,7 @@ begin
     'conflictingPrecedents',(select count(*) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=owner_id and precedent.status='CONFLICTING'),
     'supersededPrecedents',(select count(*) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=owner_id and precedent.status='SUPERSEDED'),
     'gamesContributing',(select count(distinct precedent.game_id) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=owner_id and precedent.status in ('ACTIVE','CONFLICTING','SUPERSEDED')),
+    'legacyScopeReview',(select count(*) from public.gm_precedents where game_id=target_game_id and legacy_scope_review),
     'draftRoles',(select count(*) from public.ai_drafts where game_id=target_game_id and draft_type='ROLE' and status='DRAFT'),
     'draftAbilities',(select count(*) from public.ai_drafts where game_id=target_game_id and draft_type='ABILITY' and status='DRAFT')
   );
@@ -372,7 +376,8 @@ begin
   previous:=jsonb_build_object('status',result.status,'scope',result.scope,'authority',result.authority,'version',result.version);
   update public.gm_precedents set status=next_status,scope=next_scope,authority=next_authority,approved_for_global_use=(next_scope='GLOBAL'),
     superseded_by=case when next_status='SUPERSEDED' then target_superseded_by else null end,
-    compatibility_metadata=compatibility_metadata||jsonb_build_object('lastScopeReason',left(coalesce(target_reason,''),2000)),version=version+1,updated_at=now()
+    legacy_scope_review=false,
+    compatibility_metadata=compatibility_metadata||jsonb_build_object('lastScopeReason',left(coalesce(target_reason,''),2000),'scopeReviewedAt',now(),'scopeReviewedBy',actor),version=version+1,updated_at=now()
   where id=target_precedent_id returning * into result;
   insert into public.change_history(game_id,user_id,entity_type,entity_id,action,previous_data,new_data) values(result.game_id,actor,'gm_precedent',result.id::text,'GM precedent updated',previous,jsonb_build_object('status',result.status,'scope',result.scope,'authority',result.authority,'version',result.version,'reason',left(coalesce(target_reason,''),2000)));
   return result;
@@ -393,7 +398,7 @@ begin
   where precedent.id=any(target_precedent_ids) and game.owner_id=target_owner and precedent.status='ACTIVE' and precedent.scope not in ('ONE_TIME','ROLE_SPECIFIC') and cardinality(precedent.role_ids)=0;
   if signature_count<>1 or outcome_count<>1 or game_count<2 then raise exception using errcode='22023',message='INCONSISTENT_GLOBAL_PATTERN'; end if;
   select precedent.* into result from public.gm_precedents precedent where precedent.id=target_precedent_ids[1] for update;
-  update public.gm_precedents set scope='GLOBAL',authority='GLOBAL_OFFICIAL_RULE',approved_for_global_use=true,role_ids='{}',source_precedent_ids=target_precedent_ids,
+  update public.gm_precedents set scope='GLOBAL',authority='GLOBAL_OFFICIAL_RULE',approved_for_global_use=true,role_ids='{}',source_precedent_ids=target_precedent_ids,legacy_scope_review=false,
     compatibility_metadata=compatibility_metadata||jsonb_build_object('promotedFromCrossGamePattern',true,'promotionReason',left(coalesce(target_reason,''),2000),'gameCount',game_count),version=version+1,updated_at=now()
   where id=result.id returning * into result;
   insert into public.change_history(game_id,user_id,entity_type,entity_id,action,new_data) values(result.game_id,actor,'gm_precedent',result.id::text,'Cross-game pattern promoted to global official rule',jsonb_build_object('precedentIds',target_precedent_ids,'reason',left(coalesce(target_reason,''),2000),'version',result.version));
@@ -402,10 +407,10 @@ end $$;
 
 drop function private.finalize_resolution_session(uuid,integer,text,jsonb,text,boolean);
 drop function public.finalize_resolution_session(uuid,integer,text,jsonb,text,boolean);
-create function private.finalize_resolution_session(target_session_id uuid,expected_lock_version integer,target_decision text,target_manual_resolution jsonb,target_gm_explanation text,target_teach_ai boolean,target_teach_scope text default 'GAME_SPECIFIC')
+create function private.finalize_resolution_session(target_session_id uuid,expected_lock_version integer,target_decision text,target_manual_resolution jsonb,target_gm_explanation text,target_teach_ai boolean,target_teach_scope text default 'GLOBAL')
 returns public.resolution_sessions language plpgsql security definer set search_path=''
 as $$
-declare actor uuid:=(select auth.uid()); current_row public.resolution_sessions%rowtype; result public.resolution_sessions%rowtype; decision text:=upper(btrim(coalesce(target_decision,''))); manual jsonb:=coalesce(target_manual_resolution,'{}'::jsonb); final_value jsonb; signature text; tokens text[]; precedent uuid; item jsonb; ordinal integer:=0; event_kind text; learning_scope text:=upper(btrim(coalesce(target_teach_scope,'GAME_SPECIFIC'))); local_scope text; ability_values text[]; role_values text[]; status_values text[]; concept_values text[]; normalized jsonb; origin_name text; owner_id uuid;
+declare actor uuid:=(select auth.uid()); current_row public.resolution_sessions%rowtype; result public.resolution_sessions%rowtype; decision text:=upper(btrim(coalesce(target_decision,''))); manual jsonb:=coalesce(target_manual_resolution,'{}'::jsonb); final_value jsonb; signature text; tokens text[]; precedent uuid; item jsonb; ordinal integer:=0; event_kind text; learning_scope text:=upper(btrim(coalesce(target_teach_scope,'GLOBAL'))); local_scope text; ability_values text[]; role_values text[]; context_role_values text[]; status_values text[]; concept_values text[]; normalized jsonb; origin_name text; owner_id uuid; suggested_narrower_scope boolean:=false;
 begin
   select * into current_row from public.resolution_sessions where id=target_session_id for update;
   if not found then raise exception using errcode='P0002',message='RESOLUTION_SESSION_NOT_FOUND'; end if;
@@ -418,10 +423,22 @@ begin
   if decision='APPROVE' then final_value:=coalesce(current_row.ai_proposal->'resolution',current_row.ai_proposal); else final_value:=manual; end if;
   if decision<>'REJECT' and (final_value is null or jsonb_typeof(final_value)<>'object') then raise exception using errcode='22023',message='FINAL_RESOLUTION_REQUIRED'; end if;
   if coalesce(target_teach_ai,false) and char_length(btrim(coalesce(target_gm_explanation,'')))<3 then raise exception using errcode='22023',message='PRECEDENT_REASON_REQUIRED'; end if;
-  local_scope:=case when coalesce(manual->>'scope','GAME_SPECIFIC') in ('GENERAL','ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME') then manual->>'scope' else 'GAME_SPECIFIC' end;
+  if (manual ? 'ability_ids' and jsonb_typeof(manual->'ability_ids') is distinct from 'array')
+    or (manual ? 'role_ids' and jsonb_typeof(manual->'role_ids') is distinct from 'array')
+    or (manual ? 'context_role_ids' and jsonb_typeof(manual->'context_role_ids') is distinct from 'array')
+    or (manual ? 'status_types' and jsonb_typeof(manual->'status_types') is distinct from 'array')
+    or (manual ? 'ability_context' and jsonb_typeof(manual->'ability_context') is distinct from 'array')
+    or (manual ? 'role_context' and jsonb_typeof(manual->'role_context') is distinct from 'array')
+    or (manual ? 'role_modifier_context' and jsonb_typeof(manual->'role_modifier_context') is distinct from 'array')
+    or (manual ? 'conditions' and jsonb_typeof(manual->'conditions') is distinct from 'object') then
+    raise exception using errcode='22023',message='INVALID_COMPATIBILITY_CONTEXT';
+  end if;
+  local_scope:=case when upper(coalesce(manual->>'scope','GAME_SPECIFIC')) in ('ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME') then upper(manual->>'scope') else 'GAME_SPECIFIC' end;
   select coalesce(array_agg(distinct value) filter(where value<>''),'{}') into ability_values from jsonb_array_elements_text(coalesce(manual->'ability_ids','[]'::jsonb)) value;
   select coalesce(array_agg(distinct value) filter(where value<>''),'{}') into role_values from jsonb_array_elements_text(coalesce(manual->'role_ids','[]'::jsonb)) value;
+  select coalesce(array_agg(distinct value) filter(where value<>''),'{}') into context_role_values from jsonb_array_elements_text(coalesce(manual->'context_role_ids','[]'::jsonb)) value;
   select coalesce(array_agg(distinct upper(value)) filter(where value<>''),'{}') into status_values from jsonb_array_elements_text(coalesce(manual->'status_types','[]'::jsonb)) value;
+  suggested_narrower_scope:=local_scope in ('ABILITY_SPECIFIC','ROLE_SPECIFIC','ONE_TIME') or jsonb_array_length(coalesce(manual->'role_modifier_context','[]'::jsonb))>0;
   if learning_scope='GLOBAL' and (local_scope in ('ROLE_SPECIFIC','ONE_TIME') or cardinality(role_values)>0) then raise exception using errcode='22023',message='GLOBAL_LEARNING_REQUIRES_GENERAL_MECHANICS'; end if;
   update public.resolution_sessions set status=case when decision='REJECT' then 'REJECTED' else 'FINALIZED' end,lock_version=lock_version+1,gm_decision=decision,manual_resolution=case when decision='APPROVE' then null else manual end,final_resolution=final_value,post_resolution_state=manual->'post_resolution_state',gm_explanation=left(coalesce(target_gm_explanation,''),12000),teach_ai=coalesce(target_teach_ai,false),teach_scope=case when target_teach_ai then learning_scope else 'GAME_SPECIFIC' end,approved_by=actor,updated_at=now(),finalized_at=now()
   where id=target_session_id returning * into result;
@@ -447,7 +464,7 @@ begin
     from public.ability_concept_mappings mapping join public.global_ability_concepts concept on concept.id=mapping.global_concept_id
     where mapping.game_id=current_row.game_id and mapping.active and mapping.compatibility_level<>'INCOMPATIBLE' and mapping.game_ability_id=any(ability_values);
     insert into public.gm_precedents(game_id,source_resolution_session_id,title,summary,interaction_signature,signature_tokens,conditions,submitted_actions,resolution_order,final_outcome,gm_reasoning,scope,ability_ids,role_ids,status_types,rule_versions,tags,created_by,approved_by,approved_for_global_use,compatibility_metadata,mechanic_fingerprint,normalized_actions,global_concept_ids,correction_metadata,origin_game_name_snapshot)
-    values(current_row.game_id,current_row.id,left(coalesce(nullif(manual->>'title',''),'Resolution '||current_row.cycle||' '||current_row.phase),200),left(coalesce(manual->>'summary',''),4000),signature,tokens,coalesce(manual->'conditions','{}'::jsonb),current_row.submitted_actions,coalesce(final_value->'resolution_order',final_value->'proposed_order','[]'::jsonb),final_value,left(coalesce(target_gm_explanation,''),12000),case when learning_scope='GLOBAL' then 'GLOBAL' else local_scope end,ability_values,case when learning_scope='GLOBAL' then '{}'::text[] else role_values end,status_values,current_row.source_versions,coalesce(array(select jsonb_array_elements_text(coalesce(manual->'tags','[]'::jsonb))),'{}'),actor,actor,learning_scope='GLOBAL',jsonb_build_object('originScope',local_scope,'requiresDefinitionComparison',learning_scope='GLOBAL'),jsonb_build_object('signatureTokens',tokens,'abilityIds',ability_values,'roleIds',role_values,'statusTypes',status_values,'sourceVersions',current_row.source_versions),normalized,concept_values,jsonb_build_object('decision',decision,'aiProposed',coalesce(current_row.ai_proposal->'resolution','{}'::jsonb),'gmCorrected',case when decision in ('MODIFY','REJECT') then final_value else '{}'::jsonb end,'explanation',left(coalesce(target_gm_explanation,''),12000)),origin_name)
+    values(current_row.game_id,current_row.id,left(coalesce(nullif(manual->>'title',''),'Resolution '||current_row.cycle||' '||current_row.phase),200),left(coalesce(manual->>'summary',''),4000),signature,tokens,coalesce(manual->'conditions','{}'::jsonb),current_row.submitted_actions,coalesce(final_value->'resolution_order',final_value->'proposed_order','[]'::jsonb),final_value,left(coalesce(target_gm_explanation,''),12000),case when learning_scope='GLOBAL' then 'GLOBAL' else local_scope end,ability_values,case when learning_scope='GLOBAL' then '{}'::text[] else role_values end,status_values,current_row.source_versions,coalesce(array(select jsonb_array_elements_text(coalesce(manual->'tags','[]'::jsonb))),'{}'),actor,actor,learning_scope='GLOBAL',jsonb_build_object('origin',jsonb_build_object('gameId',current_row.game_id,'gameName',origin_name,'resolutionSessionId',current_row.id),'originScope',local_scope,'abilityContext',coalesce(manual->'ability_context','[]'::jsonb),'roleContext',coalesce(manual->'role_context','[]'::jsonb),'roleModifierContext',coalesce(manual->'role_modifier_context','[]'::jsonb),'statuses',status_values,'conditions',coalesce(manual->'conditions','{}'::jsonb),'outcome',final_value,'reasoning',left(coalesce(target_gm_explanation,''),12000),'sourceVersions',current_row.source_versions,'requiresDefinitionComparison',learning_scope='GLOBAL','suggestedNarrowerScope',suggested_narrower_scope),jsonb_build_object('signatureTokens',tokens,'abilityIds',ability_values,'abilityContext',coalesce(manual->'ability_context','[]'::jsonb),'originRoleIds',context_role_values,'roleContext',coalesce(manual->'role_context','[]'::jsonb),'roleModifierContext',coalesce(manual->'role_modifier_context','[]'::jsonb),'statusTypes',status_values,'conditions',coalesce(manual->'conditions','{}'::jsonb),'sourceVersions',current_row.source_versions),normalized,concept_values,jsonb_build_object('decision',decision,'aiProposed',coalesce(current_row.ai_proposal->'resolution','{}'::jsonb),'gmCorrected',case when decision in ('MODIFY','REJECT') then final_value else '{}'::jsonb end,'explanation',left(coalesce(target_gm_explanation,''),12000)),origin_name)
     returning id into precedent;
     update public.gm_precedents existing set status='CONFLICTING',updated_at=now(),version=version+1
     where existing.id<>precedent and existing.status='ACTIVE' and lower(existing.interaction_signature)=lower(signature) and existing.final_outcome<>final_value
@@ -535,7 +552,7 @@ create function public.manage_gm_precedent(target_precedent_id uuid,expected_ver
 returns public.gm_precedents language sql security invoker set search_path='' as $$select private.manage_gm_precedent(target_precedent_id,expected_version,target_status,target_superseded_by,target_scope,target_authority,target_reason)$$;
 create function public.promote_global_pattern(target_game_id uuid,target_precedent_ids uuid[],target_reason text default '')
 returns public.gm_precedents language sql security invoker set search_path='' as $$select private.promote_global_pattern(target_game_id,target_precedent_ids,target_reason)$$;
-create function public.finalize_resolution_session(target_session_id uuid,expected_lock_version integer,target_decision text,target_manual_resolution jsonb,target_gm_explanation text,target_teach_ai boolean,target_teach_scope text default 'GAME_SPECIFIC')
+create function public.finalize_resolution_session(target_session_id uuid,expected_lock_version integer,target_decision text,target_manual_resolution jsonb,target_gm_explanation text,target_teach_ai boolean,target_teach_scope text default 'GLOBAL')
 returns public.resolution_sessions language sql security invoker set search_path='' as $$select private.finalize_resolution_session(target_session_id,expected_lock_version,target_decision,target_manual_resolution,target_gm_explanation,target_teach_ai,target_teach_scope)$$;
 
 revoke all on function private.create_global_ability_concept(uuid,text,text,text,jsonb),private.approve_ability_concept_mapping(uuid,text,uuid,text,text,jsonb),private.remove_ability_concept_mapping(uuid,text),private.manage_gm_precedent(uuid,integer,text,uuid,text,text,text),private.promote_global_pattern(uuid,uuid[],text),private.finalize_resolution_session(uuid,integer,text,jsonb,text,boolean,text) from public,anon,authenticated,service_role;

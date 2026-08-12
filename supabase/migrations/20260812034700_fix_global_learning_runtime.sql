@@ -22,6 +22,7 @@ begin
     'conflictingPrecedents',(select count(*) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=target_owner_id and precedent.status='CONFLICTING'),
     'supersededPrecedents',(select count(*) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=target_owner_id and precedent.status='SUPERSEDED'),
     'gamesContributing',(select count(distinct precedent.game_id) from public.gm_precedents precedent join public.games game on game.id=precedent.game_id where game.owner_id=target_owner_id and precedent.status in ('ACTIVE','CONFLICTING','SUPERSEDED')),
+    'legacyScopeReview',(select count(*) from public.gm_precedents where game_id=target_game_id and legacy_scope_review),
     'draftRoles',(select count(*) from public.ai_drafts where game_id=target_game_id and draft_type='ROLE' and status='DRAFT'),
     'draftAbilities',(select count(*) from public.ai_drafts where game_id=target_game_id and draft_type='ABILITY' and status='DRAFT')
   );
@@ -71,4 +72,3 @@ begin
     ),'[]'::jsonb)
   );
 end $$;
-

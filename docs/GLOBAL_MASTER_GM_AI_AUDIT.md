@@ -1,7 +1,7 @@
 # Global Master GM AI Audit
 
 Audit date: 2026-08-11  
-Implemented release: 9.4.1
+Implemented release: 9.5.0
 
 ## Existing systems reused
 
@@ -16,7 +16,7 @@ No duplicate precedent, resolution, status, audit, document-retrieval, or AI arc
 
 ## Systems extended
 
-- `gm_precedents` now supports explicit global approval, global official-rule authority, origin snapshots, compatibility/fingerprint metadata, normalized actions, mapped global concepts, source precedents, and AI-correction metadata.
+- `gm_precedents` now supports explicit global approval, global official-rule authority, origin snapshots, compatibility/fingerprint metadata, normalized actions, mapped global concepts, source precedents, AI-correction metadata, and historical-scope review state.
 - `resolution_sessions` now records whether an approved ruling was taught to this game or all compatible games and which precedents the AI used.
 - Official documents now distinguish current-game, GM-approved global, and system-global scope without copying document content.
 - The existing precedent search now retrieves layered current-game and global candidates, enforces role/ability/one-time isolation, and ranks current-game precedent above global authority.
@@ -38,11 +38,16 @@ Resolution context is ordered as current-game rules, current-game abilities, rol
 
 Global candidates are checked against approved ability mappings, important statuses, role-specific conditions, and source ability versions. Incompatible candidates are removed. Partial candidates are advisory and must not be treated as conclusive. Same names alone never establish compatibility.
 
-Teach AI defaults to `GAME_SPECIFIC`. `GLOBAL` requires an explicit authorized-GM choice and cannot be used for role-specific or one-time rulings. Global promotion, downgrade, lifecycle changes, mapping approval/removal, and pattern promotion use the existing permission system and audit log.
+New Teach AI rulings default to `GLOBAL`, including GM-modified and GM-rejected corrections. Global candidates are only considered when their recorded mechanics are compatible and never override the current game. The selector also supports game-, ability-, role-, and one-time scope. A warning appears when role modifiers or game-specific ability versions suggest narrower scope, but the software never silently changes the GM's choice.
+
+Existing precedent scopes are preserved during migration. Historical non-global records are marked for GM review instead of being silently promoted. Authorized GMs can select eligible current-game records and promote them to Global in bulk through the existing version-checked, audited precedent-management RPC.
+
+Each new taught precedent stores structured origin, ability/version, role modifier, status, condition, outcome, and reasoning context in the existing compatibility fields. Global promotion, downgrade, lifecycle changes, mapping approval/removal, and pattern promotion continue to use the existing permission system and audit log.
 
 ## UI changes
 
-- Teach This Game / Teach All Games audience selector on existing Resolution Session review.
+- Global-default learning-scope selector with Global, game, ability, role, and one-time choices on the existing Resolution Session review.
+- Compatibility warning for rulings that appear narrower, plus an authorized-GM historical review filter and bulk Global promotion control.
 - Current/global scope on the existing official-document uploader.
 - Global/current/specific/conflicting/superseded filters on the existing AI Learning view.
 - Cross-game consistent-pattern and rule-difference panels with explicit promotion.
@@ -51,7 +56,7 @@ Teach AI defaults to `GAME_SPECIFIC`. `GLOBAL` requires an explicit authorized-G
 
 ## Verification
 
-- JavaScript syntax linting, static build verification, and the full Node test suite cover default scope, global scope, retrieval order, current-game precedence, role/ability/one-time isolation, mappings, incompatible rejection, version/status compatibility, permissions, audits, promotions, superseding, and duplicate-architecture detection.
+- JavaScript syntax linting, static build verification, and the full Node test suite cover the Global default, all five scope choices, historical preservation/review, structured compatibility context, narrower-scope warnings, retrieval order, current-game precedence, role/ability/one-time isolation, mappings, incompatible rejection, version/status compatibility, permissions, audits, promotions, superseding, and duplicate-architecture detection.
 - The migration is designed as additive/backfilled DDL and in-place RPC replacement. It does not reset games or delete existing precedents, resolutions, statuses, documents, abilities, or audit history.
 - One optional external Transformers DOCX acceptance test remains skipped because the fixture is not part of the repository; all repository-contained tests run.
 

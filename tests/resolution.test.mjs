@@ -13,9 +13,9 @@ test('structured resolutions and events are bounded and normalized',()=>{
 test('manual precedent learning requires a reason and normalized signature',()=>{
   const payload=manualResolutionPayload({title:'Guard ruling',results:'Kill transfers',events:'Guard receives the action',interactionSignature:'PERSONAL INSTANT KILL + GUARD',signatureTokens:'personal instant kill\nguard',scope:'ABILITY_SPECIFIC'});
   assert.deepEqual(payload.signature_tokens,['personal_instant_kill','guard']);
-  assert.equal(validateManualResolution('MODIFY',payload,true,'Guard transfers applicable normal harm.').length,0);
-  assert.match(validateManualResolution('MODIFY',{...payload,signature_tokens:[]},true,'why')[0],/signature token/i);
-  assert.match(validateManualResolution('MODIFY',payload,true,'')[0],/Explain why/i);
+  assert.equal(validateManualResolution('MODIFY',payload,true,'Guard transfers applicable normal harm.','GAME_SPECIFIC',true).length,0);
+  assert.match(validateManualResolution('MODIFY',{...payload,signature_tokens:[]},true,'why','GAME_SPECIFIC',true)[0],/signature token/i);
+  assert.match(validateManualResolution('MODIFY',payload,true,'','GAME_SPECIFIC',true)[0],/Explain why/i);
 });
 
 test('AI role and ability drafts remain structured drafts',()=>{

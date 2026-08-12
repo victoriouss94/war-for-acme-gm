@@ -15,9 +15,12 @@ const [sql,runtimeFix,edge,app,cloud,html]=await Promise.all([
   readFile('index.html','utf8')
 ]);
 
-test('Teach AI defaults to this game and global approval preserves role isolation',()=>{
-  const base=manualResolutionPayload({results:'Guard receives the kill.',interactionSignature:'PERSONAL INSTANT KILL + GUARD',signatureTokens:'personal instant kill\nguard'});
+test('Teach AI defaults to Global for new rulings and preserves role isolation',()=>{
+  const base=manualResolutionPayload({results:'Guard receives the kill.',interactionSignature:'PERSONAL INSTANT KILL + GUARD',signatureTokens:'personal instant kill\nguard',contextRoleIds:['guard'],abilityContext:[{id:'kill',version:2}],roleContext:[{id:'guard'}],roleModifierContext:[]});
   assert.equal(base.scope,'GAME_SPECIFIC');
+  assert.deepEqual(base.context_role_ids,['guard']);
+  assert.equal(base.ability_context[0].version,2);
+  assert.deepEqual(validateManualResolution('MODIFY',base,true,'Approved ruling.',undefined,true),[]);
   assert.deepEqual(validateManualResolution('MODIFY',base,true,'Approved ruling.','GAME_SPECIFIC',true),[]);
   assert.deepEqual(validateManualResolution('MODIFY',base,true,'Approved ruling.','GLOBAL',true),[]);
   assert.match(validateManualResolution('MODIFY',base,true,'Approved ruling.','GLOBAL',false)[0],/authorized GM/i);
@@ -38,12 +41,14 @@ test('safe migration extends existing learning, resolution, document, status, an
   for(const pattern of [
     /alter table public\.gm_precedents/,
     /add column teach_scope text not null default 'GAME_SPECIFIC'/,
+    /alter table public\.resolution_sessions alter column teach_scope set default 'GLOBAL'/,
     /add column scope text not null default 'GAME_SPECIFIC'/,
     /approved_for_global_use/,
     /compatibility_metadata/,
     /normalized_actions/,
     /correction_metadata/,
     /origin_game_name_snapshot/,
+    /legacy_scope_review/,
     /GLOBAL_OFFICIAL_RULE/,
     /change_history/,
     /public\.can_edit_game/,
@@ -52,6 +57,32 @@ test('safe migration extends existing learning, resolution, document, status, an
   ])assert.match(sql,pattern);
   assert.doesNotMatch(sql,/create table public\.(gm_precedents|resolution_sessions|resolution_session_events|player_status_effects|change_history)/);
   assert.doesNotMatch(sql,/drop table|truncate table|delete from public\.(games|gm_precedents|resolution_sessions|player_status_effects)/i);
+  assert.match(sql,/approved_for_global_use=\(precedent\.scope='GLOBAL'\)/);
+  assert.match(sql,/legacy_scope_review=\(precedent\.scope<>'GLOBAL'\)/);
+  const historicalBackfill=sql.match(/update public\.gm_precedents precedent[\s\S]*?where game\.id=precedent\.game_id and precedent\.origin_game_name_snapshot='';/)?.[0]||'';
+  assert.doesNotMatch(historicalBackfill,/\n\s*scope\s*=/i);
+});
+
+test('all five learning choices are exposed with Global first and corrections share that default',()=>{
+  assert.match(html,/id="teachAiAudience"><option value="GLOBAL" selected>Global — All Games \(default\)<\/option>/);
+  for(const scope of ['GLOBAL','GAME_SPECIFIC','ABILITY_SPECIFIC','ROLE_SPECIFIC','ONE_TIME'])assert.match(html,new RegExp(`<option value="${scope}"`));
+  assert.doesNotMatch(html,/id="teachAiAudience"[^>]*>[\s\S]{0,500}<option value="GENERAL"/);
+  assert.match(cloud,/teachScope='GLOBAL'/);
+  assert.match(sql,/target_teach_scope text default 'GLOBAL'/);
+  assert.match(sql,/decision in \('MODIFY','REJECT'\)/);
+});
+
+test('compatibility context, narrower-scope warning, and audited legacy bulk review reuse existing systems',()=>{
+  for(const pattern of [/contextRoleIds/,/abilityContext/,/roleContext/,/roleModifierContext/])assert.match(app,pattern);
+  for(const pattern of [/originRoleIds/,/abilityContext/,/roleContext/,/roleModifierContext/,/'statuses',status_values/,/'conditions'/,/'outcome',final_value/,/'reasoning'/,/sourceVersions/,/suggestedNarrowerScope/])assert.match(sql,pattern);
+  assert.match(app,/Global remains selected, but review whether a narrower scope is safer/);
+  assert.match(app,/GLOBAL GM PRECEDENT FOUND/);
+  assert.match(app,/CROSS-GAME CONSISTENT GM PATTERN/);
+  assert.match(app,/promoteSelectedLegacyPrecedents/);
+  assert.match(app,/GMCloud\.managePrecedent/);
+  assert.match(html,/id="bulkPromoteGlobalBtn"/);
+  assert.match(sql,/legacy_scope_review=false/);
+  assert.doesNotMatch(sql,/create (table|function)[^;]*bulk.*global/i);
 });
 
 test('cross-game retrieval is current-game first, scoped, mapped, and compatibility aware',()=>{
@@ -94,7 +125,7 @@ test('global concepts, mappings, promotions, downgrades, superseding, and audits
     /next_scope<>'GLOBAL'.*next_authority:='GM_PRECEDENT'/s
   ])assert.match(sql,pattern);
   for(const pattern of [/createGlobalAbilityConcept/,/approveAbilityConceptMapping/,/removeAbilityConceptMapping/,/promoteGlobalPattern/,/managePrecedent/])assert.match(cloud,pattern);
-  for(const id of ['teachAiAudience','knowledgeScope','precedentScopeFilter','crossGamePatternList','globalConceptForm','abilityConceptMappingForm'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const id of ['teachAiAudience','scopeCompatibilityWarning','bulkPromoteGlobalBtn','knowledgeScope','precedentScopeFilter','crossGamePatternList','globalConceptForm','abilityConceptMappingForm'])assert.match(html,new RegExp(`id="${id}"`));
   for(const pattern of [/syncResolutionLearningControls/,/changePrecedentScope/,/promoteCrossGamePattern/,/createGlobalConcept/,/saveAbilityConceptMapping/])assert.match(app,pattern);
 });
 
