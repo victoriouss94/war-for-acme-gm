@@ -45,7 +45,7 @@ test('AI GM frontend and Edge Function enforce authenticated human approval boun
     readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/functions/gm-copilot/index.ts','utf8'),readFile('supabase/functions/_shared/ai-service.ts','utf8')
   ]);
   for(const id of ['copilotView','copilotTask','copilotDepth','copilotResolveQueueBtn','copilotConversation','copilotForm','copilotPrompt','copilotAskBtn'])assert.match(html,new RegExp(`id="${id}"`));
-  assert.match(app,/validateCopilotChanges\(entry\.result\.proposed_changes,state\)/);
+  assert.match(app,/validateCopilotChanges\(entry\.result\.proposed_changes,state,liveStatuses\)/);
   assert.match(app,/Review the AI GM proposal before applying it/);
   assert.match(app,/entry\.applied=true;save\('AI GM proposal approved and applied/);
   assert.match(cloud,/functions\.invoke\('gm-copilot'/);

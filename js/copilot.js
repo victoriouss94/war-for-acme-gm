@@ -1,7 +1,9 @@
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=9.2.0';
+
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['assistant','resolve_actions','explain_role','plan_session']);
 export const COPILOT_DEPTHS=new Set(['standard','deep']);
-export const COPILOT_CHANGE_KINDS=new Set(['remove_action','set_player_alive','set_player_role','add_history','set_game_phase','set_game_day']);
+export const COPILOT_CHANGE_KINDS=new Set(['remove_action','set_player_alive','set_player_role','set_player_faction','apply_status','resolve_status','add_history','set_game_phase','set_game_day']);
 
 const cleanText=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
 
@@ -41,10 +43,12 @@ export function normalizeCopilotResponse(input={}){
   };
 }
 
-export function validateCopilotChanges(changes,gameState={}){
+export function validateCopilotChanges(changes,gameState={},statusEffects=[]){
   const players=new Map((gameState.players||[]).map(player=>[player.id,player]));
   const roles=new Map((gameState.roles||[]).map(role=>[role.id,role]));
+  const factions=new Map((gameState.factions||[]).map(faction=>[faction.id,faction]));
   const actions=new Map((gameState.actions||[]).map(action=>[action.id,action]));
+  const statuses=new Map((Array.isArray(statusEffects)?statusEffects:[]).map(status=>[status.id,status]));
   const valid=[],rejected=[];
   for(const original of Array.isArray(changes)?changes:[]){
     const change={...original};let reason='';
@@ -52,6 +56,16 @@ export function validateCopilotChanges(changes,gameState={}){
     else if(change.kind==='remove_action'&&!actions.has(change.target_id))reason='The queued action no longer exists.';
     else if(change.kind==='set_player_alive'&&(!players.has(change.target_id)||!['true','false'].includes(change.value)))reason='The player or alive value is invalid.';
     else if(change.kind==='set_player_role'&&(!players.has(change.target_id)||!roles.has(change.value)))reason='The player or role no longer exists.';
+    else if(change.kind==='set_player_faction'&&(!players.has(change.target_id)||!factions.has(change.value)))reason='The player or faction no longer exists.';
+    else if(change.kind==='apply_status'){
+      const status=parseStatusProposalValue(change.value);
+      if(!players.has(change.target_id)||!status||!['ACTIVE','PENDING'].includes(status.state))reason='The proposed live status is invalid.';
+      else change.status={...status,playerId:change.target_id};
+    }
+    else if(change.kind==='resolve_status'){
+      const status=statuses.get(change.target_id);
+      if(!status||!['ACTIVE','PENDING'].includes(String(status.state||'').toUpperCase()))reason='The live status no longer exists or is already resolved.';
+    }
     else if(change.kind==='add_history'&&!cleanText(change.value,4000))reason='The history note is empty.';
     else if(change.kind==='set_game_phase'&&!['Day','Night'].includes(change.value))reason='The phase must be Day or Night.';
     else if(change.kind==='set_game_day'&&(!/^\d{1,3}$/.test(change.value)||Number(change.value)>999))reason='The day must be between 0 and 999.';
@@ -60,11 +74,14 @@ export function validateCopilotChanges(changes,gameState={}){
   return {valid,rejected};
 }
 
-export function copilotChangeLabel(change,gameState={}){
-  const player=(gameState.players||[]).find(item=>item.id===change.target_id),role=(gameState.roles||[]).find(item=>item.id===change.value),action=(gameState.actions||[]).find(item=>item.id===change.target_id);
+export function copilotChangeLabel(change,gameState={},statusEffects=[]){
+  const player=(gameState.players||[]).find(item=>item.id===change.target_id),role=(gameState.roles||[]).find(item=>item.id===change.value),faction=(gameState.factions||[]).find(item=>item.id===change.value),action=(gameState.actions||[]).find(item=>item.id===change.target_id);
   if(change.kind==='remove_action')return 'Resolve and remove action: '+(action?.name||change.target_id);
   if(change.kind==='set_player_alive')return (change.value==='true'?'Revive ':'Mark dead ')+(player?.name||change.target_id);
   if(change.kind==='set_player_role')return 'Set '+(player?.name||change.target_id)+' role to '+(role?.name||change.value);
+  if(change.kind==='set_player_faction')return 'Set '+(player?.name||change.target_id)+' current faction to '+(faction?.name||change.value);
+  if(change.kind==='apply_status')return 'Apply '+statusLabel(parseStatusProposalValue(change.value)||{})+' to '+(player?.name||change.target_id);
+  if(change.kind==='resolve_status'){const status=(statusEffects||[]).find(item=>item.id===change.target_id),target=(gameState.players||[]).find(item=>item.id===(status?.playerId||status?.player_id));return 'Resolve '+(status?statusLabel(status):'live status')+(target?' on '+target.name:'')}
   if(change.kind==='set_game_phase')return 'Set phase to '+change.value;
   if(change.kind==='set_game_day')return 'Set day to '+change.value;
   return 'Add history note: '+cleanText(change.value,140);

@@ -1,3 +1,3 @@
 GM Command Center
-Version: 9.1.0
-Build: Complete Courtroom Encyclopedia and Transformers Roster
+Version: 9.2.0
+Build: Live Player Status Awareness

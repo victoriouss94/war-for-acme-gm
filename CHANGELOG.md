@@ -1,5 +1,13 @@
 # Changelog
 
+## v9.2.0 - Live Player Status Awareness
+
+- Adds an extensible live status ledger with active, passive, pending, permanent, and resolved effect groups.
+- Adds GM status controls, filters, expiration timing, visibility rules, and append-only status history.
+- Grounds AI player-condition answers and action resolution in controlled live database queries rather than role abilities or chat memory.
+- Applies AI-proposed status changes only after GM review through an audited server-side transaction.
+- Removes the retired Courtroom source label while preserving the standardized ability definitions.
+
 ## v9.1.0 — Courtroom Ability Encyclopedia
 
 - Replaced the built-in encyclopedia with the exact 32 abilities from the supplied Courtroom Master Ability Encyclopedia.

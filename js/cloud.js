@@ -179,6 +179,11 @@
   async function roleTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.roles||[]).map(role=>({key:row.game_id+':'+role.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',role,abilities:row.document?.data?.abilities||[],factions:row.document?.data?.factions||[]})))}
   async function abilityTemplates(){const rows=unwrap(await required().from('game_documents').select('game_id,document'));return rows.flatMap(row=>(row.document?.data?.abilities||[]).map(ability=>({key:row.game_id+':'+ability.id,sourceGameId:row.game_id,sourceGameName:row.document?.game?.name||'Saved Game',...ability})))}
   async function history(gameId){return unwrap(await required().from('change_history').select('*,profiles!change_history_profile_fkey(display_name,username)').eq('game_id',gameId).order('created_at',{ascending:false}).limit(250))}
+  async function statusEffects(gameId){return unwrap(await required().from('player_status_effects').select('*').eq('game_id',gameId).order('created_at',{ascending:true}))}
+  async function playerStatusHistory(gameId,playerId=null){return unwrap(await required().rpc('get_player_status_history',{target_game_id:gameId,target_player_id:playerId,max_rows:250}))}
+  async function playerState(gameId,playerId){return unwrap(await required().rpc('get_player_state',{target_game_id:gameId,target_player_id:playerId}))}
+  async function mutatePlayerStatus(gameId,statusId,operation,payload){return unwrap(await required().rpc('mutate_player_status',{target_game_id:gameId,target_status_id:statusId||null,target_operation:operation,target_payload:payload||{}}))}
+  async function applyPlayerStatusChanges(gameId,changes){return unwrap(await required().rpc('apply_player_status_changes',{target_game_id:gameId,target_changes:changes}))}
   async function imports(gameId){return unwrap(await required().from('game_imports').select('*').eq('game_id',gameId).order('created_at',{ascending:false}))}
   async function downloadImport(record){const blob=unwrap(await required().storage.from(importBucket).download(record.storage_path)),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=record.source_file_name||'game.docx';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
   async function askCopilot(gameId,request){
@@ -227,12 +232,13 @@
     return data;
   }
   async function unsubscribe(){if(channel&&client){await client.removeChannel(channel);channel=null}}
-  async function subscribe(gameId,{onDocument,onMembership,onInvites,onPresence,onStatus}){
+  async function subscribe(gameId,{onDocument,onMembership,onInvites,onStatuses,onPresence,onStatus}){
     await unsubscribe();
     channel=required().channel('game:'+gameId,{config:{private:true,presence:{key:session.user.id}}});
     channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_documents',filter:'game_id=eq.'+gameId},payload=>onDocument?.(payload.new));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'game_members',filter:'game_id=eq.'+gameId},payload=>onMembership?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'game_invites',filter:'game_id=eq.'+gameId},payload=>onInvites?.(payload));
+    channel.on('postgres_changes',{event:'*',schema:'public',table:'player_status_effects',filter:'game_id=eq.'+gameId},payload=>onStatuses?.(payload));
     channel.on('presence',{event:'sync'},()=>onPresence?.(channel.presenceState()));
     channel.subscribe(async status=>{
       onStatus?.(status);
@@ -243,5 +249,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

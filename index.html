@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=8.1.1">
+  <link rel="stylesheet" href="css/main.css?v=9.2.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -212,10 +212,46 @@
         <button id="addPlayerBtn" class="full">Add Player</button>
       </aside>
       <div class="panel">
-        <div class="filters"><input id="playerSearch" placeholder="Search player or role"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select></div>
+        <div class="filters player-filters"><input id="playerSearch" placeholder="Search player, role, faction, or status"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select><select id="playerStatusFilter"><option value="ALL">All status conditions</option><option value="ANY_ACTIVE">Any active status</option><option value="PENDING">Pending effects</option><option value="EXPIRING_CURRENT">Expiring this cycle</option><option value="ROLEBLOCK">Blocked</option><option value="MARK">Marked</option><option value="POISON">Poisoned</option><option value="PROTECT">Protected</option><option value="SUPER_PROTECT">Super Protected</option><option value="GUARDED">Guarded</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="DEATH_IMMUNITY">Death Immune</option><option value="REDIRECT">Redirected</option><option value="CONVERTED">Converted</option></select></div>
         <div id="playerList" class="card-grid"></div>
       </div>
     </div>
+    <section id="playerStatusManager" class="panel player-status-manager" hidden>
+      <div class="section-heading"><div><p class="eyebrow">LIVE DATABASE STATE</p><h2 id="playerStatusManagerTitle">Player Status</h2><p class="muted">Abilities owned are separate from effects currently applied.</p></div><button id="closePlayerStatusManagerBtn" class="secondary" type="button">Close</button></div>
+      <div class="player-status-layout">
+        <form id="playerStatusForm" class="status-editor">
+          <h3 id="playerStatusFormTitle">Add Status</h3>
+          <div class="grid2 compact-grid">
+            <label>Status type<select id="statusType"><option value="ROLEBLOCK">Roleblock / Blocked</option><option value="MARK">Mark / Marked</option><option value="POISON">Poison / Poisoned</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="SILENCED">Silenced</option><option value="PROTECT">Protect</option><option value="SUPER_PROTECT">Super Protect</option><option value="DEATH_IMMUNITY">Death Immunity</option><option value="BULLETPROOF">Bulletproof</option><option value="GUARDED">Guarded</option><option value="REDIRECT">Redirected</option><option value="CONVERTED">Converted</option><option value="HEALING_PENDING">Healing Pending</option><option value="ACTION_SUCCESS_GUARANTEE">Action Success Guarantee</option><option value="ABILITY_AMPLIFY">Ability Amplify</option><option value="ADDITIONAL_USES">Additional Uses</option><option value="TEMPORARY_IMMUNITY">Temporary Immunity</option><option value="TEMPORARY_RESTRICTION">Temporary Restriction</option><option value="CUSTOM">Custom Status</option></select></label>
+            <label>Status name<input id="statusName" maxlength="120" placeholder="Required for a custom status"></label>
+            <label>Section<select id="statusCategory"><option value="HARMFUL">Active / Harmful</option><option value="PROTECTION">Active / Protection</option><option value="PASSIVE">Passive Effect</option><option value="TEMPORARY">Temporary Effect</option><option value="PERMANENT">Permanent State Change</option><option value="CUSTOM">Custom</option></select></label>
+            <label>State<select id="statusState"><option value="ACTIVE">Active</option><option value="PENDING">Pending</option></select></label>
+            <label>Source player<select id="statusSourcePlayer"><option value="">Unknown / System</option></select></label>
+            <label>Source ability<select id="statusSourceAbility"><option value="">Unknown / Custom</option></select></label>
+            <label>Applied cycle<input id="statusAppliedCycle" type="number" min="0" max="9999"></label>
+            <label>Applied phase<select id="statusAppliedPhase"><option>Day</option><option>Night</option><option>Any</option><option>Immediate</option></select></label>
+            <label>Duration<input id="statusDuration" maxlength="200" placeholder="Example: Current cycle"></label>
+            <label>Remaining duration<input id="statusRemainingDuration" type="number" min="0" max="9999" placeholder="Leave blank if undefined"></label>
+            <label>Expires cycle<input id="statusExpiresCycle" type="number" min="0" max="9999" placeholder="Leave blank if undefined"></label>
+            <label>Expires phase<select id="statusExpiresPhase"><option value="">Not defined</option><option>Day</option><option>Night</option><option>Any</option><option>Immediate</option></select></label>
+            <label>Stack count<input id="statusStackCount" type="number" min="1" max="999" value="1"></label>
+            <label>Visibility<select id="statusVisibility"><option value="GM_ONLY">GM only</option><option value="OWNER_VISIBLE">Owner visible</option><option value="FACTION_VISIBLE">Faction visible</option><option value="PUBLIC">Public</option></select></label>
+            <label>Converted/current faction<select id="statusFactionOverride"><option value="">No faction change</option></select></label>
+            <label class="check"><input id="statusDispellable" type="checkbox" checked> Dispellable / removable</label>
+          </div>
+          <label>Description<textarea id="statusDescription" rows="3" maxlength="4000"></textarea></label>
+          <label>GM reason / notes<textarea id="statusReason" rows="2" maxlength="2000" required></textarea></label>
+          <p id="playerStatusFormError" class="form-notice" aria-live="polite"></p>
+          <div class="form-actions horizontal-actions"><button id="savePlayerStatusBtn" type="submit">Add Status</button><button id="cancelPlayerStatusEditBtn" class="secondary" type="button">Clear</button></div>
+        </form>
+        <div>
+          <h3>Current and Previous Effects</h3>
+          <div id="playerStatusDetail"></div>
+          <h3>Status History</h3>
+          <div id="playerStatusHistory" class="status-history-list"></div>
+        </div>
+      </div>
+    </section>
   </section>
 
   <section id="queueView" class="view">
@@ -261,7 +297,7 @@
         <div class="copilot-safety"><strong>You stay in control.</strong><p>The AI can only propose a limited set of changes. Nothing changes until an authorized GM reviews and confirms it.</p></div>
         <div class="knowledge-uploader">
           <p class="eyebrow">OFFICIAL KNOWLEDGE</p>
-          <label>Title<input id="knowledgeTitle" maxlength="200" placeholder="Example: Courtroom Rules"></label>
+          <label>Title<input id="knowledgeTitle" maxlength="200" placeholder="Example: Game Master Rules"></label>
           <label>Document type<select id="knowledgeType"><option value="GAME_MASTER_RULESET">Game Master Ruleset</option><option value="CHARACTER_ROLE_GUIDE">Character / Role Guide</option><option value="ABILITY_ENCYCLOPEDIA">Ability Encyclopedia</option><option value="ACTION_RESOLUTION_RULES">Action Resolution Rules</option><option value="PLAYER_FAQ">Player FAQ</option><option value="CUSTOM">Custom</option></select></label>
           <label>Status<select id="knowledgeStatus"><option value="ACTIVE">Active / authoritative</option><option value="APPROVED">Approved reference</option><option value="DRAFT">Draft</option></select></label>
           <label class="file-btn secondary full">Choose DOCX, PDF, or TXT<input id="knowledgeFile" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" hidden></label>
@@ -389,7 +425,7 @@
     </div>
     <section class="panel official-ability-panel">
       <div class="section-heading encyclopedia-heading">
-        <div><p class="eyebrow">VERSIONED OFFICIAL DATASET</p><h2>Courtroom — Master Ability Encyclopedia</h2><p class="muted">Stable standardized abilities stay separate from game copies and role-specific modifiers.</p></div>
+        <div><p class="eyebrow">VERSIONED OFFICIAL DATASET</p><h2>Standard Ability Encyclopedia</h2><p class="muted">Stable standardized abilities stay separate from game copies and role-specific modifiers.</p></div>
         <div class="official-dataset-actions"><span id="officialAbilityCount" class="count-pill"></span><button id="activateOfficialDatasetBtn" class="secondary" type="button">Activate for This Game</button><button id="showAbilityReconciliationBtn" class="secondary" type="button">Reconciliation Report</button></div>
       </div>
       <p id="officialDatasetNotice" class="form-notice"></p>
@@ -486,9 +522,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=9.1.0"></script>
-<script src="js/cloud.js?v=9.1.0"></script>
+<script src="js/supabase-config.js?v=9.2.0"></script>
+<script src="js/cloud.js?v=9.2.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=9.1.0"></script>
+<script type="module" src="js/app.js?v=9.2.0"></script>
 </body>
 </html>
