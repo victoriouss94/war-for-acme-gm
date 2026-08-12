@@ -1,7 +1,7 @@
 # Global Master GM AI Audit
 
 Audit date: 2026-08-11  
-Implemented release: 9.4.0
+Implemented release: 9.4.1
 
 ## Existing systems reused
 

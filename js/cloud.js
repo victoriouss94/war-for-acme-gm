@@ -260,6 +260,7 @@
   async function unsubscribe(){if(channel&&client){await client.removeChannel(channel);channel=null}}
   async function subscribe(gameId,{onDocument,onMembership,onInvites,onStatuses,onResolution,onLearning,onPresence,onStatus}){
     await unsubscribe();
+    await required().realtime.setAuth(session.access_token);
     channel=required().channel('game:'+gameId,{config:{private:true,presence:{key:session.user.id}}});
     channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_documents',filter:'game_id=eq.'+gameId},payload=>onDocument?.(payload.new));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'game_members',filter:'game_id=eq.'+gameId},payload=>onMembership?.(payload));

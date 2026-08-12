@@ -1,5 +1,10 @@
 # Changelog
 
+## v9.4.1 - Global Learning Runtime Fix
+
+- Fixed ambiguous database owner references in learning summaries and cross-game pattern retrieval.
+- Ensured private Realtime game channels receive the active authenticated session before subscribing.
+
 ## v9.4.0 - Global Master GM AI
 
 - Extends the single AI GM, Resolution Session, GM Precedent, document retrieval, live-status, and audit architectures with layered cross-game knowledge.

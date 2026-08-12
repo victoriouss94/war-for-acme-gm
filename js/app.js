@@ -1,8 +1,8 @@
-import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=9.4.0';
-import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=9.4.0';
-import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=9.4.0';
-import {PLAYER_STATUS_TYPES,groupPlayerStatuses,normalizePlayerStatus,playerMatchesStatusFilter,statusLabel,statusMutationPayload,statusTypeDefinition} from './statuses.js?v=9.4.0';
-import {manualResolutionPayload,normalizeAiDraft,normalizeResolution,precedentVisibility,validateManualResolution} from './resolution.js?v=9.4.0';
+import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=9.4.1';
+import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=9.4.1';
+import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=9.4.1';
+import {PLAYER_STATUS_TYPES,groupPlayerStatuses,normalizePlayerStatus,playerMatchesStatusFilter,statusLabel,statusMutationPayload,statusTypeDefinition} from './statuses.js?v=9.4.1';
+import {manualResolutionPayload,normalizeAiDraft,normalizeResolution,precedentVisibility,validateManualResolution} from './resolution.js?v=9.4.1';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
 const GAME_INDEX_KEY='gm_command_center_games_v4';

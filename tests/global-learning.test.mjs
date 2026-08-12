@@ -5,8 +5,10 @@ import {manualResolutionPayload,precedentVisibility,validateManualResolution} fr
 import {normalizeCopilotResponse} from '../js/copilot.js';
 
 const migrationPath='supabase/migrations/20260812024815_global_master_gm_ai.sql';
-const [sql,edge,app,cloud,html]=await Promise.all([
+const runtimeFixPath='supabase/migrations/20260812034700_fix_global_learning_runtime.sql';
+const [sql,runtimeFix,edge,app,cloud,html]=await Promise.all([
   readFile(migrationPath,'utf8'),
+  readFile(runtimeFixPath,'utf8'),
   readFile('supabase/functions/gm-copilot/index.ts','utf8'),
   readFile('js/app.js','utf8'),
   readFile('js/cloud.js','utf8'),
@@ -107,4 +109,11 @@ test('repository still has one precedent, resolution, status, retrieval, audit, 
   const functionFolders=(await readdir('supabase/functions',{withFileTypes:true})).filter(entry=>entry.isDirectory()&&!entry.name.startsWith('_')).map(entry=>entry.name);
   assert.equal(functionFolders.filter(name=>name==='gm-copilot').length,1);
   assert.equal(functionFolders.filter(name=>/global-ai|courtroom-ai|jungle-ai|war-for-acme-ai/i.test(name)).length,0);
+});
+
+test('global learning runtime summaries avoid ambiguous owner references and private Realtime receives the active JWT',()=>{
+  assert.match(runtimeFix,/declare target_owner_id uuid/);
+  assert.doesNotMatch(runtimeFix,/declare owner_id uuid/);
+  assert.match(runtimeFix,/game\.owner_id=target_owner_id/);
+  assert.match(cloud,/realtime\.setAuth\(session\.access_token\)/);
 });

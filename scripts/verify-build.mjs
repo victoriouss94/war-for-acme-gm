@@ -1,12 +1,12 @@
 import {access,readFile} from 'node:fs/promises';
-const files=['index.html','css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/document-import.js','js/statuses.js','js/resolution.js','js/copilot.js','js/knowledge.js','js/app.js','scripts/build-transformers-payload.mjs','supabase/migrations/20260812011716_live_player_status_awareness.sql','supabase/migrations/20260812011926_harden_player_status_mutations.sql','supabase/migrations/20260812020135_consolidated_ai_gm_resolution_learning.sql','supabase/migrations/20260812024815_global_master_gm_ai.sql','supabase/functions/_shared/ai-service.ts','supabase/functions/gm-copilot/index.ts','supabase/functions/gm-document-import/index.ts','supabase/functions/gm-knowledge-ingest/index.ts'];
+const files=['index.html','css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/document-import.js','js/statuses.js','js/resolution.js','js/copilot.js','js/knowledge.js','js/app.js','scripts/build-transformers-payload.mjs','supabase/migrations/20260812011716_live_player_status_awareness.sql','supabase/migrations/20260812011926_harden_player_status_mutations.sql','supabase/migrations/20260812020135_consolidated_ai_gm_resolution_learning.sql','supabase/migrations/20260812024815_global_master_gm_ai.sql','supabase/migrations/20260812034700_fix_global_learning_runtime.sql','supabase/functions/_shared/ai-service.ts','supabase/functions/gm-copilot/index.ts','supabase/functions/gm-document-import/index.ts','supabase/functions/gm-knowledge-ingest/index.ts'];
 await Promise.all(files.map(file=>access(file)));
 const html=await readFile('index.html','utf8');
 for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/app.js'])if(!html.includes(file))throw new Error(`index.html does not load ${file}`);
 const app=await readFile('js/app.js','utf8');
-if(!app.includes("from './document-import.js?v=9.4.0'"))throw new Error('app.js does not load the versioned js/document-import.js');
-if(!app.includes("from './copilot.js?v=9.4.0'"))throw new Error('app.js does not load the versioned js/copilot.js');
-if(!app.includes("from './knowledge.js?v=9.4.0'"))throw new Error('app.js does not load the versioned js/knowledge.js');
-if(!app.includes("from './statuses.js?v=9.4.0'"))throw new Error('app.js does not load the versioned js/statuses.js');
-if(!app.includes("from './resolution.js?v=9.4.0'"))throw new Error('app.js does not load the versioned js/resolution.js');
+if(!app.includes("from './document-import.js?v=9.4.1'"))throw new Error('app.js does not load the versioned js/document-import.js');
+if(!app.includes("from './copilot.js?v=9.4.1'"))throw new Error('app.js does not load the versioned js/copilot.js');
+if(!app.includes("from './knowledge.js?v=9.4.1'"))throw new Error('app.js does not load the versioned js/knowledge.js');
+if(!app.includes("from './statuses.js?v=9.4.1'"))throw new Error('app.js does not load the versioned js/statuses.js');
+if(!app.includes("from './resolution.js?v=9.4.1'"))throw new Error('app.js does not load the versioned js/resolution.js');
 console.log('Static build verified:',files.join(', '));
