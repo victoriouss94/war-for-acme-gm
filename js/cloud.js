@@ -203,7 +203,7 @@
       required().from('ai_conversations').select('id').eq('game_id',gameId).eq('active',true).maybeSingle()
     ]);
     let conversationId=conversation.data?.id||null;if(!conversationId&&['owner','gm'].includes((await required().from('game_members').select('member_role').eq('game_id',gameId).eq('user_id',session.user.id).single()).data?.member_role)){conversationId=unwrap(await required().rpc('ensure_ai_conversation',{target_game_id:gameId}))}
-    const messages=conversationId?unwrap(await required().from('ai_messages').select('id,role,content,structured_result,model,game_version,created_at').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(250)):[];
+    const messages=conversationId?unwrap(await required().from('ai_messages').select('id,role,content,structured_result,model,game_version,intent,referenced_entities,tool_trace,created_at').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(250)):[];
     return {documents,abilities,modifiers,conversationId,messages};
   }
   async function uploadKnowledgeDocument(gameId,file,metadata){
@@ -223,7 +223,7 @@
   async function saveRoleAbilityModifier(gameId,roleId,abilityId,modifierText){return unwrap(await required().rpc('save_role_ability_modifier',{target_game_id:gameId,target_role_id:roleId,target_ability_id:abilityId,target_modifier_text:modifierText}))}
   async function startNewAiConversation(gameId){return unwrap(await required().rpc('start_new_ai_conversation',{target_game_id:gameId}))}
   async function resolutionContext(gameId){
-    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings]=await Promise.all([
+    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings,proposals,runs,toolCalls]=await Promise.all([
       required().from('resolution_sessions').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
       required().from('gm_precedents').select('*').order('updated_at',{ascending:false}).limit(500),
       required().from('ai_drafts').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
@@ -233,15 +233,19 @@
       required().from('ai_usage_limits').select('*').eq('game_id',gameId).maybeSingle(),
       required().rpc('get_cross_game_learning_patterns',{target_game_id:gameId}),
       required().rpc('get_global_ability_concepts',{target_game_id:gameId}),
-      required().from('ability_concept_mappings').select('*,global_ability_concepts(concept_key,name)').eq('game_id',gameId).eq('active',true).order('updated_at',{ascending:false})
+      required().from('ability_concept_mappings').select('*,global_ability_concepts(concept_key,name)').eq('game_id',gameId).eq('active',true).order('updated_at',{ascending:false}),
+      required().from('ai_change_proposals').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
+      required().from('ai_agent_runs').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
+      required().from('ai_tool_calls').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(500)
     ]);
-    for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings])if(result.error)throw result.error;
-    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[]};
+    for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings,proposals,runs,toolCalls])if(result.error)throw result.error;
+    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[],proposals:proposals.data||[],runs:runs.data||[],toolCalls:toolCalls.data||[]};
   }
   async function resolutionEvents(sessionId){return unwrap(await required().from('resolution_session_events').select('*').eq('session_id',sessionId).order('event_order',{ascending:true}))}
   async function startResolutionSession(gameId,gameVersion){return unwrap(await required().rpc('start_resolution_session',{target_game_id:gameId,expected_game_version:gameVersion}))}
   async function finalizeResolutionSession(sessionId,lockVersion,decision,manualResolution,explanation,teachAi,teachScope='GLOBAL'){return unwrap(await required().rpc('finalize_resolution_session',{target_session_id:sessionId,expected_lock_version:lockVersion,target_decision:decision,target_manual_resolution:manualResolution||{},target_gm_explanation:explanation||'',target_teach_ai:Boolean(teachAi),target_teach_scope:teachScope}))}
   async function reviewAiDraft(draftId,status){return unwrap(await required().rpc('review_ai_draft',{target_draft_id:draftId,target_status:status}))}
+  async function reviewAiChangeProposal(proposalId,version,decision,editedChanges=null,reason=''){return unwrap(await required().rpc('review_ai_change_proposal',{target_proposal_id:proposalId,expected_version:version,target_decision:decision,target_edited_changes:editedChanges,target_reason:reason||''}))}
   async function managePrecedent(precedentId,version,status,supersededBy=null,scope=null,authority=null,reason=''){return unwrap(await required().rpc('manage_gm_precedent',{target_precedent_id:precedentId,expected_version:version,target_status:status,target_superseded_by:supersededBy,target_scope:scope,target_authority:authority,target_reason:reason}))}
   async function promoteGlobalPattern(gameId,precedentIds,reason=''){return unwrap(await required().rpc('promote_global_pattern',{target_game_id:gameId,target_precedent_ids:precedentIds,target_reason:reason}))}
   async function createGlobalAbilityConcept(gameId,conceptKey,name,description,mechanics={}){return unwrap(await required().rpc('create_global_ability_concept',{target_game_id:gameId,target_concept_key:conceptKey,target_name:name,target_description:description||'',target_mechanics:mechanics||{}}))}
@@ -269,6 +273,7 @@
     channel.on('postgres_changes',{event:'*',schema:'public',table:'resolution_sessions',filter:'game_id=eq.'+gameId},payload=>onResolution?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'gm_precedents'},payload=>onLearning?.(payload));
     channel.on('postgres_changes',{event:'*',schema:'public',table:'ai_drafts',filter:'game_id=eq.'+gameId},payload=>onLearning?.(payload));
+    channel.on('postgres_changes',{event:'*',schema:'public',table:'ai_change_proposals',filter:'game_id=eq.'+gameId},payload=>onLearning?.(payload));
     channel.on('presence',{event:'sync'},()=>onPresence?.(channel.presenceState()));
     channel.subscribe(async status=>{
       onStatus?.(status);
@@ -279,5 +284,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,managePrecedent,promoteGlobalPattern,createGlobalAbilityConcept,approveAbilityConceptMapping,removeAbilityConceptMapping,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,reviewAiChangeProposal,managePrecedent,promoteGlobalPattern,createGlobalAbilityConcept,approveAbilityConceptMapping,removeAbilityConceptMapping,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

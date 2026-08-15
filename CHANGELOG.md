@@ -1,5 +1,13 @@
 # Changelog
 
+## v10.0.0 - Full Interactive Master GM Agent
+
+- Extends the single Master GM assistant with natural intent detection, exact entity resolution, conversation context, and controlled server-side tool traces.
+- Adds permission-scoped AI runs, tool-call audit records, generic drafts, and atomic GM-reviewed change proposals for games, roles, abilities, factions, rules, and live statuses.
+- Answers exact live-status questions directly from the authoritative database without spending AI tokens and opens existing Resolution Sessions for action-resolution requests.
+- Retrieves only relevant current-game documents, rules, ability versions, statuses, precedents, historical resolutions, audits, and compatible authorized cross-game knowledge.
+- Restricts AI conversation visibility to owners and GMs, validates proposal targets and fields on the server, and keeps all writes pending until an authorized GM approves them.
+
 ## v9.5.0 - Global Learning Default
 
 - Makes Global — All Games the default for every newly taught ruling, including GM modifications and rejections, while keeping current-game authority first.

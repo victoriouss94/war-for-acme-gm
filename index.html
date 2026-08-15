@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=9.5.0">
+  <link rel="stylesheet" href="css/main.css?v=10.0.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -316,17 +316,23 @@
     <div class="copilot-layout">
       <aside class="panel copilot-controls">
         <p class="eyebrow">AI GAME MASTER</p>
-        <h2>GM Copilot</h2>
-        <p class="muted">Ask about the current saved game or resolve its action queue using its actual roles, abilities, players, and rules.</p>
+        <h2>Master GM</h2>
+        <p class="muted">Talk naturally about the current game. The same controlled AI can inspect live state, explain rules, create drafts, and prepare changes for approval.</p>
         <label>Task
           <select id="copilotTask">
+            <option value="auto" selected>Understand automatically</option>
             <option value="assistant">Answer a GM question</option>
             <option value="resolve_actions">Resolve queued actions</option>
             <option value="explain_role">Explain a role or ability</option>
             <option value="plan_session">Plan the next phase</option>
             <option value="create_role">Create a role draft</option>
             <option value="create_ability">Create an ability draft</option>
-            <option value="balance_role">Analyze role balance</option>
+            <option value="create_faction">Create a faction draft</option>
+            <option value="create_rule">Create a rule draft</option>
+            <option value="create_game">Create a game draft</option>
+            <option value="create_status">Create a status draft</option>
+            <option value="edit_content">Propose an edit</option>
+            <option value="analyze_balance">Analyze balance</option>
           </select>
         </label>
         <label>Reasoning mode
@@ -337,6 +343,7 @@
         </label>
         <button id="copilotResolveQueueBtn" class="full">Resolve Action Queue</button>
         <button id="copilotClearBtn" class="secondary full">Clear Conversation</button>
+        <div class="master-gm-context"><p class="eyebrow">CURRENT CONTEXT</p><div id="masterGmContext"><span class="muted">No entity selected yet.</span></div></div>
         <div class="copilot-safety"><strong>You stay in control.</strong><p>The AI can only propose a limited set of changes. Nothing changes until an authorized GM reviews and confirms it.</p></div>
         <div class="knowledge-uploader">
           <p class="eyebrow">OFFICIAL KNOWLEDGE</p>
@@ -353,8 +360,9 @@
         </div>
       </aside>
       <div class="panel copilot-workspace">
-        <div class="section-heading copilot-heading"><div><h2>Game Rulings</h2><p class="muted">The AI reads the authoritative cloud save, not a client-supplied copy.</p></div><span class="permission-badge">OWNER / GM ONLY</span></div>
+        <div class="section-heading copilot-heading"><div><h2>Master GM Conversation</h2><p class="muted">Reads are permission-checked server-side. Every write remains a reviewable proposal.</p></div><span class="permission-badge">OWNER / GM ONLY</span></div>
         <div id="copilotConversation" class="copilot-conversation" aria-live="polite"></div>
+        <details class="master-gm-activity"><summary>Master GM activity <span id="masterGmActivityCount" class="count-pill"></span></summary><div id="masterGmActivityList"></div></details>
         <details class="knowledge-library"><summary>Official documents for this game <span id="knowledgeDocumentCount" class="count-pill"></span></summary><div id="knowledgeDocumentList"></div></details>
         <div id="copilotStatus" class="form-notice copilot-status" aria-live="polite"></div>
         <form id="copilotForm" class="copilot-form">
@@ -580,9 +588,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=9.5.0"></script>
-<script src="js/cloud.js?v=9.5.0"></script>
+<script src="js/supabase-config.js?v=10.0.0"></script>
+<script src="js/cloud.js?v=10.0.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=9.5.0"></script>
+<script type="module" src="js/app.js?v=10.0.0"></script>
 </body>
 </html>

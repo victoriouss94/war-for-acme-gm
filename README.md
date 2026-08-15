@@ -1,6 +1,17 @@
-# GM Command Center v9.0
+# GM Command Center v10.0
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
+
+## New in v10.0
+
+- One Master GM agent handles questions, explanations, balance analysis, draft creation, controlled edits, live-status checks, document import, and action-resolution requests.
+- Natural intent and exact entity resolution use the active game plus short conversation context, while ambiguous names are returned to the GM instead of guessed.
+- The server exposes a bounded, permission-aware tool registry and records each AI run and tool call for GM audit.
+- Role, ability, faction, rule, game, and live-status writes are stored as validated proposals; nothing changes until an owner or GM approves it.
+- Proposal approval is atomic, idempotent, version checked, and written through the existing game-document and live-status mutation paths.
+- Current-game state stays authoritative, with relevant official documents, historical resolutions, precedents, and compatible cross-game learning supplied only when needed.
+- Exact live-status questions can be answered directly from the database without an AI request or token cost.
+- Master GM conversations, runs, proposals, and tool traces are owner/GM-only under Row Level Security.
 
 ## New in v9.0
 

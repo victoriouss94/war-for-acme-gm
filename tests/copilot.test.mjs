@@ -45,12 +45,12 @@ test('AI GM frontend and Edge Function enforce authenticated human approval boun
     readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/functions/gm-copilot/index.ts','utf8'),readFile('supabase/functions/_shared/ai-service.ts','utf8')
   ]);
   for(const id of ['copilotView','copilotTask','copilotDepth','copilotResolveQueueBtn','copilotConversation','copilotForm','copilotPrompt','copilotAskBtn'])assert.match(html,new RegExp(`id="${id}"`));
-  assert.match(app,/validateCopilotChanges\(entry\.result\.proposed_changes,state,liveStatuses\)/);
+  assert.match(app,/validateCopilotChanges\(entry\.editedChanges\|\|result\.proposed_changes,state,liveStatuses\)/);
   assert.match(app,/Review the AI GM proposal before applying it/);
   assert.match(app,/entry\.applied=true;save\('AI GM proposal approved and applied/);
   assert.match(cloud,/functions\.invoke\('gm-copilot'/);
   assert.doesNotMatch(app+cloud,/OPENAI_API_KEY|api\.openai\.com/);
-  for(const pattern of [/from\('game_members'\)/,/\['owner','gm'\]/,/from\('game_documents'\)/,/requires_gm_decision/,/match_game_knowledge/,/record_ai_exchange/])assert.match(edge,pattern);
+  for(const pattern of [/from\('game_members'\)/,/\['owner','gm'\]/,/from\('game_documents'\)/,/requires_gm_decision/,/match_game_knowledge/,/record_master_gm_exchange_internal/])assert.match(edge,pattern);
   for(const pattern of [/auth\.getUser\(token\)/,/Deno\.env\.get\('OPENAI_API_KEY'\)/,/gpt-5\.6-terra/,/gpt-5\.6-sol/,/store:false/,/type:'json_schema'/,/strict:true/])assert.match(service,pattern);
   assert.doesNotMatch(edge,/service_role/i);
 });

@@ -21,7 +21,8 @@ test('manual precedent learning requires a reason and normalized signature',()=>
 test('AI role and ability drafts remain structured drafts',()=>{
   const draft=normalizeAiDraft({draft_type:'ROLE',title:'Mirror Judge',possible_duplicate:false,payload:{name:'Mirror Judge',standard_ability_ids:['reflection'],role_modifiers:['May trigger twice.']}});
   assert.equal(draft.draft_type,'ROLE');assert.deepEqual(draft.payload.standard_ability_ids,['reflection']);assert.equal(draft.payload.role_modifiers[0],'May trigger twice.');
-  assert.equal(normalizeAiDraft({draft_type:'GAME',payload:{}}),null);
+  assert.equal(normalizeAiDraft({draft_type:'GAME',title:'New Game',payload:{name:'New Game'}}).draft_type,'GAME');
+  assert.equal(normalizeAiDraft({draft_type:'UNKNOWN',payload:{}}),null);
 });
 
 test('database and UI implement one GM-controlled resolution and precedent architecture',async()=>{

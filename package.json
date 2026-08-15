@@ -1,7 +1,7 @@
 {
   "name": "gm-command-center",
   "private": true,
-  "version": "9.5.0",
+  "version": "10.0.0",
   "type": "module",
   "scripts": {
     "lint": "node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",

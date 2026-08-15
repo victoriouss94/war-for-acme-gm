@@ -61,7 +61,7 @@ test('Phase 1 schema is versioned, RLS protected, immutable by default, and expl
 test('Phase 1 UI and Edge Functions wire retrieval, citations, activation, persistent chat, and human control',()=>{
   for(const id of ['knowledgeFile','uploadKnowledgeBtn','knowledgeDocumentList','officialAbilityList','activateOfficialDatasetBtn','abilityReconciliationReport','officialAbilityEditor','roleModifierPanel'])assert.match(html,new RegExp(`id="${id}"`));
   for(const pattern of [/uploadKnowledgeDocument/,/activateAbilityDataset/,/createStandardAbilityVersion/,/saveRoleAbilityModifier/,/startNewAiConversation/])assert.match(cloud,pattern);
-  for(const pattern of [/match_game_knowledge/,/source_catalog/,/requires_gm_decision/,/Never invent a missing value or universal action order/,/record_ai_exchange/])assert.match(copilot,pattern);
+  for(const pattern of [/match_game_knowledge/,/source_catalog/,/requires_gm_decision/,/Never invent a missing value or universal action order/,/record_master_gm_exchange_internal/])assert.match(copilot,pattern);
   for(const pattern of [/input_file/,/application\/pdf/,/createEmbeddings/,/complete_knowledge_ingestion/,/fail_knowledge_ingestion/])assert.match(ingest,pattern);
   assert.match(cloud,/official_document_versions!official_document_versions_document_id_fkey/);
   assert.match(app,/if\(currentGame\(\)\)\{await refreshOpenGame\(\);await subscribeToOpenGame\(\)\}/);

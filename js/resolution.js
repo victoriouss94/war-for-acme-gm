@@ -4,6 +4,7 @@ export const PRECEDENT_STATES=new Set(['ACTIVE','CONFLICTING','SUPERSEDED','ARCH
 export const PRECEDENT_SCOPES=new Set(['GENERAL','GLOBAL','ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME']);
 export const TEACH_SCOPES=new Set(['GAME_SPECIFIC','GLOBAL']);
 export const COMPATIBILITY_LEVELS=new Set(['EXACT','STRONG','PARTIAL','INCOMPATIBLE']);
+export const AI_DRAFT_TYPES=new Set(['ROLE','ABILITY','FACTION','RULE','GAME','STATUS','DOCUMENT_IMPORT']);
 
 const text=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
 const strings=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).map(item=>text(item,4000)).filter(Boolean):[];
@@ -19,10 +20,10 @@ export function normalizeResolution(input){
 }
 
 export function normalizeAiDraft(input){
-  if(!input||typeof input!=='object'||!['ROLE','ABILITY'].includes(input.draft_type)||!input.payload||typeof input.payload!=='object'||Array.isArray(input.payload))return null;
+  if(!input||typeof input!=='object'||!AI_DRAFT_TYPES.has(input.draft_type)||!input.payload||typeof input.payload!=='object'||Array.isArray(input.payload))return null;
   const payload=input.payload;
   return {draft_type:input.draft_type,title:text(input.title,200)||text(payload.name,200)||'Untitled draft',possible_duplicate:Boolean(input.possible_duplicate),duplicate_notes:text(input.duplicate_notes,4000),payload:{
-    name:text(payload.name,120),faction_id:text(payload.faction_id,100),faction_name:text(payload.faction_name,120),description:text(payload.description,8000),standard_ability_ids:strings(payload.standard_ability_ids),role_modifiers:strings(payload.role_modifiers),active_abilities:strings(payload.active_abilities),passive_abilities:strings(payload.passive_abilities),uses:text(payload.uses,200),cooldowns:text(payload.cooldowns,500),immunities:strings(payload.immunities),special_mechanics:strings(payload.special_mechanics),win_condition:text(payload.win_condition,4000),resolution_notes:strings(payload.resolution_notes),potential_interactions:strings(payload.potential_interactions),category:text(payload.category,80),targeting:text(payload.targeting,1000),active_passive:text(payload.active_passive,120),resolution_behavior:text(payload.resolution_behavior,8000),exceptions:strings(payload.exceptions),balance_notes:strings(payload.balance_notes)
+    name:text(payload.name,120),faction_id:text(payload.faction_id,100),faction_name:text(payload.faction_name,120),description:text(payload.description,8000),standard_ability_ids:strings(payload.standard_ability_ids),role_modifiers:strings(payload.role_modifiers),active_abilities:strings(payload.active_abilities),passive_abilities:strings(payload.passive_abilities),uses:text(payload.uses,200),cooldowns:text(payload.cooldowns,500),immunities:strings(payload.immunities),special_mechanics:strings(payload.special_mechanics),win_condition:text(payload.win_condition,4000),resolution_notes:strings(payload.resolution_notes),potential_interactions:strings(payload.potential_interactions),category:text(payload.category,80),targeting:text(payload.targeting,1000),active_passive:text(payload.active_passive,120),resolution_behavior:text(payload.resolution_behavior,8000),exceptions:strings(payload.exceptions),balance_notes:strings(payload.balance_notes),alignment:text(payload.alignment,200),visibility:text(payload.visibility,80),relationships:strings(payload.relationships),rule_title:text(payload.rule_title,200),rule_category:text(payload.rule_category,80),rule_description:text(payload.rule_description,8000),game_theme:text(payload.game_theme,200),game_player_count:Math.max(0,Number(payload.game_player_count)||0),status_type:text(payload.status_type,80),status_category:text(payload.status_category,80),status_state:text(payload.status_state,80),status_duration:text(payload.status_duration,200)
   }};
 }
 
