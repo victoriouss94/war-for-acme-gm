@@ -223,7 +223,7 @@
   async function saveRoleAbilityModifier(gameId,roleId,abilityId,modifierText){return unwrap(await required().rpc('save_role_ability_modifier',{target_game_id:gameId,target_role_id:roleId,target_ability_id:abilityId,target_modifier_text:modifierText}))}
   async function startNewAiConversation(gameId){return unwrap(await required().rpc('start_new_ai_conversation',{target_game_id:gameId}))}
   async function resolutionContext(gameId){
-    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings,proposals,runs,toolCalls]=await Promise.all([
+    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings,proposals,runs,toolCalls,globalRules,effectiveRuleset]=await Promise.all([
       required().from('resolution_sessions').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
       required().from('gm_precedents').select('*').order('updated_at',{ascending:false}).limit(500),
       required().from('ai_drafts').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
@@ -236,11 +236,14 @@
       required().from('ability_concept_mappings').select('*,global_ability_concepts(concept_key,name)').eq('game_id',gameId).eq('active',true).order('updated_at',{ascending:false}),
       required().from('ai_change_proposals').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
       required().from('ai_agent_runs').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
-      required().from('ai_tool_calls').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(500)
+      required().from('ai_tool_calls').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(500),
+      required().rpc('get_global_rules',{target_game_id:gameId}),
+      required().rpc('get_effective_ruleset',{target_game_id:gameId})
     ]);
-    for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings,proposals,runs,toolCalls])if(result.error)throw result.error;
-    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[],proposals:proposals.data||[],runs:runs.data||[],toolCalls:toolCalls.data||[]};
+    for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings,proposals,runs,toolCalls,globalRules,effectiveRuleset])if(result.error)throw result.error;
+    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[],proposals:proposals.data||[],runs:runs.data||[],toolCalls:toolCalls.data||[],globalRules:globalRules.data||[],effectiveRuleset:effectiveRuleset.data||{gameRules:[],gameOverrides:[],globalFallbacks:[],standardAbilities:[],roleModifiers:[],unresolved:[]}};
   }
+  async function saveGlobalRule(gameId,rule){return unwrap(await required().rpc('save_global_rule',{target_game_id:gameId,target_rule_id:rule.id||null,target_rule_key:rule.ruleKey,target_name:rule.name,target_category:rule.category,target_description:rule.description,target_structured_data:rule.structuredData||{},target_notes:rule.notes||'',target_active:rule.active!==false,expected_version:rule.expectedVersion||null}))}
   async function resolutionEvents(sessionId){return unwrap(await required().from('resolution_session_events').select('*').eq('session_id',sessionId).order('event_order',{ascending:true}))}
   async function startResolutionSession(gameId,gameVersion){return unwrap(await required().rpc('start_resolution_session',{target_game_id:gameId,expected_game_version:gameVersion}))}
   async function finalizeResolutionSession(sessionId,lockVersion,decision,manualResolution,explanation,teachAi,teachScope='GLOBAL'){return unwrap(await required().rpc('finalize_resolution_session',{target_session_id:sessionId,expected_lock_version:lockVersion,target_decision:decision,target_manual_resolution:manualResolution||{},target_gm_explanation:explanation||'',target_teach_ai:Boolean(teachAi),target_teach_scope:teachScope}))}
@@ -284,5 +287,5 @@
   function user(){return safeUser()}
   function account(){return profile?{...profile}:null}
   function dispose(){authListener?.unsubscribe();unsubscribe()}
-  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,reviewAiChangeProposal,managePrecedent,promoteGlobalPattern,createGlobalAbilityConcept,approveAbilityConceptMapping,removeAbilityConceptMapping,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
+  window.GMCloud={init,passwordSignIn,createAccount,upgradeLegacyAccount,changePassword,signOut,listGames,loadGame,createGame,createImportedGame,reimportGame,saveGame,deleteGame,joinGame,invites,generateInvite,revokeInvite,setMemberRole,removeMember,roleTemplates,abilityTemplates,history,statusEffects,playerStatusHistory,playerState,mutatePlayerStatus,applyPlayerStatusChanges,imports,downloadImport,askCopilot,analyzeWordDocument,phaseOneContext,uploadKnowledgeDocument,activateAbilityDataset,createStandardAbilityVersion,standardAbilityHistory,saveRoleAbilityModifier,startNewAiConversation,resolutionContext,saveGlobalRule,resolutionEvents,startResolutionSession,finalizeResolutionSession,reviewAiDraft,reviewAiChangeProposal,managePrecedent,promoteGlobalPattern,createGlobalAbilityConcept,approveAbilityConceptMapping,removeAbilityConceptMapping,setAiUsageLimit,subscribe,unsubscribe,track,user,account,dispose,normalizeUsername};
 })();

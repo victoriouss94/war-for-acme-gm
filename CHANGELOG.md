@@ -1,5 +1,13 @@
 # Changelog
 
+## v11.0.0 - Document-Driven Master GM and Global Settings
+
+- Makes imported Word documents the source for game structure, including roles, abilities, rules, statuses, special mechanics, relationships, modifiers, conflicts, ambiguities, and source locations.
+- Adds owner-scoped Global Settings with immutable rule versions, GM-only editing, concurrency checks, audit history, and dynamic current-game overrides without copying global rules into game documents.
+- Resolves each AI ruling from current-game rules first, then versioned global fallbacks, standardized abilities, compatible precedents, and finally a clearly marked GM decision.
+- Snapshots exact Global Settings and standardized-ability versions in Resolution Sessions, and requires explicit GM approval for every AI-proposed global change.
+- Retires whole-game AI generation while preserving historical drafts as audit records and keeps invited viewer loading separate from GM-only AI data.
+
 ## v10.0.0 - Full Interactive Master GM Agent
 
 - Extends the single Master GM assistant with natural intent detection, exact entity resolution, conversation context, and controlled server-side tool traces.

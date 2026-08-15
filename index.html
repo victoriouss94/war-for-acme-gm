@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=10.0.0">
+  <link rel="stylesheet" href="css/main.css?v=11.0.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -45,6 +45,7 @@
   <button class="tab game-tab" data-view="statisticsView">Statistics</button>
   <button class="tab game-tab" data-view="rulesView">Rules</button>
   <button class="tab game-tab" data-view="encyclopediaView">📚 Abilities</button>
+  <button id="globalSettingsTab" class="tab game-tab" data-view="globalSettingsView">Global Settings</button>
   <button class="tab game-tab" data-view="historyView">History</button>
   <button class="tab game-tab" data-view="settingsView">Game Settings</button>
 </nav>
@@ -329,7 +330,6 @@
             <option value="create_ability">Create an ability draft</option>
             <option value="create_faction">Create a faction draft</option>
             <option value="create_rule">Create a rule draft</option>
-            <option value="create_game">Create a game draft</option>
             <option value="create_status">Create a status draft</option>
             <option value="edit_content">Propose an edit</option>
             <option value="analyze_balance">Analyze balance</option>
@@ -386,6 +386,26 @@
       <section class="panel"><div class="section-heading"><div><h2>Ability Interaction Matrix</h2><p class="muted">Only official documents, explicit rules, and approved precedents may populate this evidence table.</p></div></div><div id="abilityInteractionList"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>AI Usage</h2><p class="muted">Token counts and estimates are recorded server-side. Only the game owner can see or change spending controls.</p></div></div><div id="aiUsageTotals"></div><form id="aiUsageLimitForm"><div class="grid2"><label>Monthly limit (USD, blank = no limit)<input id="aiMonthlyLimit" type="number" min="0" max="100000" step="0.01"></label><label>Requests per minute<input id="aiRequestsPerMinute" type="number" min="1" max="120" value="12"></label></div><button id="saveAiUsageLimitBtn" type="submit">Save Usage Limits</button><p id="aiUsageLimitStatus" class="form-notice"></p></form><div id="aiUsageList" class="usage-list"></div></section>
     </div>
+  </section>
+
+  <section id="globalSettingsView" class="view">
+    <div class="section-heading"><div><p class="eyebrow">OWNER-SCOPED FALLBACKS</p><h2>Global Settings</h2><p class="muted">Versioned defaults apply only when the current game does not define the same rule. Current-game rules always win.</p></div><span class="permission-badge">OWNER / GM ONLY</span></div>
+    <div class="layout">
+      <form id="globalRuleForm" class="panel">
+        <h2 id="globalRuleFormTitle">Add Global Fallback Rule</h2>
+        <label>Stable rule key<input id="globalRuleKey" maxlength="120" placeholder="PROTECTION_ORDER" required></label>
+        <label>Name<input id="globalRuleName" maxlength="200" required></label>
+        <label>Category<input id="globalRuleCategory" maxlength="80" value="General" required></label>
+        <label>Description<textarea id="globalRuleDescription" rows="5" maxlength="20000" required></textarea></label>
+        <label>Structured details (JSON object)<textarea id="globalRuleStructuredData" rows="5">{}</textarea></label>
+        <label>Version note<textarea id="globalRuleNotes" rows="3" maxlength="4000"></textarea></label>
+        <label class="check"><input id="globalRuleActive" type="checkbox" checked> Active fallback</label>
+        <p id="globalRuleFormError" class="form-notice" aria-live="polite"></p>
+        <div class="form-actions"><button id="saveGlobalRuleBtn" type="submit">Save Version</button><button id="cancelGlobalRuleEditBtn" class="secondary" type="button" hidden>Cancel Edit</button></div>
+      </form>
+      <div class="panel"><div class="section-heading"><div><h2>Versioned Rules</h2><p class="muted">Edits create a new version; earlier versions remain attached to historical resolutions.</p></div><span id="globalRuleCount" class="count-pill"></span></div><div id="globalRuleList"></div></div>
+    </div>
+    <section class="panel"><div class="section-heading"><div><h2>Effective Ruleset for Current Game</h2><p class="muted">Computed live from game rules, Global Settings, standardized abilities, and role modifiers.</p></div></div><div id="effectiveRulesetSummary" class="import-summary"></div><div id="effectiveRulesetDetails"></div></section>
   </section>
 
   <section id="statisticsView" class="view">
@@ -588,9 +608,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=10.0.0"></script>
-<script src="js/cloud.js?v=10.0.0"></script>
+<script src="js/supabase-config.js?v=11.0.0"></script>
+<script src="js/cloud.js?v=11.0.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=10.0.0"></script>
+<script type="module" src="js/app.js?v=11.0.0"></script>
 </body>
 </html>

@@ -8,6 +8,8 @@ export const MASTER_GM_TOOLS=Object.freeze({
   getGame:tool('getGame',{inputs:['gameId'],output:'authorized game metadata'}),
   searchGames:tool('searchGames',{gameScoped:false,inputs:['query'],output:'authorized GM game summaries'}),
   getGameRules:tool('getGameRules',{inputs:['gameId'],output:'active current-game rules'}),
+  getGlobalSettings:tool('getGlobalSettings',{gameScoped:false,inputs:['gameId'],output:'owner-scoped versioned global fallback rules'}),
+  getEffectiveRuleset:tool('getEffectiveRuleset',{inputs:['gameId'],output:'dynamic game overrides and granular global fallbacks'}),
   searchRules:tool('searchRules',{inputs:['gameId','query'],output:'matching rules'}),
   getPlayer:tool('getPlayer',{inputs:['gameId','playerId'],output:'player record'}),
   searchPlayers:tool('searchPlayers',{inputs:['gameId','query'],output:'matching player references'}),
@@ -30,7 +32,6 @@ export const MASTER_GM_TOOLS=Object.freeze({
   createAbilityDraft:tool('createAbilityDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable ability draft'}),
   createFactionDraft:tool('createFactionDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable faction draft'}),
   createRuleDraft:tool('createRuleDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable rule draft'}),
-  createGameDraft:tool('createGameDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable game draft'}),
   createStatusDraft:tool('createStatusDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable status draft'}),
   createDocumentImportDraft:tool('createDocumentImportDraft',{readOnly:false,inputs:['gameId','documentId'],output:'reviewable document-import draft'}),
   proposeRoleUpdate:tool('proposeRoleUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','roleId','patch','sourceVersion'],output:'pending proposal'}),
@@ -38,6 +39,7 @@ export const MASTER_GM_TOOLS=Object.freeze({
   proposeFactionUpdate:tool('proposeFactionUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','factionId','patch','sourceVersion'],output:'pending proposal'}),
   proposeRuleUpdate:tool('proposeRuleUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','ruleId','patch','sourceVersion'],output:'pending proposal'}),
   proposeGameUpdate:tool('proposeGameUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','patch','sourceVersion'],output:'pending proposal'}),
+  proposeGlobalRuleUpdate:tool('proposeGlobalRuleUpdate',{readOnly:false,approvalRequired:true,gameScoped:false,inputs:['gameId','globalRuleId','patch','expectedVersion'],output:'pending versioned global rule proposal'}),
   proposeStatusChange:tool('proposeStatusChange',{readOnly:false,approvalRequired:true,inputs:['gameId','playerId','statusPayload','sourceVersion'],output:'pending proposal'}),
   analyzeActions:tool('analyzeActions',{inputs:['gameId','resolutionSessionId'],output:'structured resolution analysis'}),
   applyApprovedProposal:tool('applyApprovedProposal',{readOnly:false,approvalRequired:true,inputs:['proposalId','expectedVersion','decision'],output:'atomic application result'})
@@ -54,12 +56,13 @@ export function inferMasterIntent(message,requestedTask='auto'){
   const query=normalized(message);
   if(/\b(resolve|process|analy[sz]e)\b.*\b(actions?|tonight|queue|night)\b|\bresolve tonight\b/.test(query))return 'resolve_actions';
   if(/\b(read|import|add|build|create)\b.*\b(document|docx|pdf|file)\b/.test(query))return 'document_import';
+  if(/\b(global settings?|global fallback|global rules?|every game|all games|from now on)\b/.test(query)&&/\b(add|create|change|edit|update|set|remove|disable|enable|use)\b/.test(query))return 'edit_content';
   if(/\b(give|change|edit|update|increase|decrease|remove|mark|block|protect|poison|make .*stronger|make .*weaker)\b/.test(query))return 'edit_content';
   if(/\b(create|make|design|draft|add)\b.*\b(role)\b/.test(query))return 'create_role';
   if(/\b(create|make|design|draft|add)\b.*\b(ability|power)\b/.test(query))return 'create_ability';
   if(/\b(create|make|design|draft|add)\b.*\b(faction|team|alignment)\b/.test(query))return 'create_faction';
   if(/\b(create|make|draft|add)\b.*\b(rule)\b/.test(query))return 'create_rule';
-  if(/\b(create|make|design|draft|build)\b.*\b(game)\b/.test(query))return 'create_game';
+  if(/\b(create|make|design|draft|build)\b.*\b(game)\b/.test(query))return 'assistant';
   if(/\b(create|make|draft|add)\b.*\b(status|effect)\b/.test(query))return 'create_status';
   if(/\b(balance|overpowered|underpowered|advantage|too many|compare)\b/.test(query))return 'analyze_balance';
   if(/\b(last night|yesterday|why .*die|what happened|show me what changed|audit|history)\b/.test(query))return 'search_history';
@@ -70,7 +73,7 @@ export function inferMasterIntent(message,requestedTask='auto'){
   return 'assistant';
 }
 
-export function isWriteIntent(intent){return ['create_role','create_ability','create_faction','create_rule','create_game','create_status','document_import','edit_content'].includes(intent)}
+export function isWriteIntent(intent){return ['create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content'].includes(intent)}
 
 function aliases(record){return unique([record?.name,record?.nickname,record?.display_name,...(Array.isArray(record?.aliases)?record.aliases:[]),...(Array.isArray(record?.labels)?record.labels:[])].map(normalized).filter(value=>value.length>1));}
 function entityRef(type,record){return {type,id:String(record?.id||''),name:String(record?.name||record?.title||record?.display_name||record?.id||''),label:String(record?.name||record?.title||record?.display_name||record?.id||'')};}
@@ -106,15 +109,16 @@ export function requestedPlayerName(message){
 }
 
 export function toolsForMasterIntent(intent,{hasPlayer=false,hasAbility=false,hasRole=false,hasFaction=false}={}){
-  const tools=['getCurrentGame'];
+  const tools=['getCurrentGame','getEffectiveRuleset'];
   if(intent==='live_status')tools.push(hasPlayer?'getPlayerState':'getPlayersByStatus');
   if(intent==='explain_content')tools.push(hasAbility?'getAbility':hasRole?'getRole':'searchAbilities','searchRoles');
   if(intent==='search_history')tools.push('searchResolutions','getAuditHistory');
   if(intent==='search_precedents')tools.push('searchPrecedents');
   if(intent==='resolve_actions')tools.push('getSubmittedActions','getPlayerStatuses','getGameRules','searchPrecedents','searchDocuments','analyzeActions');
-  if(['create_role','create_ability','create_faction','create_rule','create_game','create_status','edit_content','analyze_balance','plan_session'].includes(intent))tools.push('searchRoles','searchAbilities','searchFactions','getGameRules');
-  const draftTool={create_role:'createRoleDraft',create_ability:'createAbilityDraft',create_faction:'createFactionDraft',create_rule:'createRuleDraft',create_game:'createGameDraft',create_status:'createStatusDraft',document_import:'createDocumentImportDraft'}[intent];if(draftTool)tools.push(draftTool);
+  if(['create_role','create_ability','create_faction','create_rule','create_status','edit_content','analyze_balance','plan_session'].includes(intent))tools.push('searchRoles','searchAbilities','searchFactions','getGameRules');
+  const draftTool={create_role:'createRoleDraft',create_ability:'createAbilityDraft',create_faction:'createFactionDraft',create_rule:'createRuleDraft',create_status:'createStatusDraft',document_import:'createDocumentImportDraft'}[intent];if(draftTool)tools.push(draftTool);
   if(intent==='edit_content')tools.push(hasPlayer?'proposeStatusChange':hasRole?'proposeRoleUpdate':hasAbility?'proposeAbilityUpdate':hasFaction?'proposeFactionUpdate':'proposeGameUpdate');
+  if(intent==='edit_content')tools.push('getGlobalSettings','proposeGlobalRuleUpdate');
   if(intent==='edit_content'&&hasPlayer)tools.push('getPlayerState');
   if(['assistant','explain_content','create_role','create_ability','create_rule','edit_content','analyze_balance','plan_session'].includes(intent))tools.push('searchDocuments');
   if(hasFaction&&intent==='assistant')tools.push('getFaction');
