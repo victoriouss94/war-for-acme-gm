@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.4.0">
+  <link rel="stylesheet" href="css/main.css?v=11.5.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -381,23 +381,33 @@
           <section class="resolution-snapshot"><h3>Submitted Actions</h3><div id="resolutionActions"></div></section>
           <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>AI Resolution</h3><button id="analyzeResolutionBtn" type="button">Analyze with AI</button></div><div id="resolutionAiOutput"><p class="muted">No AI proposal yet. Manual resolution is always available.</p></div></section>
           <form id="manualResolutionForm" class="manual-resolution-form">
-            <div class="section-heading"><div><h3>GM Final Decision</h3><p class="muted">Approve the AI proposal, modify it below, or reject it. Finalization is transactional and cannot happen twice.</p></div></div>
-            <label>Decision<select id="resolutionDecision"><option value="APPROVE">Approve AI proposal</option><option value="MODIFY">Modify / manual resolution</option><option value="REJECT">Reject AI proposal</option></select></label>
+            <div class="section-heading"><div><p class="eyebrow">FINAL AUTHORITY</p><h3>Resolution Editor</h3><p class="muted">Review every AI determination, edit anything that is wrong, then approve one final ruling. Nothing below changes live game state until Approve &amp; Apply succeeds.</p></div></div>
             <label>Resolution title<input id="resolutionTitle" maxlength="200"></label>
             <label>Summary<textarea id="resolutionSummary" rows="2" maxlength="4000"></textarea></label>
-            <div class="grid2"><label>Resolution order (one line per step)<textarea id="manualResolutionOrder" rows="5"></textarea></label><label>Expected results (one line per result)<textarea id="manualResolutionResults" rows="5"></textarea></label></div>
-            <div class="grid2"><label>Structured events (one line per event)<textarea id="manualResolutionEvents" rows="4"></textarea></label><label>Status changes (one line per change)<textarea id="manualResolutionStatuses" rows="4"></textarea></label></div>
-            <div class="grid2"><label>Deaths / survivals<textarea id="manualResolutionDeaths" rows="3"></textarea></label><label>Conversions<textarea id="manualResolutionConversions" rows="3"></textarea></label></div>
-            <label>Abilities consumed<textarea id="manualResolutionConsumed" rows="3"></textarea></label>
-            <section class="grant-consumption-review"><h4>Granted ability uses</h4><p class="muted">Select only the granted actions whose uses this approved resolution should consume. Blocked or failed attempts are not preselected.</p><div id="resolutionGrantConsumptions"></div></section>
-            <label>Final player state / notes<textarea id="manualResolutionPostState" rows="4" maxlength="12000"></textarea></label>
-            <label>Why did you resolve it this way?<textarea id="manualResolutionReasoning" rows="4" maxlength="12000"></textarea></label>
+            <section class="ruling-editor-section"><h4>Resolution Order &amp; Action Results</h4><p class="muted">One submitted action remains one attempt even when it redirects, reflects, or affects many players.</p><div id="resolutionActionEditor"></div></section>
+            <section class="ruling-editor-section"><div class="section-heading"><div><h4>Passive Triggers</h4><p class="muted">Only actual triggers count as passive usage.</p></div><button id="addResolutionPassiveBtn" class="secondary" type="button">+ Add Passive</button></div><div id="resolutionPassiveEditor"></div></section>
+            <section class="ruling-editor-section"><div class="section-heading"><div><h4>Player Outcomes</h4><p class="muted">Set final life, role, and faction state for involved players.</p></div></div><div id="resolutionPlayerOutcomeEditor"></div></section>
+            <section class="ruling-editor-section"><div class="section-heading"><div><h4>Status Changes</h4><p class="muted">Apply a new structured status or remove a saved status by ID.</p></div><button id="addResolutionStatusBtn" class="secondary" type="button">+ Add Status</button></div><div id="resolutionStatusEditor"></div></section>
+            <section class="ruling-editor-section"><div class="section-heading"><div><h4>Granted &amp; Temporary Abilities</h4><p class="muted">Grant, revoke, or correct remaining uses as part of the same approval transaction.</p></div><button id="addResolutionGrantBtn" class="secondary" type="button">+ Add Grant Change</button></div><div id="resolutionGrantEditor"></div></section>
+            <section class="ruling-editor-section"><div class="section-heading"><div><h4>Other Structured Effects</h4><p class="muted">Record cooldowns, marks, faction-wide effects, grants, or another bounded effect the AI missed.</p></div><button id="addResolutionEffectBtn" class="secondary" type="button">+ Add Effect</button></div><div id="resolutionOtherEffectEditor"></div></section>
+            <div class="grid2"><label>Final Master GM ruling<textarea id="resolutionFinalRuling" rows="4" maxlength="12000" required></textarea></label><label>Why?<textarea id="manualResolutionReasoning" rows="4" maxlength="12000"></textarea></label></div>
+            <div class="grid2"><label>Authority used (one source per line)<textarea id="resolutionAuthorityUsed" rows="3" maxlength="12000"></textarea></label><label>Confidence<select id="resolutionConfidence"><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select></label></div>
+            <div id="resolutionDifferenceSummary" class="resolution-difference-summary"></div>
+            <label class="check"><input id="resolutionOverrideWarnings" type="checkbox"> I reviewed the consistency warnings and authorize this final ruling when a warning remains.</label>
+            <details class="legacy-resolution-fields"><summary>Advanced precedent and legacy notes</summary>
+              <label>Internal decision<select id="resolutionDecision"><option value="MODIFY">Approve edited/final GM ruling</option><option value="REJECT">Close without applying</option></select></label>
+              <div class="grid2"><label>Resolution order (one line per step)<textarea id="manualResolutionOrder" rows="5"></textarea></label><label>Expected results (generated at approval)<textarea id="manualResolutionResults" rows="5" readonly></textarea></label></div>
+              <div class="grid2"><label>Event notes<textarea id="manualResolutionEvents" rows="4"></textarea></label><label>Status notes<textarea id="manualResolutionStatuses" rows="4"></textarea></label></div>
+              <div class="grid2"><label>Death / survival notes<textarea id="manualResolutionDeaths" rows="3"></textarea></label><label>Conversion notes<textarea id="manualResolutionConversions" rows="3"></textarea></label></div>
+              <label>Ability-use notes<textarea id="manualResolutionConsumed" rows="3"></textarea></label><div id="resolutionGrantConsumptions" hidden></div>
+              <label>Final player state / notes<textarea id="manualResolutionPostState" rows="4" maxlength="12000"></textarea></label>
+            </details>
             <label>Conditions that make this ruling apply<textarea id="precedentConditions" rows="3" maxlength="8000"></textarea></label>
             <div class="grid2"><label>Interaction signature<input id="precedentSignature" maxlength="1000" placeholder="ROLEBLOCK + ACTION_SUCCESS_GUARANTEE"></label><label>Signature tokens (one per line)<textarea id="precedentTokens" rows="3" placeholder="roleblock&#10;action_success_guarantee"></textarea></label></div>
             <label class="check"><input id="teachAiFromResolution" type="checkbox"> Teach AI / save this approved decision as a GM precedent</label>
             <div id="teachAiAudiencePanel" class="teach-audience" hidden><label>Learning scope<select id="teachAiAudience"><option value="GLOBAL" selected>Global — All Games (default)</option><option value="GAME_SPECIFIC">This Game Only</option><option value="ABILITY_SPECIFIC">Ability Specific</option><option value="ROLE_SPECIFIC">Role Specific</option><option value="ONE_TIME">One-Time</option></select></label><p class="muted">Global rulings are considered only when mechanics are compatible. Current-game rules, official abilities, role exceptions, and live state always take priority.</p><p id="scopeCompatibilityWarning" class="form-notice"></p></div>
             <p id="resolutionFormError" class="form-notice" aria-live="polite"></p>
-            <button id="finalizeResolutionBtn" type="submit">Save Final Resolution</button>
+            <button id="finalizeResolutionBtn" type="submit">Approve &amp; Apply</button>
           </form>
         </div>
       </div>
@@ -504,9 +514,12 @@
 
   <section id="statisticsView" class="view">
     <div class="panel">
-      <div class="section-heading"><div><h2>Ability Statistics</h2><p class="muted">Counts update automatically from role tags and can be filtered by faction and living players.</p></div></div>
-      <div class="filters"><select id="statsFactionFilter"></select><label class="check"><input id="aliveOnlyStats" type="checkbox"> Alive players only</label></div>
-      <div id="abilityStats"></div>
+      <div class="section-heading"><div><h2>Official Ability Usage</h2><p class="muted">Attempts use stable queued action IDs. Results, passives, uses, targets, and outcomes come only from GM-approved final rulings.</p></div></div>
+      <div class="filters analytics-filters"><select id="statsPlayerFilter"><option value="ALL">All players</option></select><select id="statsRoleFilter"><option value="ALL">All roles</option></select><select id="statsRoleMode"><option value="HISTORICAL">Historical role at action time</option><option value="CURRENT">Players with this current role</option></select><select id="statsAbilityFilter"><option value="ALL">All abilities</option></select><select id="statsFactionFilter"></select><select id="statsSourceFilter"><option value="ALL">All ability sources</option><option value="ROLE">Role-owned only</option><option value="FACTION">Faction actions</option><option value="PERMANENT_GRANT">Granted</option><option value="MINIGAME_REWARD">Mini-game rewards</option><option value="EVENT_REWARD">Event rewards</option><option value="TEMPORARY_GRANT">Temporary</option><option value="STOLEN">Stolen</option><option value="COPIED">Copied</option><option value="GM_GRANT">GM grants</option></select><select id="statsPhaseFilter"><option value="ALL">All phases</option></select><select id="statsCycleFilter"><option value="ALL">All cycles</option></select><select id="statsOutcomeFilter"><option value="ALL">All outcomes</option><option value="SUCCESS">Successful</option><option value="FAILURE">Failed</option><option value="BLOCKED">Blocked</option><option value="CANCELLED">Cancelled</option><option value="INELIGIBLE_EFFECT">Ineligible</option></select><select id="statsPassiveFilter"><option value="ALL">Active and passive</option><option value="PASSIVE">Passive triggers only</option><option value="ACTIVE">Active attempts only</option></select><select id="statsSort"><option value="MOST_ACTIVE">Most active</option><option value="LEAST_ACTIVE">Least active</option><option value="MOST_SUCCESSFUL">Most successful</option><option value="MOST_FAILED">Most failed / blocked</option><option value="MOST_PASSIVE">Most passive triggers</option></select><label class="check"><input id="aliveOnlyStats" type="checkbox"> Current living players only</label></div>
+      <div id="usageTotals" class="learning-summary"></div>
+      <div class="analytics-grid"><section><h3>Player Activity</h3><div id="playerUsageStats"></div></section><section><h3>Role-Owned Activity</h3><div id="roleUsageStats"></div></section><section><h3>Ability Activity</h3><div id="abilityUsageStats"></div></section><section><h3>Faction Activity</h3><div id="factionUsageStats"></div></section></div>
+      <section class="usage-history-panel"><h3>Filtered Action &amp; Phase History</h3><p class="muted">Drafts removed before submission are excluded. Submitted cancelled actions remain one attempt.</p><div id="officialUsageHistory"></div></section>
+      <details><summary>Legacy role inventory counts</summary><div id="abilityStats"></div></details>
     </div>
   </section>
 
@@ -705,9 +718,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.4.0"></script>
-<script src="js/cloud.js?v=11.4.0"></script>
+<script src="js/supabase-config.js?v=11.5.0"></script>
+<script src="js/cloud.js?v=11.5.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.4.0"></script>
+<script type="module" src="js/app.js?v=11.5.0"></script>
 </body>
 </html>

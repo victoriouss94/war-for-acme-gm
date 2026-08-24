@@ -1,5 +1,14 @@
 # Changelog
 
+## v11.5.0 — Master GM Ruling, Approval & Usage Tracking
+
+- Added a firm, schema-v2 Master GM ruling contract covering action outcomes, final targets, passives, statuses, life/role/faction outcomes, grant changes, authority, and confidence.
+- Replaced the primary three-way resolution workflow with one editable **Approve & Apply** path while retaining reject as an advanced internal close state.
+- Added structured GM editing for action order/results/targets, consumption and refunds, redirects/reflections, passives, player outcomes, statuses, grants, cooldown notes, faction-wide affected players, and other effects.
+- Added a permission-checked, lock-versioned, idempotent Supabase transaction that validates references, preserves the AI proposal and structured differences, rebuilds official events server-side, applies live state/status/grant changes, updates the phase queue, and writes audit history.
+- Added player, role-owned, ability, faction, passive, phase, and source-aware usage analytics. Attempts are deduplicated by stable action ID; official results come only from the final GM ruling.
+- Preserved role ID/version and source attribution at action time so later role changes and reward abilities cannot rewrite role-owned history.
+
 ## v11.4.0 - Universal Role, Ability, and Passive Understanding
 
 - Preserves complete source text and splits compound role text into independently reviewable structured mechanics.
