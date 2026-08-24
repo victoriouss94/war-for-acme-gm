@@ -14,6 +14,9 @@ export const MASTER_GM_TOOLS=Object.freeze({
   getPlayer:tool('getPlayer',{inputs:['gameId','playerId'],output:'player record'}),
   searchPlayers:tool('searchPlayers',{inputs:['gameId','query'],output:'matching player references'}),
   getPlayerState:tool('getPlayerState',{inputs:['gameId','playerId'],output:'live player state'}),
+  getEffectivePlayerAbilities:tool('getEffectivePlayerAbilities',{inputs:['gameId','playerId'],output:'role abilities plus active player-specific grants with remaining uses, restrictions, and sources'}),
+  getPlayerAbilityGrants:tool('getPlayerAbilityGrants',{inputs:['gameId','playerId'],output:'current player-specific ability grants'}),
+  getPlayerAbilityGrantHistory:tool('getPlayerAbilityGrantHistory',{inputs:['gameId','playerId'],output:'audited grant, consumption, expiration, and revocation history'}),
   getPlayerStatuses:tool('getPlayerStatuses',{inputs:['gameId','playerId'],output:'visible live effects'}),
   getPlayersByStatus:tool('getPlayersByStatus',{inputs:['gameId','statusType'],output:'matching live effects'}),
   getRosterAnalysis:tool('getRosterAnalysis',{inputs:['gameId'],output:'deterministic player, role-slot, Basic Role, and unassigned counts'}),
@@ -26,6 +29,7 @@ export const MASTER_GM_TOOLS=Object.freeze({
   getFaction:tool('getFaction',{inputs:['gameId','factionId'],output:'faction record'}),
   searchFactions:tool('searchFactions',{inputs:['gameId','query'],output:'matching faction references'}),
   getSubmittedActions:tool('getSubmittedActions',{inputs:['gameId','resolutionSessionId'],output:'queued or snapshotted actions'}),
+  getQueuedActions:tool('getQueuedActions',{inputs:['gameId','playerId','targetPlayerId','category'],output:'current structured attempted actions'}),
   getResolutionSession:tool('getResolutionSession',{inputs:['gameId','resolutionSessionId'],output:'resolution snapshot'}),
   searchResolutions:tool('searchResolutions',{inputs:['gameId','query'],output:'matching historical resolutions'}),
   searchPrecedents:tool('searchPrecedents',{inputs:['gameId','signature','query'],output:'compatible current and global precedents'}),
@@ -47,6 +51,11 @@ export const MASTER_GM_TOOLS=Object.freeze({
   proposeGameUpdate:tool('proposeGameUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','patch','sourceVersion'],output:'pending proposal'}),
   proposeGlobalRuleUpdate:tool('proposeGlobalRuleUpdate',{readOnly:false,approvalRequired:true,gameScoped:false,inputs:['gameId','globalRuleId','patch','expectedVersion'],output:'pending versioned global rule proposal'}),
   proposeStatusChange:tool('proposeStatusChange',{readOnly:false,approvalRequired:true,inputs:['gameId','playerId','statusPayload','sourceVersion'],output:'pending proposal'}),
+  prepareAbilityGrant:tool('prepareAbilityGrant',{readOnly:false,approvalRequired:true,inputs:['gameId','playerId','abilityId','grantConfiguration','sourceVersion'],output:'review-only deterministic player ability grant'}),
+  prepareGrantRevocation:tool('prepareGrantRevocation',{readOnly:false,approvalRequired:true,inputs:['gameId','grantId','expectedVersion','reason'],output:'review-only grant revocation'}),
+  preparePlayerAction:tool('preparePlayerAction',{readOnly:false,approvalRequired:true,inputs:['gameId','playerId','abilityId','grantId','targets','parameters','sourceVersion'],output:'review-only structured action attempt'}),
+  prepareBulkAbilityGrants:tool('prepareBulkAbilityGrants',{readOnly:false,approvalRequired:true,inputs:['gameId','grants','sourceVersion'],output:'review-only transactional batch grant'}),
+  prepareRandomReward:tool('prepareRandomReward',{readOnly:false,approvalRequired:true,inputs:['gameId','playerId','explicitAbilityPool','configuration','sourceVersion'],output:'review-only server-randomized reward'}),
   analyzeActions:tool('analyzeActions',{inputs:['gameId','resolutionSessionId'],output:'structured resolution analysis'}),
   applyApprovedProposal:tool('applyApprovedProposal',{readOnly:false,approvalRequired:true,inputs:['proposalId','expectedVersion','decision'],output:'atomic application result'})
 });
@@ -60,6 +69,9 @@ export function inferMasterIntent(message,requestedTask='auto'){
   if(explicit==='balance_role')return 'analyze_balance';
   if(explicit&&explicit!=='auto'&&explicit!=='assistant')return explicit;
   const query=normalized(message);
+  if(/\b(grant|award|reward|won|bonus|mini game|take away|revoke)\b.*\b(ability|power|kill|protect|ask|roleblock|reward|bonus)\b/.test(query))return 'ability_grant';
+  if(!/\b(give|grant|award)\b/.test(query)&&(/\b(queue|submit)\b.*\b(action|attack|kill|protect|ask|roleblock|player)\b|\b(attacks?|targets?|protects?|blocks?|asks?|kills?)\b/.test(query)))return 'queue_action';
+  if(/\b(what|which|who|why|show)\b.*\b(abilities|ability|powers?|rewards?|temporary|queued actions?|submitted)\b/.test(query))return 'ability_inventory';
   if(/\b(resolve|process|analy[sz]e)\b.*\b(actions?|tonight|queue|night)\b|\bresolve tonight\b/.test(query))return 'resolve_actions';
   if(/\b(read|import|add|build|create)\b.*\b(document|docx|pdf|file)\b/.test(query))return 'document_import';
   if(/\b(global settings?|global fallback|global rules?|every game|all games|from now on)\b/.test(query)&&/\b(add|create|change|edit|update|set|remove|disable|enable|use)\b/.test(query))return 'edit_content';
@@ -80,7 +92,7 @@ export function inferMasterIntent(message,requestedTask='auto'){
   return 'assistant';
 }
 
-export function isWriteIntent(intent){return ['create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content'].includes(intent)}
+export function isWriteIntent(intent){return ['create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','ability_grant','queue_action'].includes(intent)}
 
 function aliases(record){return unique([record?.name,record?.nickname,record?.display_name,...(Array.isArray(record?.aliases)?record.aliases:[]),...(Array.isArray(record?.labels)?record.labels:[])].map(normalized).filter(value=>value.length>1));}
 function entityRef(type,record){return {type,id:String(record?.id||''),name:String(record?.name||record?.title||record?.display_name||record?.id||''),label:String(record?.name||record?.title||record?.display_name||record?.id||'')};}
@@ -118,6 +130,9 @@ export function requestedPlayerName(message){
 export function toolsForMasterIntent(intent,{hasPlayer=false,hasAbility=false,hasRole=false,hasFaction=false}={}){
   const tools=['getCurrentGame','getEffectiveRuleset'];
   if(intent==='live_status')tools.push(hasPlayer?'getPlayerState':'getPlayersByStatus');
+  if(intent==='ability_inventory')tools.push(hasPlayer?'getEffectivePlayerAbilities':'getPlayerAbilityGrants','getPlayerAbilityGrantHistory','getQueuedActions');
+  if(intent==='ability_grant')tools.push('searchPlayers','searchAbilities','getEffectivePlayerAbilities','getPlayerAbilityGrants','getPlayerAbilityGrantHistory','prepareAbilityGrant','prepareGrantRevocation','prepareBulkAbilityGrants','prepareRandomReward');
+  if(intent==='queue_action')tools.push('searchPlayers','searchAbilities','getEffectivePlayerAbilities','getPlayerStatuses','getQueuedActions','preparePlayerAction');
   if(intent==='roster_setup')tools.push('getRosterAnalysis','getUnassignedPlayers','getAvailableRoleSlots','createAssignmentPreview','shuffleAssignmentPreview','applyApprovedAssignments');
   if(intent==='explain_content')tools.push(hasAbility?'getAbility':hasRole?'getRole':'searchAbilities','searchRoles');
   if(intent==='search_history')tools.push('searchResolutions','getAuditHistory');
@@ -128,6 +143,7 @@ export function toolsForMasterIntent(intent,{hasPlayer=false,hasAbility=false,ha
   if(intent==='edit_content')tools.push(hasPlayer?'proposeStatusChange':hasRole?'proposeRoleUpdate':hasAbility?'proposeAbilityUpdate':hasFaction?'proposeFactionUpdate':'proposeGameUpdate');
   if(intent==='edit_content')tools.push('getGlobalSettings','proposeGlobalRuleUpdate');
   if(intent==='edit_content'&&hasPlayer)tools.push('getPlayerState');
+  if(intent==='edit_content'&&hasPlayer&&hasAbility)tools.push('getEffectivePlayerAbilities','getPlayerAbilityGrants','prepareAbilityGrant','prepareGrantRevocation');
   if(['assistant','explain_content','create_role','create_ability','create_rule','edit_content','analyze_balance','plan_session'].includes(intent))tools.push('searchDocuments');
   if(hasFaction&&intent==='assistant')tools.push('getFaction');
   return unique(tools).filter(name=>MASTER_GM_TOOLS[name]).slice(0,MASTER_GM_MAX_TOOL_CALLS);
