@@ -75,6 +75,16 @@ test('Supabase migration is additive, GM-only, audited, live, random on the serv
   assert.match(sql,/result:=private\.finalize_resolution_session/);assert.match(sql,/for update/);assert.match(sql,/GRANT_VERSION_CONFLICT/);assert.match(sql,/NOT_ENOUGH_GRANT_USES/);assert.match(sql,/player_ability_grant_events/);assert.match(sql,/change_history/);assert.match(sql,/alter publication supabase_realtime add table public\.player_ability_grants/);
 });
 
+test('action queue hotfix removes PL/pgSQL player and ability column ambiguity',async()=>{
+  const sql=await readFile(new URL('../supabase/migrations/20260824120000_fix_action_queue_ambiguous_references.sql',import.meta.url),'utf8');
+  assert.match(sql,/create or replace function private\.queue_player_action/);
+  assert.match(sql,/action_player_id text/);assert.match(sql,/action_ability_id text/);
+  assert.doesNotMatch(sql,/[;\s]player_id text[;\s]/);assert.doesNotMatch(sql,/[;\s]ability_id text[;\s]/);
+  assert.match(sql,/effect\.player_id=action_player_id/);assert.match(sql,/event\.actor_player_id=action_player_id/);assert.match(sql,/event\.ability_id=action_ability_id/);
+  assert.doesNotMatch(sql,/effect\.player_id=player_id/);assert.doesNotMatch(sql,/event\.actor_player_id=player_id/);assert.doesNotMatch(sql,/event\.ability_id=ability_id/);
+  assert.match(sql,/security definer set search_path=''/);assert.doesNotMatch(sql,/drop function|delete from/i);
+});
+
 test('cloud and UI extend the existing queue and expose review-only deterministic Master GM flows',async()=>{
   const [app,cloud,html,edge]=await Promise.all(['../js/app.js','../js/cloud.js','../index.html','../supabase/functions/gm-copilot/index.ts'].map(path=>readFile(new URL(path,import.meta.url),'utf8')));
   for(const token of ['playerAbilityManager','grantAbilityId','actionActorSearch','actionAbilityPicker','actionTargetPicker','queueCompleteness','resolutionGrantConsumptions'])assert.match(html,new RegExp(token));
