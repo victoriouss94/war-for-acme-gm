@@ -1,6 +1,15 @@
-# GM Command Center v11.1
+# GM Command Center v11.2
 
-Version 11.1 adds first-class Basic Roles, bulk TXT/CSV/DOCX player-name import, role slot counts, and GM-reviewed server-randomized role assignment with locks and faction constraints.
+Version 11.2 adds audited player-specific ability grants and a structured, searchable Action Queue that calculates each player's effective Role and granted abilities without changing their Role.
+
+## New in v11.2
+
+- Player profiles separate Role abilities from mini-game rewards, temporary grants, stolen/copied abilities, statuses, and action history.
+- Authorized GMs can review, approve, revoke, expire, or adjust use-limited grants that reference existing Encyclopedia ability IDs.
+- The Action Queue selects an acting player, displays effective abilities and restrictions, validates structured targets, and records status warnings without pre-resolving the attempt.
+- Server RPCs enforce ownership, active grants, use reservations, phase/cooldown/target rules, GM override reasons, optimistic concurrency, and audit history.
+- Resolution finalization consumes only explicitly selected granted actions in the same transaction, preventing stale or double consumption.
+- Master GM natural-language requests prepare deterministic grant/action reviews; batch grants are transactional and random rewards use an explicit pool with server-side randomness.
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 

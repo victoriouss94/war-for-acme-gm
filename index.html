@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.1.0">
+  <link rel="stylesheet" href="css/main.css?v=11.2.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -240,6 +240,33 @@
       <div id="assignmentPreview" class="setup-preview"><p class="muted">No assignment preview has been created.</p></div>
       <div class="form-actions horizontal-actions"><button id="approveAssignmentBtn" type="button" disabled>Approve Assignment</button><button id="addBasicSlotsBtn" class="secondary" type="button">Add Basic Role Slots</button></div>
     </section>
+    <section id="playerAbilityManager" class="panel player-ability-manager" hidden>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER-SPECIFIC ABILITIES</p><h2 id="playerAbilityManagerTitle">Grant Ability</h2><p class="muted">Grants reference the existing Ability Encyclopedia and never modify the player's Role.</p></div><button id="closePlayerAbilityManagerBtn" class="secondary" type="button">Close</button></div>
+      <div class="player-ability-layout">
+        <form id="playerAbilityGrantForm" class="ability-grant-editor">
+          <label>Search abilities<input id="grantAbilitySearch" maxlength="120" placeholder="Search existing game abilities"></label>
+          <label>Ability<select id="grantAbilityId"></select></label>
+          <div class="grid2 compact-grid">
+            <label>Source<select id="grantSourceType"><option value="GM_GRANT">GM Grant</option><option value="MINIGAME_REWARD">Mini-game Reward</option><option value="EVENT_REWARD">Event Reward</option><option value="TEMPORARY_GRANT">Temporary Grant</option><option value="PERMANENT_GRANT">Permanent Grant</option><option value="STOLEN">Stolen</option><option value="COPIED">Copied</option><option value="STATUS_EFFECT">Status Effect</option><option value="ITEM">Item</option><option value="SPECIAL_MECHANIC">Special Mechanic</option><option value="OTHER">Other</option></select></label>
+            <label>Source / event reference<input id="grantSourceReference" maxlength="300" placeholder="Example: Trivia Challenge"></label>
+            <label>Uses<input id="grantUses" type="number" min="1" max="999" value="1"><small>Clear only for an unlimited grant.</small></label>
+            <label>Duration<select id="grantDuration"><option value="UNTIL_USED">Until Used</option><option value="ONE_USE">One Use</option><option value="LIMITED_USES">Limited Uses</option><option value="UNTIL_END_OF_PHASE">Until End of Phase</option><option value="UNTIL_END_OF_DAY">Until End of Day</option><option value="UNTIL_END_OF_NIGHT">Until End of Night</option><option value="UNTIL_END_OF_CYCLE">Until End of Cycle</option><option value="UNTIL_SPECIFIC_CYCLE">Until Specific Cycle</option><option value="UNTIL_REMOVED">Until Removed</option><option value="PERMANENT_FOR_GAME">Permanent for This Game</option></select></label>
+            <label>Expires cycle<input id="grantExpiresCycle" type="number" min="0" max="9999" placeholder="Optional"></label>
+            <label>Expires phase<select id="grantExpiresPhase"><option value="">Not defined</option><option>Day</option><option>Night</option><option>Any</option><option>Immediate</option></select></label>
+            <label>Usable phases<select id="grantPhaseRestrictions" multiple size="3"><option>Any</option><option>Day</option><option>Night</option></select></label>
+            <label class="check"><input id="grantSurvivesConversion" type="checkbox"> Survives conversion</label>
+            <label class="check"><input id="grantStealable" type="checkbox" checked> Can be stolen</label>
+          </div>
+          <label>Special conditions<textarea id="grantSpecialConditions" rows="2" maxlength="4000"></textarea></label>
+          <label>GM reason<textarea id="grantReason" rows="2" maxlength="4000" required></textarea></label>
+          <p id="grantFormError" class="form-notice" aria-live="polite"></p>
+          <div class="form-actions horizontal-actions"><button id="reviewGrantBtn" type="button">Review Grant</button><button id="clearGrantBtn" class="secondary" type="button">Clear</button></div>
+          <div id="grantReview" class="setup-preview"><p class="muted">Configure a grant, then review it before approval.</p></div>
+          <button id="approveGrantBtn" type="submit" disabled>Approve Ability Grant</button>
+        </form>
+        <div><h3>Effective Player Abilities</h3><div id="playerEffectiveAbilityList"></div><h3>Grant History</h3><div id="playerAbilityGrantHistory"></div><h3>Action &amp; Resolution History</h3><div id="playerActionHistory"></div></div>
+      </div>
+    </section>
     <section id="playerStatusManager" class="panel player-status-manager" hidden>
       <div class="section-heading"><div><p class="eyebrow">LIVE DATABASE STATE</p><h2 id="playerStatusManagerTitle">Player Status</h2><p class="muted">Abilities owned are separate from effects currently applied.</p></div><button id="closePlayerStatusManagerBtn" class="secondary" type="button">Close</button></div>
       <div class="player-status-layout">
@@ -279,17 +306,27 @@
   </section>
 
   <section id="queueView" class="view">
-    <div class="layout">
-      <aside class="panel">
-        <h2>Queue Action</h2>
-        <label>Actor<select id="actionActor"></select></label>
-        <label>Action name<input id="actionName" placeholder="Example: Den Kill"></label>
-        <label>Category<select id="actionCategory"><option>Block</option><option>Control / Swap</option><option>Protection</option><option>Investigation</option><option>Kill / Harmful</option><option>Save / Heal</option><option>Other</option></select></label>
-        <label>Target<select id="actionTarget"></select></label>
-        <button id="addActionBtn" class="full">Add Action</button>
+    <div class="action-queue-layout">
+      <aside class="panel action-builder">
+        <div class="section-heading"><div><p class="eyebrow">STRUCTURED ATTEMPT</p><h2 id="actionBuilderTitle">Queue Action</h2></div><button id="cancelActionEditBtn" class="secondary" type="button" hidden>Cancel Edit</button></div>
+        <label>Action source<select id="actionSourceType"><option value="PLAYER">Player</option><option value="FACTION">Faction</option><option value="SYSTEM">Game / System Effect</option><option value="GM_MANUAL">GM Manual</option></select></label>
+        <div id="actionPlayerFields"><label>Search acting player<input id="actionActorSearch" maxlength="120" placeholder="Search player, role, or faction"></label><label>Acting player<select id="actionActor"></select></label></div>
+        <label id="actionFactionField" hidden>Acting faction<select id="actionFaction"></select></label>
+        <label>Search available abilities<input id="actionAbilitySearch" maxlength="120" placeholder="Search abilities"></label>
+        <div id="actionAbilityPicker" class="action-ability-picker"><p class="muted">Select an acting player to see effective abilities.</p></div>
+        <div id="actionAbilityInfo" class="ability-info-panel"><p class="muted">Select an ability to inspect its source, uses, restrictions, and effective mechanic.</p></div>
+        <label id="actionTargetSearchField">Search targets<input id="actionTargetSearch" maxlength="120" placeholder="Search player, role, faction, or status"></label>
+        <div id="actionTargetPicker" class="action-target-picker"></div>
+        <label id="actionTargetAbilityField" hidden>Target ability<select id="actionTargetAbility"></select></label>
+        <label id="actionTargetFactionField" hidden>Target faction<select id="actionTargetFaction"></select></label>
+        <label id="actionCustomTargetField" hidden>Custom target<input id="actionCustomTarget" maxlength="1000"></label>
+        <label class="check"><input id="actionGmOverride" type="checkbox"> GM override restrictions</label>
+        <label id="actionOverrideReasonField" hidden>Override reason<textarea id="actionOverrideReason" rows="2" maxlength="4000"></textarea></label>
+        <div id="actionReview" class="setup-preview"><p class="muted">Select a player, ability, and required target to review the attempted action.</p></div>
+        <button id="addActionBtn" class="full" disabled>Add to Action Queue</button>
       </aside>
       <div class="panel">
-        <h2>Submitted Actions</h2>
+        <div class="section-heading"><div><h2>Submitted Actions</h2><p id="queueCompleteness" class="muted"></p></div></div>
         <p class="gm-decision-required"><strong>No universal order is configured.</strong> The AI may propose an order only when an official rule or applicable GM precedent supports it. Otherwise, a GM decision is required.</p>
         <div id="queueList"></div>
         <button id="startResolutionSessionBtn" class="full" type="button">Start Resolution Session</button>
@@ -320,6 +357,7 @@
             <div class="grid2"><label>Structured events (one line per event)<textarea id="manualResolutionEvents" rows="4"></textarea></label><label>Status changes (one line per change)<textarea id="manualResolutionStatuses" rows="4"></textarea></label></div>
             <div class="grid2"><label>Deaths / survivals<textarea id="manualResolutionDeaths" rows="3"></textarea></label><label>Conversions<textarea id="manualResolutionConversions" rows="3"></textarea></label></div>
             <label>Abilities consumed<textarea id="manualResolutionConsumed" rows="3"></textarea></label>
+            <section class="grant-consumption-review"><h4>Granted ability uses</h4><p class="muted">Select only the granted actions whose uses this approved resolution should consume. Blocked or failed attempts are not preselected.</p><div id="resolutionGrantConsumptions"></div></section>
             <label>Final player state / notes<textarea id="manualResolutionPostState" rows="4" maxlength="12000"></textarea></label>
             <label>Why did you resolve it this way?<textarea id="manualResolutionReasoning" rows="4" maxlength="12000"></textarea></label>
             <label>Conditions that make this ruling apply<textarea id="precedentConditions" rows="3" maxlength="8000"></textarea></label>
@@ -631,9 +669,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.1.0"></script>
-<script src="js/cloud.js?v=11.1.0"></script>
+<script src="js/supabase-config.js?v=11.2.0"></script>
+<script src="js/cloud.js?v=11.2.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.1.0"></script>
+<script type="module" src="js/app.js?v=11.2.0"></script>
 </body>
 </html>

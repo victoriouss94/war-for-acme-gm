@@ -1,5 +1,13 @@
 # Changelog
 
+## v11.2.0 - Dynamic Player Abilities and Structured Action Queue
+
+- Adds an RLS-protected, append-history player ability grant relationship referencing the existing game Encyclopedia.
+- Calculates effective Role and player-specific abilities with remaining uses, phase/cooldown availability, live status warnings, Additional Uses, Ability Amplify, and role modifiers.
+- Replaces free-text action entry with searchable player, ability, and structured target pickers while preserving the existing `data.actions` queue and Resolution Sessions.
+- Adds audited grant, revoke, expire, use-adjustment, batch-grant, server-randomized reward, queue/edit/remove, and transactional resolution-consumption RPCs.
+- Extends Master GM context and deterministic browser orchestration for ability inventory, grant/revoke, and action-queue requests.
+
 ## v11.1.0 - Basic Roles and Reviewed Roster Assignment
 
 - Adds explicit Basic Roles with zero abilities, a separate incomplete-data state, and reusable role-slot counts.

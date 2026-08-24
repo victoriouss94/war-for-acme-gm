@@ -1,3 +1,3 @@
 GM Command Center
-Version: 11.1.0
-Build: Basic Roles + Player Import + Reviewed Role Assignment
+Version: 11.2.0
+Build: Dynamic Player Abilities + Structured Action Queue
