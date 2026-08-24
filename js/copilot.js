@@ -1,10 +1,10 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.2.0';
-import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.2.0';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.3.0';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.3.0';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
-export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
+export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','phase_control','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
 export const COPILOT_DEPTHS=new Set(['standard','deep']);
-export const COPILOT_CHANGE_KINDS=new Set(['remove_action','set_player_alive','set_player_role','set_player_faction','apply_status','resolve_status','add_history','set_game_phase','set_game_day','update_role','update_ability','update_faction','update_rule','update_game','upsert_global_rule']);
+export const COPILOT_CHANGE_KINDS=new Set(['remove_action','set_player_alive','set_player_role','set_player_faction','apply_status','resolve_status','add_history','update_role','update_ability','update_faction','update_rule','update_game','upsert_global_rule']);
 
 const cleanText=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
 
@@ -52,7 +52,7 @@ export function normalizeCopilotResponse(input={}){
   };
 }
 
-const patchFields={update_role:new Set(['name','factionId','roleType','abilityDataStatus','basicEvidence','slotCount','alignment','description','activeAbilityId','passiveAbilityId','tags','abilityUses','cooldowns','immunities','restrictions','winCondition','notes','gmNotes','labels','enabled','archivedAt']),update_ability:new Set(['name','category','definition','phase','mechanics']),update_faction:new Set(['name','class','alignment','description','winCondition','notes','alias','teamNumber']),update_rule:new Set(['title','description','category','visibility','notes','enabled','sortOrder']),update_game:new Set(['name','theme','description','status','currentDay','currentPhase','notes'])};
+const patchFields={update_role:new Set(['name','factionId','roleType','abilityDataStatus','basicEvidence','slotCount','alignment','description','activeAbilityId','passiveAbilityId','tags','abilityUses','cooldowns','immunities','restrictions','winCondition','notes','gmNotes','labels','enabled','archivedAt']),update_ability:new Set(['name','category','definition','phase','mechanics']),update_faction:new Set(['name','class','alignment','description','winCondition','notes','alias','teamNumber']),update_rule:new Set(['title','description','category','visibility','notes','enabled','sortOrder']),update_game:new Set(['name','theme','description','notes'])};
 function parsedPatch(change){try{const value=JSON.parse(change.value);if(!value||typeof value!=='object'||Array.isArray(value))return null;const allowed=patchFields[change.kind];if(!allowed||Object.keys(value).some(key=>!allowed.has(key)))return null;return value}catch{return null}}
 
 export function validateCopilotChanges(changes,gameState={},statusEffects=[]){

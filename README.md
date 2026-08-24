@@ -1,6 +1,14 @@
-# GM Command Center v11.2
+# GM Command Center v11.3
 
-Version 11.2 adds audited player-specific ability grants and a structured, searchable Action Queue that calculates each player's effective Role and granted abilities without changing their Role.
+Version 11.3 integrates a server-authoritative Game Phase Controller directly into the existing Action Queue while preserving the document game model for compatibility.
+
+## New in v11.3
+
+- One locked current phase and queue per active game, with Night 0 / Day 1 starts, pause/resume, advance previews, and stale-phase rejection.
+- Phase history tabs retain actions, Resolution Sessions, final results, status/grant consequences, notes, and an audited event log.
+- Advancing requires a GM review, closes the old queue, opens the next Day/Night queue, expires bounded statuses and grants, updates timers, and synchronizes the existing game document.
+- Queue completeness counts only living players with an available active ability in the current phase, with rapid entry from the same page.
+- The Master GM reads the same authoritative phase context and opens approval workflows without silently changing game status, cycle, or phase.
 
 ## New in v11.2
 

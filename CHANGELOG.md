@@ -1,5 +1,13 @@
 # Changelog
 
+## v11.3.0 - Integrated Action Queue and Game Phase Controller
+
+- Adds one authoritative, concurrency-locked current phase and phase-scoped action queue per active game.
+- Integrates start, pause/resume, resolution, reviewed advance, history, summaries, results, and event logs into Action Queue.
+- Preserves completed phases as read-only history with owner-only reasoned corrections and explicit audit events.
+- Applies deterministic status/grant expirations and timer decrements during approved transitions, then opens the correct next Day/Night queue.
+- Gives the Master GM the same phase context and approval-required phase tools while blocking generic AI day/phase rewrites.
+
 ## v11.2.0 - Dynamic Player Abilities and Structured Action Queue
 
 - Adds an RLS-protected, append-history player ability grant relationship referencing the existing game Encyclopedia.

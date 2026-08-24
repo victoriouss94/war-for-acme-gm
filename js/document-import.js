@@ -392,4 +392,4 @@ export function compareGameImport(model,currentDocument){
 export function importSummary(model){
   const count=key=>model.sections?.[key]===false?0:(model[key]||[]).filter(item=>item.selected).length,analysis=model.analysis||{};return {factions:count('factions'),roles:count('roles'),abilities:count('abilities'),rules:count('rules'),roleModifiers:(model.roles||[]).filter(item=>item.selected).reduce((sum,item)=>sum+(item.abilityModifiers||[]).length,0),statuses:(model.statuses||[]).length,specialMechanics:(model.specialMechanics||[]).length,globalFallbacks:(analysis.globalFallbacks||[]).length,duplicates:(analysis.duplicates||[]).length,ambiguities:(analysis.ambiguities||[]).length,conflicts:(analysis.conflicts||[]).length,warnings:(model.warnings||[]).length};
 }
-import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=11.2.0';
+import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=11.3.0';

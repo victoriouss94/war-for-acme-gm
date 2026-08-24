@@ -5,6 +5,12 @@ const tool=(name,{permission='GM',readOnly=true,approvalRequired=false,gameScope
 
 export const MASTER_GM_TOOLS=Object.freeze({
   getCurrentGame:tool('getCurrentGame',{inputs:['gameId'],output:'focused game context'}),
+  getPhaseContext:tool('getPhaseContext',{inputs:['gameId'],output:'authoritative current phase, phase queues, sessions, results, timers, and history'}),
+  previewPhaseAdvance:tool('previewPhaseAdvance',{inputs:['gameId','phaseId','phaseVersion'],output:'read-only unresolved-action and automatic-consequence preview'}),
+  startGamePhase:tool('startGamePhase',{readOnly:false,approvalRequired:true,inputs:['gameId','gameVersion','startingPhase','reason'],output:'audited first authoritative phase'}),
+  pauseGame:tool('pauseGame',{readOnly:false,approvalRequired:true,inputs:['gameId','gameVersion','phaseId','phaseVersion','reason'],output:'audited paused game state'}),
+  resumeGame:tool('resumeGame',{readOnly:false,approvalRequired:true,inputs:['gameId','gameVersion','phaseId','phaseVersion','reason'],output:'audited active game state'}),
+  advancePhase:tool('advancePhase',{readOnly:false,approvalRequired:true,inputs:['gameId','gameVersion','phaseId','phaseVersion','allowUnresolved','reason'],output:'audited next phase and deterministic automatic consequences'}),
   getGame:tool('getGame',{inputs:['gameId'],output:'authorized game metadata'}),
   searchGames:tool('searchGames',{gameScoped:false,inputs:['query'],output:'authorized GM game summaries'}),
   getGameRules:tool('getGameRules',{inputs:['gameId'],output:'active current-game rules'}),
@@ -69,6 +75,7 @@ export function inferMasterIntent(message,requestedTask='auto'){
   if(explicit==='balance_role')return 'analyze_balance';
   if(explicit&&explicit!=='auto'&&explicit!=='assistant')return explicit;
   const query=normalized(message);
+  if(/\b(current|what|which|show|next|advance|start|begin|pause|resume|move|go)\b.*\b(phase|cycle|day|night|game)\b|\b(unresolved|submitted|no action|expiring|timers?)\b.*\b(actions?|statuses?|grants?|phase)?\b/.test(query))return 'phase_control';
   if(/\b(grant|award|reward|won|bonus|mini game|take away|revoke)\b.*\b(ability|power|kill|protect|ask|roleblock|reward|bonus)\b/.test(query))return 'ability_grant';
   if(!/\b(give|grant|award)\b/.test(query)&&(/\b(queue|submit)\b.*\b(action|attack|kill|protect|ask|roleblock|player)\b|\b(attacks?|targets?|protects?|blocks?|asks?|kills?)\b/.test(query)))return 'queue_action';
   if(/\b(what|which|who|why|show)\b.*\b(abilities|ability|powers?|rewards?|temporary|queued actions?|submitted)\b/.test(query))return 'ability_inventory';
@@ -133,11 +140,12 @@ export function toolsForMasterIntent(intent,{hasPlayer=false,hasAbility=false,ha
   if(intent==='ability_inventory')tools.push(hasPlayer?'getEffectivePlayerAbilities':'getPlayerAbilityGrants','getPlayerAbilityGrantHistory','getQueuedActions');
   if(intent==='ability_grant')tools.push('searchPlayers','searchAbilities','getEffectivePlayerAbilities','getPlayerAbilityGrants','getPlayerAbilityGrantHistory','prepareAbilityGrant','prepareGrantRevocation','prepareBulkAbilityGrants','prepareRandomReward');
   if(intent==='queue_action')tools.push('searchPlayers','searchAbilities','getEffectivePlayerAbilities','getPlayerStatuses','getQueuedActions','preparePlayerAction');
+  if(intent==='phase_control')tools.push('getPhaseContext','previewPhaseAdvance','startGamePhase','pauseGame','resumeGame','advancePhase');
   if(intent==='roster_setup')tools.push('getRosterAnalysis','getUnassignedPlayers','getAvailableRoleSlots','createAssignmentPreview','shuffleAssignmentPreview','applyApprovedAssignments');
   if(intent==='explain_content')tools.push(hasAbility?'getAbility':hasRole?'getRole':'searchAbilities','searchRoles');
   if(intent==='search_history')tools.push('searchResolutions','getAuditHistory');
   if(intent==='search_precedents')tools.push('searchPrecedents');
-  if(intent==='resolve_actions')tools.push('getSubmittedActions','getPlayerStatuses','getGameRules','searchPrecedents','searchDocuments','analyzeActions');
+  if(intent==='resolve_actions')tools.push('getPhaseContext','getSubmittedActions','getPlayerStatuses','getGameRules','searchPrecedents','searchDocuments','analyzeActions');
   if(['create_role','create_ability','create_faction','create_rule','create_status','edit_content','analyze_balance','plan_session'].includes(intent))tools.push('searchRoles','searchAbilities','searchFactions','getGameRules');
   const draftTool={create_role:'createRoleDraft',create_ability:'createAbilityDraft',create_faction:'createFactionDraft',create_rule:'createRuleDraft',create_status:'createStatusDraft',document_import:'createDocumentImportDraft'}[intent];if(draftTool)tools.push(draftTool);
   if(intent==='edit_content')tools.push(hasPlayer?'proposeStatusChange':hasRole?'proposeRoleUpdate':hasAbility?'proposeAbilityUpdate':hasFaction?'proposeFactionUpdate':'proposeGameUpdate');

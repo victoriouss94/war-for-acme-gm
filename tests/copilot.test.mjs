@@ -35,7 +35,9 @@ test('AI GM proposals are allowlisted and revalidated against current game IDs',
     {kind:'set_game_day',target_id:'',value:'1000',reason:'invalid'}
   ];
   const review=validateCopilotChanges(proposals,gameState);
-  assert.equal(review.valid.length,6);assert.equal(review.rejected.length,2);
+  assert.equal(review.valid.length,4);assert.equal(review.rejected.length,4);
+  assert.ok(review.rejected.some(item=>item.change.kind==='set_game_phase'));
+  assert.ok(review.rejected.some(item=>item.change.kind==='set_game_day'));
   assert.equal(copilotChangeLabel(proposals[1],gameState),'Mark dead Rowan');
   assert.equal(copilotChangeLabel(proposals[2],gameState),'Set Rowan role to Guardian');
 });

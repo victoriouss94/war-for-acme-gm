@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.2.0">
+  <link rel="stylesheet" href="css/main.css?v=11.3.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -306,8 +306,36 @@
   </section>
 
   <section id="queueView" class="view">
+    <article id="phaseOperationHeader" class="panel phase-operation-header">
+      <div class="phase-operation-main">
+        <div><p class="eyebrow">LIVE GAME WORKFLOW</p><h2 id="phaseOperationTitle">Game not started</h2><p id="phaseOperationMeta" class="muted">Choose a starting phase to open the first action queue.</p></div>
+        <div class="phase-operation-counts" aria-label="Current phase counts"><span><strong id="phaseCycleCount">—</strong><small>Cycle</small></span><span><strong id="phaseQueuedCount">0</strong><small>Queued</small></span><span><strong id="phaseUnresolvedCount">0</strong><small>Unresolved</small></span></div>
+      </div>
+      <div class="horizontal-actions phase-operation-actions">
+        <button id="startGamePhaseBtn" type="button">Start Game</button>
+        <button id="pauseResumeGameBtn" class="secondary" type="button" hidden>Pause Game</button>
+        <button id="resolveCurrentPhaseBtn" type="button" hidden>Resolve Current Phase</button>
+        <button id="advanceGamePhaseBtn" type="button" hidden>Advance Phase</button>
+      </div>
+      <div id="startGamePhasePanel" class="phase-confirmation-panel" hidden>
+        <h3>Choose the first phase</h3>
+        <div class="phase-start-options"><label><input type="radio" name="startingPhase" value="NIGHT_0" checked><span><strong>Night 0</strong><small>Preparation night before Day 1</small></span></label><label><input type="radio" name="startingPhase" value="DAY_1"><span><strong>Day 1</strong><small>Begin with daytime play</small></span></label></div>
+        <label>Reason / opening note<textarea id="startGamePhaseReason" rows="2" maxlength="4000">Game started by GM.</textarea></label>
+        <div class="horizontal-actions"><button id="confirmStartGamePhaseBtn" type="button">Open First Queue</button><button id="cancelStartGamePhaseBtn" class="secondary" type="button">Cancel</button></div>
+      </div>
+      <div id="advanceGamePhasePanel" class="phase-confirmation-panel" hidden>
+        <div class="section-heading"><div><h3 id="advancePhaseHeading">Advance Phase</h3><p class="muted">Review every queued item and automatic consequence before approval.</p></div></div>
+        <div id="advancePhasePreview" class="phase-preview-grid"></div>
+        <label class="check"><input id="allowUnresolvedAdvance" type="checkbox"> Advance even if unresolved actions remain</label>
+        <label>GM approval reason<textarea id="advancePhaseReason" rows="2" maxlength="4000">Phase reviewed and advanced by GM.</textarea></label>
+        <p id="advancePhaseNotice" class="form-notice" aria-live="polite"></p>
+        <div class="horizontal-actions"><button id="reviewUnresolvedActionsBtn" class="secondary" type="button">Review Unresolved</button><button id="confirmAdvanceGamePhaseBtn" type="button">Approve &amp; Advance</button><button id="cancelAdvanceGamePhaseBtn" class="secondary" type="button">Cancel</button></div>
+      </div>
+    </article>
+    <div id="phaseHistoryTabs" class="phase-history-tabs" role="tablist" aria-label="Game phase history"></div>
+    <details id="phaseSummaryPanel" class="panel phase-summary-panel" open><summary>Phase Summary &amp; Rapid Entry</summary><div id="phaseSummaryContent"></div></details>
     <div class="action-queue-layout">
-      <aside class="panel action-builder">
+      <aside id="actionBuilderPanel" class="panel action-builder">
         <div class="section-heading"><div><p class="eyebrow">STRUCTURED ATTEMPT</p><h2 id="actionBuilderTitle">Queue Action</h2></div><button id="cancelActionEditBtn" class="secondary" type="button" hidden>Cancel Edit</button></div>
         <label>Action source<select id="actionSourceType"><option value="PLAYER">Player</option><option value="FACTION">Faction</option><option value="SYSTEM">Game / System Effect</option><option value="GM_MANUAL">GM Manual</option></select></label>
         <div id="actionPlayerFields"><label>Search acting player<input id="actionActorSearch" maxlength="120" placeholder="Search player, role, or faction"></label><label>Acting player<select id="actionActor"></select></label></div>
@@ -326,11 +354,15 @@
         <button id="addActionBtn" class="full" disabled>Add to Action Queue</button>
       </aside>
       <div class="panel">
-        <div class="section-heading"><div><h2>Submitted Actions</h2><p id="queueCompleteness" class="muted"></p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">PHASE-SCOPED QUEUE</p><h2 id="queuePhaseHeading">Submitted Actions</h2><p id="queueCompleteness" class="muted"></p></div></div>
         <p class="gm-decision-required"><strong>No universal order is configured.</strong> The AI may propose an order only when an official rule or applicable GM precedent supports it. Otherwise, a GM decision is required.</p>
         <div id="queueList"></div>
-        <button id="startResolutionSessionBtn" class="full" type="button">Start Resolution Session</button>
+        <button id="startResolutionSessionBtn" class="full" type="button">Resolve Current Phase</button>
       </div>
+    </div>
+    <div class="phase-lower-grid">
+      <article id="phaseResolutionPanel" class="panel"><div class="section-heading"><div><p class="eyebrow">SAME-PHASE RESOLUTION</p><h2>Resolution Sessions &amp; Results</h2></div><button id="openDetailedResolutionBtn" class="secondary" type="button">Open Detailed Review</button></div><div id="phaseResolutionContent"><p class="muted">No Resolution Session for this phase.</p></div></article>
+      <article class="panel"><div class="section-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h2>Phase Event Log</h2></div></div><div id="phaseEventLog" class="phase-event-log"><p class="muted">No phase events yet.</p></div></article>
     </div>
   </section>
 
@@ -382,6 +414,7 @@
           <select id="copilotTask">
             <option value="auto" selected>Understand automatically</option>
             <option value="assistant">Answer a GM question</option>
+            <option value="phase_control">Inspect or prepare a phase change</option>
             <option value="resolve_actions">Resolve queued actions</option>
             <option value="explain_role">Explain a role or ability</option>
             <option value="plan_session">Plan the next phase</option>
@@ -614,8 +647,9 @@
         <label>Game name<input id="gameName"></label>
         <label>Theme<input id="gameTheme"></label>
         <label>Description<textarea id="gameDescription" rows="3"></textarea></label>
-        <label>Status<select id="gameStatus"><option value="SETUP">Setup</option><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option><option value="COMPLETED">Completed</option><option value="ARCHIVED">Archived</option></select></label>
-        <div class="grid2 compact-grid"><label>Current day<input id="currentDay" type="number" min="0"></label><label>Current phase<select id="currentPhase"><option>Day</option><option>Night</option></select></label></div>
+        <label>Status<select id="gameStatus" disabled><option value="SETUP">Setup</option><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option><option value="COMPLETED">Completed</option><option value="ARCHIVED">Archived</option></select></label>
+        <div class="grid2 compact-grid"><label>Current day<input id="currentDay" type="number" min="0" readonly></label><label>Current phase<select id="currentPhase" disabled><option>Day</option><option>Night</option></select></label></div>
+        <p class="muted">Status, cycle, and phase are controlled from the Action Queue so every GM sees the same authoritative state.</p>
         <label>Game notes<textarea id="gameNotes" rows="4"></textarea></label>
         <label>Villager label<input id="villagerLabel"></label>
         <label>Den label<input id="denLabel"></label>
@@ -669,9 +703,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.2.0"></script>
-<script src="js/cloud.js?v=11.2.0"></script>
+<script src="js/supabase-config.js?v=11.3.0"></script>
+<script src="js/cloud.js?v=11.3.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.2.0"></script>
+<script type="module" src="js/app.js?v=11.3.0"></script>
 </body>
 </html>

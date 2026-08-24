@@ -14,7 +14,7 @@ const indexes={
 
 test('natural language routes to one Master GM intent without special commands',()=>{
   const cases=new Map([
-    ['Is Riz blocked?','live_status'],['Who is poisoned?','live_status'],['Resolve tonight.','resolve_actions'],['Have we resolved Guard against Reflection before?','search_precedents'],['Why did Player A die last night?','search_history'],['Create a role with Reflection.','create_role'],['Create an ability similar to Guard.','create_ability'],['Give Sheriff another Advanced Ask.','edit_content'],['Make this faction stronger.','edit_content'],['Read this document and add the roles.','document_import'],['Is this role overpowered?','analyze_balance']
+    ['Is Riz blocked?','live_status'],['Who is poisoned?','live_status'],['Resolve tonight.','resolve_actions'],['What phase are we in?','phase_control'],['Advance to the next day.','phase_control'],['Have we resolved Guard against Reflection before?','search_precedents'],['Why did Player A die last night?','search_history'],['Create a role with Reflection.','create_role'],['Create an ability similar to Guard.','create_ability'],['Give Sheriff another Advanced Ask.','edit_content'],['Make this faction stronger.','edit_content'],['Read this document and add the roles.','document_import'],['Is this role overpowered?','analyze_balance']
   ]);
   for(const [message,intent] of cases)assert.equal(inferMasterIntent(message),intent,message);
   assert.equal(isWriteIntent('edit_content'),true);assert.equal(isWriteIntent('live_status'),false);
@@ -37,6 +37,7 @@ test('simple live-state questions are answered deterministically from current ef
 test('tool registry is bounded and every tool declares permission, risk, scope, inputs, output, and audit behavior',()=>{
   for(const definition of Object.values(MASTER_GM_TOOLS)){assert.ok(['OWNER','GM','MEMBER'].includes(definition.permission));assert.equal(typeof definition.readOnly,'boolean');assert.equal(typeof definition.approvalRequired,'boolean');assert.equal(typeof definition.gameScoped,'boolean');assert.ok(Array.isArray(definition.inputs));assert.ok(definition.output);assert.equal(definition.audit,true)}
   const resolution=toolsForMasterIntent('resolve_actions',{hasPlayer:true});assert.ok(resolution.length<=MASTER_GM_MAX_TOOL_CALLS);assert.ok(resolution.includes('analyzeActions'));assert.ok(resolution.includes('searchPrecedents'));
+  const phase=toolsForMasterIntent('phase_control');assert.ok(phase.includes('getPhaseContext'));assert.ok(phase.includes('previewPhaseAdvance'));assert.equal(MASTER_GM_TOOLS.advancePhase.approvalRequired,true);
   const edit=toolsForMasterIntent('edit_content',{hasPlayer:true});assert.ok(edit.includes('proposeStatusChange'));assert.ok(edit.includes('getPlayerState'));assert.ok(!edit.includes('applyApprovedProposal'));
 });
 
