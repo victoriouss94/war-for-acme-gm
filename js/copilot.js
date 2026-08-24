@@ -1,5 +1,5 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.3.0';
-import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.3.0';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.4.0';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.4.0';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','phase_control','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
@@ -52,7 +52,7 @@ export function normalizeCopilotResponse(input={}){
   };
 }
 
-const patchFields={update_role:new Set(['name','factionId','roleType','abilityDataStatus','basicEvidence','slotCount','alignment','description','activeAbilityId','passiveAbilityId','tags','abilityUses','cooldowns','immunities','restrictions','winCondition','notes','gmNotes','labels','enabled','archivedAt']),update_ability:new Set(['name','category','definition','phase','mechanics']),update_faction:new Set(['name','class','alignment','description','winCondition','notes','alias','teamNumber']),update_rule:new Set(['title','description','category','visibility','notes','enabled','sortOrder']),update_game:new Set(['name','theme','description','notes'])};
+const patchFields={update_role:new Set(['name','factionId','roleType','abilityDataStatus','basicEvidence','slotCount','alignment','description','activeAbilityId','passiveAbilityId','tags','abilityUses','cooldowns','immunities','restrictions','mechanicalStatements','understanding','unresolvedComponents','sourceVersion','winCondition','notes','gmNotes','labels','enabled','archivedAt']),update_ability:new Set(['name','category','definition','phase','mechanics','mechanicalStatements','understanding','targeting','baseStandardAbilityId','standardAbilityId','mapping','unresolvedComponents','sourceVersion']),update_faction:new Set(['name','class','alignment','description','winCondition','notes','alias','teamNumber']),update_rule:new Set(['title','description','category','visibility','notes','enabled','sortOrder']),update_game:new Set(['name','theme','description','notes'])};
 function parsedPatch(change){try{const value=JSON.parse(change.value);if(!value||typeof value!=='object'||Array.isArray(value))return null;const allowed=patchFields[change.kind];if(!allowed||Object.keys(value).some(key=>!allowed.has(key)))return null;return value}catch{return null}}
 
 export function validateCopilotChanges(changes,gameState={},statusEffects=[]){

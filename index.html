@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.3.0">
+  <link rel="stylesheet" href="css/main.css?v=11.4.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -476,6 +476,8 @@
       <section class="panel"><div class="section-heading"><div><h2>Global Ability Concepts</h2><p class="muted">Map game abilities to reusable mechanical concepts only after comparing their definitions.</p></div></div><form id="globalConceptForm"><label>Concept key<input id="globalConceptKey" maxlength="120" placeholder="NORMAL_SINGLE_TARGET_KILL"></label><label>Name<input id="globalConceptName" maxlength="160" placeholder="Normal single-target kill"></label><label>Description<textarea id="globalConceptDescription" rows="3" maxlength="8000"></textarea></label><button type="submit">Create Approved Concept</button><p id="globalConceptStatus" class="form-notice"></p></form><hr><form id="abilityConceptMappingForm"><label>Game ability<select id="mappingAbilityId"></select></label><label>Global concept<select id="mappingConceptId"></select></label><label>Compatibility<select id="mappingCompatibility"><option value="EXACT">Exact</option><option value="STRONG">Strong</option><option value="PARTIAL">Partial</option><option value="INCOMPATIBLE">Incompatible</option></select></label><label>Comparison notes<textarea id="mappingNotes" rows="3" maxlength="8000" placeholder="Compare strength, timing, defenses, statuses, and exceptions."></textarea></label><button type="submit">Approve Mapping</button><p id="mappingStatus" class="form-notice"></p></form><div id="abilityConceptMappingList"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>AI Drafts</h2><p class="muted">Drafts never activate automatically. Edit them in the existing role or ability editor before adding.</p></div></div><div id="aiDraftList" class="draft-list"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>Ability Interaction Matrix</h2><p class="muted">Only official documents, explicit rules, and approved precedents may populate this evidence table.</p></div></div><div id="abilityInteractionList"></div></section>
+      <section class="panel mechanics-review-panel"><div class="section-heading"><div><h2>Mechanics Needing Review</h2><p class="muted">Source text is preserved beside each uncertain interpretation. Nothing here is silently approved or deleted.</p></div><span id="mechanicsReviewCount" class="count-pill"></span></div><div class="filters mechanics-review-filters"><label>Game<select id="mechanicsReviewGame"><option value="ALL">All authorized games</option></select></label><label>Role<input id="mechanicsReviewRole" placeholder="Role name"></label><label>Ability<input id="mechanicsReviewAbility" placeholder="Ability name"></label><label>Mechanic<select id="mechanicsReviewType"><option value="ALL">All mechanics</option></select></label><label>Confidence<select id="mechanicsReviewConfidence"><option value="ALL">All confidence levels</option><option value="LOW">Low (&lt; 50%)</option><option value="MEDIUM">Medium (50–74%)</option><option value="HIGH">High (75%+)</option></select></label><label>Interaction / text<input id="mechanicsReviewSearch" placeholder="Trigger, Den Block, redirect…"></label></div><div id="mechanicsReviewList" class="precedent-list"></div></section>
+      <section class="panel"><div class="section-heading"><div><h2>Ability Usage History</h2><p class="muted">Attempts are deduplicated by queued action ID. Redirects and reflections do not create extra attempts; passive triggers are separate.</p></div></div><div id="abilityUsageHistory"></div></section>
       <section class="panel"><div class="section-heading"><div><h2>AI Usage</h2><p class="muted">Token counts and estimates are recorded server-side. Only the game owner can see or change spending controls.</p></div></div><div id="aiUsageTotals"></div><form id="aiUsageLimitForm"><div class="grid2"><label>Monthly limit (USD, blank = no limit)<input id="aiMonthlyLimit" type="number" min="0" max="100000" step="0.01"></label><label>Requests per minute<input id="aiRequestsPerMinute" type="number" min="1" max="120" value="12"></label></div><button id="saveAiUsageLimitBtn" type="submit">Save Usage Limits</button><p id="aiUsageLimitStatus" class="form-notice"></p></form><div id="aiUsageList" class="usage-list"></div></section>
     </div>
   </section>
@@ -703,9 +705,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.3.0"></script>
-<script src="js/cloud.js?v=11.3.0"></script>
+<script src="js/supabase-config.js?v=11.4.0"></script>
+<script src="js/cloud.js?v=11.4.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.3.0"></script>
+<script type="module" src="js/app.js?v=11.4.0"></script>
 </body>
 </html>

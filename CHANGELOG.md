@@ -1,5 +1,14 @@
 # Changelog
 
+## v11.4.0 - Universal Role, Ability, and Passive Understanding
+
+- Preserves complete source text and splits compound role text into independently reviewable structured mechanics.
+- Adds explicit active, passive, immunity, trigger, faction, global, targeting, eligibility, confidence, origin, and unresolved-component fields without replacing custom identity with a standard ability.
+- Treats faction and global actions as first-class queue attempts, including source-defined performer eligibility and Den Block-compatible status semantics.
+- Adds a source-backed Mechanics Needing Review queue and action-ID-deduplicated per-game and authorized cross-game ability/passive usage history.
+- Extends resolution events for ineligible effects, cancellations, prevented passives, and refunded uses while retaining GM-only finalization and learning approval.
+- Re-import remains additive and never automatically deletes existing roles or mechanics.
+
 ## v11.3.0 - Integrated Action Queue and Game Phase Controller
 
 - Adds one authoritative, concurrency-locked current phase and phase-scoped action queue per active game.

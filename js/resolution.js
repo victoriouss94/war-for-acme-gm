@@ -9,13 +9,13 @@ export const AI_DRAFT_TYPES=new Set(['ROLE','ABILITY','FACTION','RULE','GAME','S
 const text=(value,limit=12000)=>String(value??'').trim().slice(0,limit);
 const strings=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).map(item=>text(item,4000)).filter(Boolean):[];
 const records=(value,limit=100)=>Array.isArray(value)?value.slice(0,limit).filter(item=>item&&typeof item==='object'&&!Array.isArray(item)):[];
-const eventTypes=new Set(['SUCCESS','FAILURE','BLOCK','REDIRECT','REFLECT','TRANSFER','PASSIVE_TRIGGER','PROTECTION_USED','DEATH','SURVIVAL','CONVERSION','STATUS_ADDED','STATUS_REMOVED','ABILITY_CONSUMED','STATE_CHANGE','OTHER']);
+const eventTypes=new Set(['SUCCESS','FAILURE','BLOCK','INELIGIBLE_EFFECT','CANCELLED','REDIRECT','REFLECT','TRANSFER','PASSIVE_TRIGGER','PASSIVE_PREVENTED','PROTECTION_USED','DEATH','SURVIVAL','CONVERSION','STATUS_ADDED','STATUS_REMOVED','ABILITY_CONSUMED','USE_REFUNDED','STATE_CHANGE','OTHER']);
 
 export function normalizeResolution(input){
   if(!input||typeof input!=='object'||Array.isArray(input))return null;
   return {
     actions_analyzed:strings(input.actions_analyzed),player_states:strings(input.player_states),relevant_rules:strings(input.relevant_rules),relevant_abilities:strings(input.relevant_abilities),role_modifiers:strings(input.role_modifiers),precedents:strings(input.precedents),proposed_order:strings(input.proposed_order),expected_results:strings(input.expected_results),status_changes:strings(input.status_changes),deaths:strings(input.deaths),conversions:strings(input.conversions),abilities_consumed:strings(input.abilities_consumed),reasoning:text(input.reasoning),interaction_signature:text(input.interaction_signature,1000),signature_tokens:[...new Set(strings(input.signature_tokens).map(item=>item.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')).filter(Boolean))],
-    events:(Array.isArray(input.events)?input.events:[]).slice(0,1000).map(item=>({event_type:eventTypes.has(item?.event_type)?item.event_type:'OTHER',actor_player_id:text(item?.actor_player_id,100),target_player_id:text(item?.target_player_id,100),ability_id:text(item?.ability_id,120),summary:text(item?.summary,4000)})).filter(item=>item.summary)
+    events:(Array.isArray(input.events)?input.events:[]).slice(0,1000).map(item=>({action_id:text(item?.action_id??item?.actionId,160),event_type:eventTypes.has(item?.event_type)?item.event_type:'OTHER',actor_player_id:text(item?.actor_player_id,100),target_player_id:text(item?.target_player_id,100),ability_id:text(item?.ability_id,120),affected_player_ids:[...new Set(strings(item?.affected_player_ids??item?.affectedPlayerIds,1000))],uses_consumed:Math.max(0,Number(item?.uses_consumed)||0),uses_refunded:Math.max(0,Number(item?.uses_refunded)||0),result:text(item?.result,80),summary:text(item?.summary,4000)})).filter(item=>item.summary)
   };
 }
 
@@ -30,7 +30,7 @@ export function normalizeAiDraft(input){
 export function manualResolutionPayload(fields={}){
   const lines=value=>String(value||'').split(/\r?\n/).map(item=>item.trim()).filter(Boolean).slice(0,1000);
   const signatureTokens=[...new Set(lines(fields.signatureTokens).map(item=>item.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')).filter(Boolean))];
-  const eventLines=lines(fields.events),events=eventLines.map(summary=>({event_type:'OTHER',actor_player_id:'',target_player_id:'',ability_id:'',summary}));
+  const eventLines=lines(fields.events),events=eventLines.map(summary=>({action_id:'',event_type:'OTHER',actor_player_id:'',target_player_id:'',ability_id:'',affected_player_ids:[],uses_consumed:0,uses_refunded:0,result:'',summary}));
   return {title:text(fields.title,200),summary:text(fields.summary,4000),interaction_signature:text(fields.interactionSignature,1000),signature_tokens:signatureTokens,scope:['ABILITY_SPECIFIC','ROLE_SPECIFIC','GAME_SPECIFIC','ONE_TIME'].includes(fields.scope)?fields.scope:'GAME_SPECIFIC',conditions:{notes:text(fields.conditions,8000)},ability_ids:[...new Set(strings(fields.abilityIds))],role_ids:[...new Set(strings(fields.roleIds))],context_role_ids:[...new Set(strings(fields.contextRoleIds))],status_types:[...new Set(strings(fields.statusTypes).map(item=>item.toUpperCase()))],ability_context:records(fields.abilityContext),role_context:records(fields.roleContext),role_modifier_context:records(fields.roleModifierContext),tags:strings(fields.tags),resolution_order:lines(fields.resolutionOrder),expected_results:lines(fields.results),status_changes:lines(fields.statusChanges),deaths:lines(fields.deaths),conversions:lines(fields.conversions),abilities_consumed:lines(fields.abilitiesConsumed),events,reasoning:text(fields.reasoning,12000),post_resolution_state:{notes:text(fields.postState,12000)}};
 }
 
