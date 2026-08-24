@@ -1,5 +1,12 @@
 # Changelog
 
+## v11.1.0 - Basic Roles and Reviewed Roster Assignment
+
+- Adds explicit Basic Roles with zero abilities, a separate incomplete-data state, and reusable role-slot counts.
+- Imports player names from paste, TXT, CSV, or DOCX with duplicate, existing, removal, and rename previews.
+- Adds GM-only server-randomized assignment previews with locks, faction constraints, shuffling, shortage validation, active-game confirmation, and per-player audit history.
+- Extends Word analysis and the Master GM with Basic Role safety and deterministic roster questions without model-generated randomness.
+
 ## v11.0.0 - Document-Driven Master GM and Global Settings
 
 - Makes imported Word documents the source for game structure, including roles, abilities, rules, statuses, special mechanics, relationships, modifiers, conflicts, ambiguities, and source locations.

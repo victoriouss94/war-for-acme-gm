@@ -1,3 +1,3 @@
 GM Command Center
-Version: 11.0.0
-Build: Document-Driven Master GM + Global Settings
+Version: 11.1.0
+Build: Basic Roles + Player Import + Reviewed Role Assignment

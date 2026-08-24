@@ -16,6 +16,9 @@ export const MASTER_GM_TOOLS=Object.freeze({
   getPlayerState:tool('getPlayerState',{inputs:['gameId','playerId'],output:'live player state'}),
   getPlayerStatuses:tool('getPlayerStatuses',{inputs:['gameId','playerId'],output:'visible live effects'}),
   getPlayersByStatus:tool('getPlayersByStatus',{inputs:['gameId','statusType'],output:'matching live effects'}),
+  getRosterAnalysis:tool('getRosterAnalysis',{inputs:['gameId'],output:'deterministic player, role-slot, Basic Role, and unassigned counts'}),
+  getUnassignedPlayers:tool('getUnassignedPlayers',{inputs:['gameId'],output:'players without a live role assignment'}),
+  getAvailableRoleSlots:tool('getAvailableRoleSlots',{inputs:['gameId'],output:'expanded existing role slots without changing game design'}),
   getRole:tool('getRole',{inputs:['gameId','roleId'],output:'role and linked abilities'}),
   searchRoles:tool('searchRoles',{inputs:['gameId','query'],output:'matching role references'}),
   getAbility:tool('getAbility',{inputs:['gameId','abilityId'],output:'game and standardized ability definitions'}),
@@ -34,6 +37,9 @@ export const MASTER_GM_TOOLS=Object.freeze({
   createRuleDraft:tool('createRuleDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable rule draft'}),
   createStatusDraft:tool('createStatusDraft',{readOnly:false,inputs:['gameId','payload'],output:'reviewable status draft'}),
   createDocumentImportDraft:tool('createDocumentImportDraft',{readOnly:false,inputs:['gameId','documentId'],output:'reviewable document-import draft'}),
+  createAssignmentPreview:tool('createAssignmentPreview',{readOnly:false,inputs:['gameId','gameVersion','lockedAssignments','factionConstraints','replaceExisting'],output:'reviewable server-randomized preview'}),
+  shuffleAssignmentPreview:tool('shuffleAssignmentPreview',{readOnly:false,inputs:['previewId','previewVersion'],output:'new preview preserving locks and constraints'}),
+  applyApprovedAssignments:tool('applyApprovedAssignments',{readOnly:false,approvalRequired:true,inputs:['previewId','previewVersion','confirmActiveGame'],output:'audited existing player role assignments'}),
   proposeRoleUpdate:tool('proposeRoleUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','roleId','patch','sourceVersion'],output:'pending proposal'}),
   proposeAbilityUpdate:tool('proposeAbilityUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','abilityId','patch','sourceVersion'],output:'pending proposal'}),
   proposeFactionUpdate:tool('proposeFactionUpdate',{readOnly:false,approvalRequired:true,inputs:['gameId','factionId','patch','sourceVersion'],output:'pending proposal'}),
@@ -59,6 +65,7 @@ export function inferMasterIntent(message,requestedTask='auto'){
   if(/\b(global settings?|global fallback|global rules?|every game|all games|from now on)\b/.test(query)&&/\b(add|create|change|edit|update|set|remove|disable|enable|use)\b/.test(query))return 'edit_content';
   if(/\b(give|change|edit|update|increase|decrease|remove|mark|block|protect|poison|make .*stronger|make .*weaker)\b/.test(query))return 'edit_content';
   if(/\b(create|make|design|draft|add)\b.*\b(role)\b/.test(query))return 'create_role';
+  if(/\b(roster|unassigned players?|unused roles?|role slots?|random(?:ly|ize)?|shuffle|reroll|assign everyone|assign players?)\b/.test(query))return 'roster_setup';
   if(/\b(create|make|design|draft|add)\b.*\b(ability|power)\b/.test(query))return 'create_ability';
   if(/\b(create|make|design|draft|add)\b.*\b(faction|team|alignment)\b/.test(query))return 'create_faction';
   if(/\b(create|make|draft|add)\b.*\b(rule)\b/.test(query))return 'create_rule';
@@ -111,6 +118,7 @@ export function requestedPlayerName(message){
 export function toolsForMasterIntent(intent,{hasPlayer=false,hasAbility=false,hasRole=false,hasFaction=false}={}){
   const tools=['getCurrentGame','getEffectiveRuleset'];
   if(intent==='live_status')tools.push(hasPlayer?'getPlayerState':'getPlayersByStatus');
+  if(intent==='roster_setup')tools.push('getRosterAnalysis','getUnassignedPlayers','getAvailableRoleSlots','createAssignmentPreview','shuffleAssignmentPreview','applyApprovedAssignments');
   if(intent==='explain_content')tools.push(hasAbility?'getAbility':hasRole?'getRole':'searchAbilities','searchRoles');
   if(intent==='search_history')tools.push('searchResolutions','getAuditHistory');
   if(intent==='search_precedents')tools.push('searchPrecedents');

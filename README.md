@@ -1,4 +1,6 @@
-# GM Command Center v10.0
+# GM Command Center v11.1
+
+Version 11.1 adds first-class Basic Roles, bulk TXT/CSV/DOCX player-name import, role slot counts, and GM-reviewed server-randomized role assignment with locks and faction constraints.
 
 Generic social-deduction game engine with permanent Villager, Den, and Neutral faction classes.
 

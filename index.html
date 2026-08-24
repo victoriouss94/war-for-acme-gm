@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.0.0">
+  <link rel="stylesheet" href="css/main.css?v=11.1.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -211,7 +211,7 @@
       <aside class="panel">
         <h2>Add Player</h2>
         <label>Player name<input id="playerName" placeholder="Discord name"></label>
-        <label>Role<select id="playerRole"></select></label>
+        <label>Role<select id="playerRole"><option value="">Unassigned</option></select></label>
         <button id="addPlayerBtn" class="full">Add Player</button>
       </aside>
       <div class="panel">
@@ -219,6 +219,27 @@
         <div id="playerList" class="card-grid"></div>
       </div>
     </div>
+    <section id="rosterSetupPanel" class="panel roster-setup-panel">
+      <div class="section-heading"><div><p class="eyebrow">GAME SETUP</p><h2>Player Import &amp; Role Assignment</h2><p class="muted">Names and assignments remain in this game's existing player and role records.</p></div><span id="rosterAnalysis" class="count-pill"></span></div>
+      <div class="roster-setup-grid">
+        <div>
+          <h3>1. Import player names</h3>
+          <label>Paste one player per line<textarea id="playerImportText" rows="8" maxlength="100000" placeholder="Riz&#10;Sky&#10;AJ"></textarea></label>
+          <label class="file-btn">Choose TXT, CSV, or DOCX<input id="playerImportFile" type="file" accept=".txt,.csv,.docx,text/plain,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label>
+          <div class="form-actions horizontal-actions"><button id="previewPlayerImportBtn" type="button">Preview Names</button><button id="cancelPlayerImportBtn" class="secondary" type="button">Cancel</button></div>
+          <div id="playerImportPreview" class="setup-preview"><p class="muted">Paste or choose a file to review player names.</p></div>
+        </div>
+        <div>
+          <h3>2. Build assignment preview</h3>
+          <label class="check"><input id="replaceRoleAssignments" type="checkbox"> Replace existing live assignments</label>
+          <p id="assignmentSafetyNotice" class="form-notice"></p>
+          <div id="assignmentControls" class="assignment-controls"></div>
+          <div class="form-actions horizontal-actions"><button id="randomizeRolesBtn" type="button">Randomize Roles</button><button id="shuffleRolesBtn" class="secondary" type="button" disabled>Shuffle Again</button><button id="editAssignmentBtn" class="secondary" type="button" disabled>Edit Locks</button><button id="cancelAssignmentBtn" class="secondary" type="button" disabled>Cancel Preview</button></div>
+        </div>
+      </div>
+      <div id="assignmentPreview" class="setup-preview"><p class="muted">No assignment preview has been created.</p></div>
+      <div class="form-actions horizontal-actions"><button id="approveAssignmentBtn" type="button" disabled>Approve Assignment</button><button id="addBasicSlotsBtn" class="secondary" type="button">Add Basic Role Slots</button></div>
+    </section>
     <section id="playerStatusManager" class="panel player-status-manager" hidden>
       <div class="section-heading"><div><p class="eyebrow">LIVE DATABASE STATE</p><h2 id="playerStatusManagerTitle">Player Status</h2><p class="muted">Abilities owned are separate from effects currently applied.</p></div><button id="closePlayerStatusManagerBtn" class="secondary" type="button">Close</button></div>
       <div class="player-status-layout">
@@ -438,6 +459,8 @@
         <p id="roleFormError" class="form-error" role="alert" hidden></p>
         <label>Role name<input id="roleName" placeholder="Example: Guardian" maxlength="80" required></label>
         <label>Faction<select id="roleFaction"></select></label>
+        <div class="grid2 compact-grid"><label>Role type<select id="roleType"><option value="STANDARD">Standard (has abilities)</option><option value="BASIC">Basic (no abilities)</option></select></label><label>Available slots<input id="roleSlotCount" type="number" min="1" max="1000" step="1" value="1"></label></div>
+        <p id="basicRoleNotice" class="form-notice" hidden>Basic Roles intentionally own no role abilities. They can still vote, participate, and receive statuses.</p>
         <label>Alignment<input id="roleAlignment" maxlength="120" placeholder="Example: Village-aligned"></label>
         <label>Description<textarea id="roleDescription" rows="3" maxlength="4000"></textarea></label>
         <div class="grid2 compact-grid"><label>Primary active ability<select id="roleActiveAbility"></select></label><label>Primary passive ability<select id="rolePassiveAbility"></select></label></div>
@@ -608,9 +631,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.0.0"></script>
-<script src="js/cloud.js?v=11.0.0"></script>
+<script src="js/supabase-config.js?v=11.1.0"></script>
+<script src="js/cloud.js?v=11.1.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.0.0"></script>
+<script type="module" src="js/app.js?v=11.1.0"></script>
 </body>
 </html>

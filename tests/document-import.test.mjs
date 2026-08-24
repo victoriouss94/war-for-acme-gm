@@ -28,6 +28,11 @@ test('assigns roles across multiple faction headings',()=>{
   const model=analyzeDocumentBlocks(blocks,{fileName:'acme.docx'});assert.equal(model.factions.length,2);assert.deepEqual(model.roles.map(role=>role.factionName),['Acme Defense Force','Warner Syndicate']);
 });
 
+test('Word import distinguishes confirmed Basic Roles from possibly incomplete roles',()=>{
+  const model=analyzeDocumentBlocks([heading(1,'Basic Game'),heading(1,'Factions'),heading(2,'Village'),heading(3,'Juror'),paragraph('No abilities.'),heading(3,'Mystery Role')],{fileName:'basic-game.docx'}),juror=model.roles.find(role=>role.name==='Juror'),mystery=model.roles.find(role=>role.name==='Mystery Role');
+  assert.equal(juror.roleType,'BASIC');assert.equal(juror.abilityDataStatus,'INTENTIONALLY_NONE');assert.deepEqual(juror.abilityNames,[]);assert.equal(mystery.roleType,'STANDARD');assert.equal(mystery.abilityDataStatus,'POSSIBLY_INCOMPLETE');assert.ok(model.warnings.some(item=>item.code==='possibly-incomplete-role'&&item.relatedId===mystery.tempId));
+});
+
 test('parses Word-style role tables and separates active and passive abilities',()=>{
   const model=analyzeDocumentBlocks([heading(1,'Table Game'),{type:'table',headers:['Role','Faction','Ability','Passive'],rows:[['Bugs Bunny','Acme','Advanced Ask — Investigate a player','Investigation resistance'],['The Brain','Warner','Redirect — Redirect one player','Early immunity']]}],{fileName:'table.docx'});
   assert.equal(model.roles.length,2);assert.equal(model.factions.length,2);assert.ok(model.roles[0].activeAbilityName);assert.ok(model.roles[0].passiveAbilityName);assert.equal(model.roles[1].factionName,'Warner');
