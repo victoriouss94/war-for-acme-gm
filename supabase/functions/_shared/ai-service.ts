@@ -17,6 +17,7 @@ export function createServiceClient(){const url=Deno.env.get('SUPABASE_URL')||''
 export async function verifiedUser(client:any,authHeader:string){const token=authHeader.slice(7),{data,error}=await client.auth.getUser(token);if(error||!data?.user)return null;return data.user}
 export async function safetyIdentifier(userId:string){const encoded=new TextEncoder().encode(userId),digest=await crypto.subtle.digest('SHA-256',encoded);return 'gmcc_'+[...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('').slice(0,32)}
 export const extractOutputText=extractStructuredOutputText;
+const usageValues=(usage:any)=>({input:Math.max(0,Number(usage?.input_tokens)||0),cached:Math.max(0,Number(usage?.input_tokens_details?.cached_tokens)||0),output:Math.max(0,Number(usage?.output_tokens)||0)});
 
 export class OpenAIServiceError extends Error{
   status:number;code:string;
@@ -31,16 +32,22 @@ function apiError(payload:any,status:number){
   return new OpenAIServiceError('The AI service could not complete this request.',502,'OPENAI_ERROR');
 }
 
-export async function structuredResponse(options:{model:string;userId:string;instructions:string;input:unknown;schema:unknown;schemaName:string;maxOutputTokens?:number;effort?:string;verbosity?:string}){
+export async function structuredResponse(options:{model:string;userId:string;instructions:string;input:unknown;schema:unknown;schemaName:string;maxOutputTokens?:number;effort?:string;verbosity?:string;repairInvalidJson?:boolean}){
   const key=Deno.env.get('OPENAI_API_KEY')||'';if(!key)throw new OpenAIServiceError('The AI service is not configured.',503,'CONFIGURATION_ERROR');
   let response:Response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({
     model:options.model,store:false,safety_identifier:await safetyIdentifier(options.userId),reasoning:{effort:options.effort||'medium'},max_output_tokens:options.maxOutputTokens||5000,
     instructions:options.instructions,input:options.input,text:{verbosity:options.verbosity||'medium',format:{type:'json_schema',name:options.schemaName,strict:true,schema:options.schema}}
   })})}catch{throw new OpenAIServiceError('The AI service could not be reached.',502,'OPENAI_UNAVAILABLE')}
-  const payload=await response.json().catch(()=>({}));if(!response.ok)throw apiError(payload,response.status);
-  const parsed=parseStructuredResponsePayload(payload);if(!parsed.ok)throw new OpenAIServiceError(parsed.message,502,parsed.code);
-  return {result:parsed.value,responseId:textValue(payload?.id,200),usage:payload?.usage||null};
+  let payload=await response.json().catch(()=>({}));if(!response.ok)throw apiError(payload,response.status);
+  let parsed=parseStructuredResponsePayload(payload),repairAttempts=0,initialUsage=payload?.usage||null;
+  if(!parsed.ok&&options.repairInvalidJson&&['AI_RESPONSE_INVALID_JSON','AI_RESPONSE_EMPTY','AI_RESPONSE_INCOMPLETE'].includes(parsed.code)){
+    repairAttempts=1;const repairResponse=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:options.model,store:false,safety_identifier:await safetyIdentifier(options.userId),reasoning:{effort:'low'},max_output_tokens:options.maxOutputTokens||5000,instructions:'Repair the failed structured response. Return only complete data matching the supplied strict JSON schema. Do not omit required fields or stop after analysis.',input:JSON.stringify({original_structured_request:options.input,original_ai_result:extractStructuredOutputText(payload),validation_errors:[parsed.message]}),text:{verbosity:'low',format:{type:'json_schema',name:options.schemaName+'_json_repair',strict:true,schema:options.schema}}})});
+    const repairedPayload=await repairResponse.json().catch(()=>({}));if(!repairResponse.ok)throw apiError(repairedPayload,repairResponse.status);payload=repairedPayload;parsed=parseStructuredResponsePayload(payload);
+  }
+  if(!parsed.ok)throw new OpenAIServiceError(parsed.message,502,parsed.code);
+  const first=usageValues(initialUsage),second=usageValues(repairAttempts?payload?.usage:null),usage=repairAttempts?{input_tokens:first.input+second.input,output_tokens:first.output+second.output,input_tokens_details:{cached_tokens:first.cached+second.cached}}:payload?.usage||null;
+  return {result:parsed.value,responseId:textValue(payload?.id,200),usage,repairAttempts};
 }
 
 export async function createEmbeddings(inputs:string[]){

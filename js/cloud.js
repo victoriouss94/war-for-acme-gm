@@ -215,7 +215,7 @@
     if(error){
       let payload=null;
       try{payload=await error.context?.json?.()}catch{}
-      throw Object.assign(new Error(payload?.error||error.message||'The GM Copilot request failed.'),{code:payload?.code||error.code||'COPILOT_ERROR',status:error.context?.status||null});
+      throw Object.assign(new Error(payload?.error||error.message||'The GM Copilot request failed.'),{code:payload?.code||error.code||'COPILOT_ERROR',status:error.context?.status||null,resolutionError:payload?.resolution_error||null});
     }
     return data;
   }

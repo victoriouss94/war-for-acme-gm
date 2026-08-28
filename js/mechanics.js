@@ -1,4 +1,4 @@
-import {classifyAbility} from './global-abilities.js?v=11.8.0';
+import {classifyAbility} from './global-abilities.js?v=11.9.0';
 
 export const MECHANIC_SCHEMA_VERSION=2;
 

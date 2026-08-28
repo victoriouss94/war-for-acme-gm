@@ -1,5 +1,13 @@
 # Changelog
 
+## v11.9.0 — Guaranteed Structured Master GM Rulings
+
+- Enforced a complete resolution contract at the Edge Function boundary, including an explicit status, phase, Master GM ruling, one final result per queued action, readable names, player outcomes, and unresolved questions.
+- Added one targeted structured repair attempt for malformed, partial, missing-action, unknown-player, or mode-as-ability AI results; invalid repaired output becomes a visible Resolution Error with affected actions and retry.
+- Replaced free-form AI presentation with fixed Master GM Ruling, action, player outcome, death, conversion, intel, status, usage, passive, generated-effect, and transformation components.
+- Disabled Approve & Apply until the structured draft passes completeness and consistency checks while preserving the existing editable GM ruling and learning-diff workflow.
+- Added focused regression coverage for all 25 requested resolution scenarios.
+
 ## v11.8.0 — Global Role Configurations
 
 - Generalized role modes into arbitrary document-defined configurations, forms, states, phases, and stances without game-specific names or a fixed count.
