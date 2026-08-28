@@ -1,5 +1,12 @@
 # Changelog
 
+## v11.7.1 — Complete Transformers Role Modes
+
+- Re-read the exact uploaded Transformers DOCX (SHA-256 `81427a…aa04`) and rebuilt all 27 source-defined Robot/Alt mode roles against the existing Master Ability Encyclopedia.
+- Corrected Optimus Alt Mode, Kup Place Swap, and every remaining imported mode relationship while retaining the source text for role-specific overrides.
+- Preserved all 39 existing roles (including both Basic roles), 50 players, 101 ability records, legacy import records, and stable role/player IDs.
+- Updated DOCX acceptance coverage so vehicle modes remain context and never become fake selectable abilities.
+
 ## v11.7.0 — Multi-Mode Action Context
 
 - Separated role modes from selectable actions with the required Player → Mode → Ability → Target → Queue flow.

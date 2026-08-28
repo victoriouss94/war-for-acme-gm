@@ -77,7 +77,7 @@ test('rejects an empty-role import even when a game name was inferred',()=>{
 const suppliedTransformersDocx=process.env.TRANSFORMERS_DOCX;
 test('acceptance: the supplied Transformers DOCX yields a complete editable roster',{skip:!suppliedTransformersDocx||!existsSync(suppliedTransformersDocx)},async()=>{
   const converted=await mammoth.convertToHtml({buffer:readFileSync(suppliedTransformersDocx)}),blocks=htmlToDocumentBlocks(converted.value),model=analyzeDocumentBlocks(blocks,{fileName:'transformers.docx'}),names=new Set(model.roles.map(role=>role.name));
-  assert.equal(model.factions.length,3);assert.ok(model.roles.length>=35,'roles='+model.roles.length+' '+JSON.stringify([...names]));assert.ok(model.abilities.length>=55,'abilities='+model.abilities.length);assert.ok(names.has('Alpha – Megatron'));assert.ok(names.has('Ultimate – Optimus'));assert.ok(names.has('Unicron- Ultimate Neutral'));assert.equal(validateGameImport(model).valid,true);
+  assert.equal(model.factions.length,3);assert.equal(model.roles.length,37);assert.equal(model.roles.filter(role=>role.modes.length===2).length,27);assert.equal(model.abilities.length,10);assert.equal(model.abilities.some(ability=>/robot mode|alt mode/i.test(ability.name)),false);assert.ok(names.has('Alpha – Megatron'));assert.ok(names.has('Ultimate – Optimus'));assert.ok(names.has('Unicron- Ultimate Neutral'));assert.equal(validateGameImport(model).valid,true);
 });
 
 test('rejects unsupported, empty, and oversized uploads before parsing',()=>{

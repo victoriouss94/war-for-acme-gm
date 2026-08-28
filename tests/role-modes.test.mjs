@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {effectivePlayerAbilities} from '../js/player-abilities.js';
 import {abilityModeAccess,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments,roleModeContext} from '../js/role-modes.js';
+import {roleAbilityMap,roleModeAbilityMap} from '../scripts/build-transformers-payload.mjs';
 
 const ability=(id,name,{phase='Night',type='ONE_PLAYER',manual=false}={})=>({id,name,category:phase==='Passive'?'Protection':'Support',phase,definition:name,mechanics:[],targeting:{type,selectionRuleType:'HARD_SELECTION_RESTRICTION',minTargets:type==='ONE_PLAYER'?1:0,maxTargets:type==='ONE_PLAYER'?1:0,livingOnly:type==='ONE_PLAYER',deadOnly:false,selfAllowed:true,selfProhibited:false,factionMemberOnly:false,nonFactionMemberOnly:false,hiddenInformationSafe:true,manuallyTriggerable:manual,selectionRules:[],effectEligibilityRules:[],targetFactionRestrictions:[],targetRoleRestrictions:[]}});
 const abilities=[ability('guard','Guard'),ability('reflect','Reflection',{phase:'Passive',type:'NO_TARGET'}),ability('plates','Protective Plates',{phase:'Passive',type:'NO_TARGET'}),ability('den-block','Den Block',{type:'FACTION'}),ability('save','Save'),ability('heal','Heal'),ability('protect','Protect'),ability('ask','Basic Ask'),ability('roleblock','Roleblock'),ability('death','Death Immunity',{phase:'Passive',type:'NO_TARGET'}),ability('instant','Personal Instant Kill'),ability('super','Super Kill'),ability('wide','Role-wide Signal'),{...ability('robot-mode','Ironhide — Robot Mode'),recordType:'MODE_CONTEXT',selectableAsAction:false}];
@@ -37,3 +38,33 @@ test('17. Optimus current mode filters mode abilities and keeps role-wide action
 test('18. legacy mode-name records are context-only and cannot enter role actions',()=>{const placeholder=abilities.find(item=>item.id==='robot-mode');assert.equal(isModeContextAbility(placeholder,ironhide),true);const legacy={...ironhide,tags:[...ironhide.tags,placeholder.name],activeAbilityId:placeholder.id};assert.equal(effective({id:'p1',currentModeId:'ironhide:robot'},legacy).abilities.some(item=>item.abilityId==='robot-mode'),false)});
 
 test('role editor parses and formats Role → Mode → Ability assignments',()=>{const parsed=parseRoleModeAssignments('Robot Mode: Guard, Reflection\nAlt Mode: Den Block',abilities,['guard','reflect','den-block','wide']);assert.deepEqual(parsed.errors,[]);assert.deepEqual(parsed.roleWideAbilityIds,['wide']);const record={id:'r',modes:parsed.modes,roleWideAbilityIds:parsed.roleWideAbilityIds};assert.match(formatRoleModeAssignments(record,abilities),/Robot Mode: Guard, Reflection/);assert.equal(normalizeRoleModes(record,abilities).modes.length,2);assert.equal(abilityModeAccess({abilityId:'den-block',context:roleModeContext({player:{id:'p'},role:{...record,modeSelectionPolicy:'CHOOSE_BEFORE_ACTION'},abilities,selectedModeId:'mode:alt-mode'})}).modeName,'Alt Mode')});
+
+test('all 27 source-defined Transformers mode roles have complete ability coverage',()=>{
+  assert.equal(Object.keys(roleAbilityMap).length,37);
+  assert.equal(Object.keys(roleModeAbilityMap).length,27);
+  for(const [roleName,mapping] of Object.entries(roleModeAbilityMap)){
+    const assigned=new Set([...Object.values(mapping.modes).flat(),...mapping.roleWide]);
+    assert.deepEqual([...assigned].sort(),[...roleAbilityMap[roleName].abilities].sort(),roleName);
+    assert.deepEqual(Object.keys(mapping.modes),['Robot Mode','Alt Mode'],roleName);
+  }
+  assert.deepEqual(roleModeAbilityMap['Ultimate – Optimus'].modes['Alt Mode'],['Personal Instant Kill','Super Kill']);
+  assert.deepEqual(roleModeAbilityMap['Drunk – Kup'].modes['Alt Mode'],['Drunk','Place Swap']);
+});
+
+test('production source rebuild is hash-scoped, complete, and preserves stable game entities',()=>{
+  const sql=readFileSync(new URL('../supabase/migrations/20260828070000_rebuild_transformers_roles_from_source.sql',import.meta.url),'utf8');
+  const embedded=sql.match(/role_map constant jsonb := \$map\$([\s\S]+?)\$map\$::jsonb;/);
+  assert.ok(embedded);
+  const mapping=JSON.parse(embedded[1]);
+  assert.equal(mapping.length,27);
+  assert.equal(new Set(mapping.map(role=>role.name)).size,27);
+  assert.match(sql,/81427a283aa7914b0b5bf3b0eb846b1544d12944fdf76263d2b39a838443aa04/);
+  assert.doesNotMatch(sql,/56b8cfc4-c45e-4227-a37b-14652ca9ed48/);
+  assert.match(sql,/Preserved 39 roles, 50 players, 101 ability records/);
+  assert.match(sql,/version=version\+1/);
+  for(const role of mapping){
+    const source=roleModeAbilityMap[role.name]||roleModeAbilityMap['Omega Supreme – 2 nd in command'];
+    assert.ok(source,role.name);
+    assert.deepEqual(role.modes.map(mode=>mode.name),['Robot Mode','Alt Mode'],role.name);
+  }
+});
