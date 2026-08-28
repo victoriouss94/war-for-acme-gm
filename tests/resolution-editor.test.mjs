@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildResolutionDraft,finalResolutionPayload,resolutionDifferences,usageAggregates,validateResolutionDraft} from '../js/resolution-editor.js';
+import {readFile} from 'node:fs/promises';
+import {buildResolutionDraft,finalResolutionPayload,humanizeResolutionText,playerOutcomeDisplayRows,resolutionDifferences,resolutionDisplayLookup,usageAggregates,validateResolutionDraft} from '../js/resolution-editor.js';
 
 const players=[{id:'riz',name:'Riz',roleId:'sheriff',currentFactionId:'town'},{id:'sky',name:'Sky',roleId:'guardian',currentFactionId:'town'},{id:'aj',name:'AJ',roleId:'basic',currentFactionId:'town'}];
 const roles=[{id:'sheriff',name:'Sheriff',version:3,roleType:'STANDARD',tags:['Personal Instant Kill']},{id:'guardian',name:'Guardian',version:2,roleType:'STANDARD',tags:['Reflection']},{id:'basic',name:'Basic Villager',version:1,roleType:'BASIC',tags:[]}];
@@ -45,4 +46,29 @@ test('structured differences preserve AI and final GM values',()=>{
 test('player analytics include rewards while role-owned analytics remain separate',()=>{
   const rows=[{player_id:'aj',player_name:'AJ',role_id:'basic',role_name:'Basic Villager',ability_id:'super',ability_name:'Super Kill',source_type:'MINIGAME_REWARD',attempts:1,successful:1},{player_id:'riz',player_name:'Riz',role_id:'sheriff',role_name:'Sheriff',ability_id:'kill',ability_name:'Personal Instant Kill',source_type:'ROLE',attempts:1,failed:1}];
   const all=usageAggregates(rows),roleOwned=usageAggregates(rows.filter(row=>row.source_type==='ROLE'));assert.equal(all.players.find(item=>item.id==='aj').attempts,1);assert.equal(roleOwned.roles.some(item=>item.id==='basic'),false);assert.equal(roleOwned.roles.find(item=>item.id==='sheriff').attempts,1);
+});
+
+test('passive classification and numbered action order are enforced before approval',()=>{
+  const orderedActions=[{id:'kill-action',sourcePlayerId:'riz',abilityId:'kill',name:'Personal Instant Kill',roleId:'sheriff',targetIds:['sky']},{id:'convert-action',sourcePlayerId:'riz',abilityId:'convert',name:'Convert',roleId:'sheriff',targetIds:['sky']}],orderedAbilities=[...abilities,{id:'convert',name:'Convert'}],draft=buildResolutionDraft({proposal:{final_ruling:'Final.',action_results:[{action_id:'kill-action',result:'SUCCESS'},{action_id:'convert-action',result:'SUCCESS'}]},actions:orderedActions,players});
+  draft.action_results.find(item=>item.action_id==='kill-action').order=1;draft.action_results.find(item=>item.action_id==='convert-action').order=2;
+  const review=validateResolutionDraft(draft,{actions:orderedActions,players,roles,abilities:orderedAbilities,factions,allowWarnings:true});assert.match(review.errors.join(' '),/global category order/);
+  const passive=buildResolutionDraft({proposal:{final_ruling:'Passive.',action_results:[{action_id:'reflect-action',result:'SUCCESS',resolution_category:'REDIRECTS',active_passive:'PASSIVE'}]},actions:[{id:'reflect-action',sourcePlayerId:'sky',abilityId:'reflect',name:'Reflection',roleId:'guardian',targetIds:[]}],players}).action_results[0];assert.equal(passive.resolution_category,'PASSIVES');assert.equal(passive.resolution_timing,'EVENT_TRIGGERED');assert.equal(passive.resolution_priority,null);
+});
+
+test('GM resolution editor exposes classification, authority, and target-history review controls',async()=>{
+  const app=await readFile('js/app.js','utf8');
+  for(const field of ['standardized_ability_type','resolution_category','resolution_timing','source_game_rule','global_rule_used'])assert.match(app,new RegExp(`data-field="${field}"`));
+  assert.match(app,/Original target\(s\)/);assert.match(app,/Transformation history/);assert.match(app,/Unknown historical role/);assert.match(app,/Unknown player/);
+});
+
+test('normal player outcomes use player and final faction names without internal status codes',()=>{
+  const playerId='0ba93b57-d7fb-4086-81d5-c842903dc5e2',townId='5108cddd-3e6e-4760-b18f-f171739da6d1',denId='72c4a82c-ee58-47b0-9b6b-a902a8f4deea',lookup=resolutionDisplayLookup({players:[{id:playerId,name:'Riz',currentFactionId:townId}],factions:[{id:townId,name:'Village'},{id:denId,name:'Den'}]});
+  const rows=playerOutcomeDisplayRows([{player_id:playerId,life_state:'UNCHANGED',faction_id:denId}],lookup);
+  assert.deepEqual(rows,['Riz — Den']);assert.doesNotMatch(rows[0],/UNCHANGED|0ba93b57|72c4a82c/);
+});
+
+test('GM-facing resolution prose resolves known entities and masks unknown UUIDs',()=>{
+  const playerId='0ba93b57-d7fb-4086-81d5-c842903dc5e2',factionId='5108cddd-3e6e-4760-b18f-f171739da6d1',unknown='e85f355f-0cc3-49c0-99a3-41b621a68f37',lookup=resolutionDisplayLookup({players:[{id:playerId,name:'Riz'}],factions:[{id:factionId,name:'Village'}]});
+  const readable=humanizeResolutionText(`${playerId}: UNCHANGED • faction ${factionId}; source ${unknown}`,lookup);
+  assert.match(readable,/Riz/);assert.match(readable,/Village/);assert.doesNotMatch(readable,/UNCHANGED|0ba93b57|5108cddd|e85f355f/);assert.match(readable,/Internal record/);
 });

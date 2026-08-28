@@ -1,6 +1,32 @@
 export const MASTER_GM_MAX_TOOL_CALLS=12;
 export const MASTER_GM_TOOL_TIMEOUT_MS=8000;
 
+const displayValue=item=>String(item?.displayName||item?.display_name||item?.playerName||item?.player_name||item?.factionName||item?.faction_name||item?.roleName||item?.role_name||item?.abilityName||item?.ability_name||item?.statusName||item?.status_name||item?.title||item?.name||'').trim();
+const displayId=item=>String(item?.id||item?.player_id||item?.playerId||item?.faction_id||item?.factionId||item?.role_id||item?.roleId||item?.ability_id||item?.abilityId||item?.status_id||item?.statusId||item?.action_id||item?.actionId||'').trim();
+const escapeExpression=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+
+export function humanizeMasterGmText(value,indexes={}){
+  let readable=String(value??'');
+  const entities=['games','players','factions','roles','abilities','statuses','actions','rules'].flatMap(key=>Array.isArray(indexes?.[key])?indexes[key]:[]),labels=new Map();
+  for(const entity of entities){const id=displayId(entity),name=displayValue(entity);if(id&&name)labels.set(id,name)}
+  for(const [id,name] of [...labels.entries()].sort((left,right)=>right[0].length-left[0].length)){
+    const expression=new RegExp(`(^|[^A-Za-z0-9_-])${escapeExpression(id)}(?=$|[^A-Za-z0-9_-])`,'g');
+    readable=readable.replace(expression,(_match,prefix)=>prefix+name);
+  }
+  return readable.replace(/\bUNCHANGED\b/gi,'no change').replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi,'Internal record');
+}
+
+export function humanizeMasterGmResult(result,indexes={}){
+  const internalKey=key=>['id','value','locator','interaction_signature','signature_tokens','global_rule_used','source_game_rule','source_reference','rule_key','document_key','game_key','life_state','result','operation','status','event_type','intent','confidence','authority','scope','kind','type','category','phase','active_passive','resolution_category','resolution_timing','source_type','use_disposition','visibility','status_category','duration_type','proposal_type','draft_type','rule_type'].includes(key)||/(?:^|_)(?:id|ids)$/.test(key)||/(?:Id|Ids)$/.test(key);
+  const visit=(value,key='')=>{
+    if(typeof value==='string')return internalKey(key)?value:humanizeMasterGmText(value,indexes);
+    if(Array.isArray(value))return internalKey(key)?value.slice():value.map(item=>visit(item,key));
+    if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([childKey,childValue])=>[childKey,visit(childValue,childKey)]));
+    return value;
+  };
+  return visit(result);
+}
+
 const tool=(name,{permission='GM',readOnly=true,approvalRequired=false,gameScoped=true,inputs=[],output='object',audit=true}={})=>Object.freeze({name,permission,readOnly,approvalRequired,gameScoped,inputs:Object.freeze(inputs),output,audit});
 
 export const MASTER_GM_TOOLS=Object.freeze({

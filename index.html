@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.5.0">
+  <link rel="stylesheet" href="css/main.css?v=11.6.1">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -215,7 +215,7 @@
         <button id="addPlayerBtn" class="full">Add Player</button>
       </aside>
       <div class="panel">
-        <div class="filters player-filters"><input id="playerSearch" placeholder="Search player, role, faction, or status"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select><select id="playerStatusFilter"><option value="ALL">All status conditions</option><option value="ANY_ACTIVE">Any active status</option><option value="PENDING">Pending effects</option><option value="EXPIRING_CURRENT">Expiring this cycle</option><option value="ROLEBLOCK">Blocked</option><option value="MARK">Marked</option><option value="POISON">Poisoned</option><option value="PROTECT">Protected</option><option value="SUPER_PROTECT">Super Protected</option><option value="GUARDED">Guarded</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="DEATH_IMMUNITY">Death Immune</option><option value="REDIRECT">Redirected</option><option value="CONVERTED">Converted</option></select></div>
+        <div class="filters player-filters"><input id="playerSearch" placeholder="Search player, role, faction, or status"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select><select id="playerStatusFilter"><option value="ALL">All status conditions</option><option value="ANY_ACTIVE">Any active status</option><option value="PENDING">Pending effects</option><option value="EXPIRING_CURRENT">Expiring this cycle</option><option value="ROLEBLOCK">Blocked</option><option value="DEN_BLOCKED">Den Blocked</option><option value="VILLAGERS_BLOCKED">Villagers Blocked</option><option value="FACTION_ACTION_BLOCKED">Faction Actions Blocked</option><option value="MARK">Marked</option><option value="POISON">Poisoned</option><option value="PROTECT">Protected</option><option value="SUPER_PROTECT">Super Protected</option><option value="GUARDED">Guarded</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="DEATH_IMMUNITY">Death Immune</option><option value="BULLETPROOF">Bulletproof</option><option value="REDIRECT">Redirected</option><option value="PLACE_SWAP">Place Swapped</option><option value="ROLE_SWAP">Role Swapped</option><option value="REFLECTION">Reflection</option><option value="COUNTERATTACK">Counterattack Ready</option><option value="CONVERTED">Converted</option><option value="HEALING_PENDING">Healing Pending</option><option value="ACTION_SUCCESS_GUARANTEE">Action Guaranteed</option><option value="ABILITY_AMPLIFY">Ability Amplified</option><option value="ADDITIONAL_USES">Additional Uses</option></select></div>
         <div id="playerList" class="card-grid"></div>
       </div>
     </div>
@@ -273,7 +273,7 @@
         <form id="playerStatusForm" class="status-editor">
           <h3 id="playerStatusFormTitle">Add Status</h3>
           <div class="grid2 compact-grid">
-            <label>Status type<select id="statusType"><option value="ROLEBLOCK">Roleblock / Blocked</option><option value="MARK">Mark / Marked</option><option value="POISON">Poison / Poisoned</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="SILENCED">Silenced</option><option value="PROTECT">Protect</option><option value="SUPER_PROTECT">Super Protect</option><option value="DEATH_IMMUNITY">Death Immunity</option><option value="BULLETPROOF">Bulletproof</option><option value="GUARDED">Guarded</option><option value="REDIRECT">Redirected</option><option value="CONVERTED">Converted</option><option value="HEALING_PENDING">Healing Pending</option><option value="ACTION_SUCCESS_GUARANTEE">Action Success Guarantee</option><option value="ABILITY_AMPLIFY">Ability Amplify</option><option value="ADDITIONAL_USES">Additional Uses</option><option value="TEMPORARY_IMMUNITY">Temporary Immunity</option><option value="TEMPORARY_RESTRICTION">Temporary Restriction</option><option value="CUSTOM">Custom Status</option></select></label>
+            <label>Status type<select id="statusType"><option value="ROLEBLOCK">Roleblock / Blocked</option><option value="DEN_BLOCKED">Den Blocked</option><option value="VILLAGERS_BLOCKED">Villagers Blocked</option><option value="FACTION_ACTION_BLOCKED">Faction Actions Blocked</option><option value="MARK">Mark / Marked</option><option value="POISON">Poison / Poisoned</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="SILENCED">Silenced</option><option value="PROTECT">Protect</option><option value="SUPER_PROTECT">Super Protect</option><option value="DEATH_IMMUNITY">Death Immunity</option><option value="BULLETPROOF">Bulletproof</option><option value="GUARDED">Guarded</option><option value="REDIRECT">Redirected</option><option value="PLACE_SWAP">Place Swapped</option><option value="ROLE_SWAP">Role Swapped</option><option value="REFLECTION">Reflection</option><option value="COUNTERATTACK">Counterattack Ready</option><option value="CONVERTED">Converted</option><option value="HEALING_PENDING">Healing Pending</option><option value="ACTION_SUCCESS_GUARANTEE">Action Success Guarantee</option><option value="ABILITY_AMPLIFY">Ability Amplify</option><option value="ADDITIONAL_USES">Additional Uses</option><option value="TEMPORARY_IMMUNITY">Temporary Immunity</option><option value="TEMPORARY_RESTRICTION">Temporary Restriction</option><option value="CUSTOM">Custom Status</option></select></label>
             <label>Status name<input id="statusName" maxlength="120" placeholder="Required for a custom status"></label>
             <label>Section<select id="statusCategory"><option value="HARMFUL">Active / Harmful</option><option value="PROTECTION">Active / Protection</option><option value="PASSIVE">Passive Effect</option><option value="TEMPORARY">Temporary Effect</option><option value="PERMANENT">Permanent State Change</option><option value="CUSTOM">Custom</option></select></label>
             <label>State<select id="statusState"><option value="ACTIVE">Active</option><option value="PENDING">Pending</option></select></label>
@@ -355,7 +355,12 @@
       </aside>
       <div class="panel">
         <div class="section-heading"><div><p class="eyebrow">PHASE-SCOPED QUEUE</p><h2 id="queuePhaseHeading">Submitted Actions</h2><p id="queueCompleteness" class="muted"></p></div></div>
-        <p class="gm-decision-required"><strong>No universal order is configured.</strong> The AI may propose an order only when an official rule or applicable GM precedent supports it. Otherwise, a GM decision is required.</p>
+        <section class="global-resolution-order" aria-label="Global resolution order">
+          <p class="eyebrow">GLOBAL DEFAULT RESOLUTION ORDER</p>
+          <div class="resolution-order-flow"><strong>BLOCKS</strong><span>↓</span><strong>GUARANTEE</strong><span>↓</span><strong>CONTROL</strong><span>↓</span><strong>SWAPS</strong><span>↓</span><strong>REDIRECTS</strong><span>↓</span><strong>STATUS EFFECTS</strong><span>↓</span><strong>INTEL</strong><span>↓</span><strong>CONVERTS</strong><span>↓</span><strong>KILLS</strong><span>↓</span><strong>DOC</strong></div>
+          <p><strong>PASSIVES — EVENT/TRIGGER BASED</strong><br><strong>HEAL — DOC ABILITY / ANY-TIME RESOLUTION</strong></p>
+          <small>Explicit current-game rules and role text override these global defaults. Actions are classified before resolution and are never resolved merely in submission order.</small>
+        </section>
         <div id="queueList"></div>
         <button id="startResolutionSessionBtn" class="full" type="button">Resolve Current Phase</button>
       </div>
@@ -620,7 +625,7 @@
     </div>
     <section class="panel official-ability-panel">
       <div class="section-heading encyclopedia-heading">
-        <div><p class="eyebrow">VERSIONED OFFICIAL DATASET</p><h2>Standard Ability Encyclopedia</h2><p class="muted">Stable standardized abilities stay separate from game copies and role-specific modifiers.</p></div>
+        <div><p class="eyebrow">VERSIONED GLOBAL DATASET</p><h2>Global Master Ability Encyclopedia</h2><p class="muted">Stable global defaults apply to every game while explicit game rules, role text, and game precedents retain higher authority.</p></div>
         <div class="official-dataset-actions"><span id="officialAbilityCount" class="count-pill"></span><button id="activateOfficialDatasetBtn" class="secondary" type="button">Activate for This Game</button><button id="showAbilityReconciliationBtn" class="secondary" type="button">Reconciliation Report</button></div>
       </div>
       <p id="officialDatasetNotice" class="form-notice"></p>
@@ -718,9 +723,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.5.0"></script>
-<script src="js/cloud.js?v=11.5.0"></script>
+<script src="js/supabase-config.js?v=11.6.1"></script>
+<script src="js/cloud.js?v=11.6.1"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.5.0"></script>
+<script type="module" src="js/app.js?v=11.6.1"></script>
 </body>
 </html>

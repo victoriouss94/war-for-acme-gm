@@ -4,6 +4,9 @@ export const STATUS_VISIBILITIES=Object.freeze(['GM_ONLY','OWNER_VISIBLE','FACTI
 
 export const PLAYER_STATUS_TYPES=Object.freeze([
   {value:'ROLEBLOCK',label:'Blocked',name:'Roleblock',category:'HARMFUL'},
+  {value:'DEN_BLOCKED',label:'Den Blocked',name:'Den Block',category:'HARMFUL'},
+  {value:'VILLAGERS_BLOCKED',label:'Villagers Blocked',name:'Villagers Block',category:'HARMFUL'},
+  {value:'FACTION_ACTION_BLOCKED',label:'Faction Actions Blocked',name:'Faction Action Block',category:'HARMFUL'},
   {value:'MARK',label:'Marked',name:'Mark',category:'HARMFUL'},
   {value:'POISON',label:'Poisoned',name:'Poison',category:'HARMFUL'},
   {value:'DRUNK',label:'Drunk',name:'Drunk',category:'HARMFUL'},
@@ -15,6 +18,10 @@ export const PLAYER_STATUS_TYPES=Object.freeze([
   {value:'BULLETPROOF',label:'Bulletproof',name:'Bulletproof',category:'PASSIVE'},
   {value:'GUARDED',label:'Guarded',name:'Guard',category:'PROTECTION'},
   {value:'REDIRECT',label:'Redirected',name:'Redirect',category:'TEMPORARY'},
+  {value:'PLACE_SWAP',label:'Place Swapped',name:'Place Swap',category:'TEMPORARY'},
+  {value:'ROLE_SWAP',label:'Role Swapped',name:'Role Swap',category:'TEMPORARY'},
+  {value:'REFLECTION',label:'Reflecting',name:'Reflection',category:'PASSIVE'},
+  {value:'COUNTERATTACK',label:'Counterattack Ready',name:'Counterattack',category:'PASSIVE'},
   {value:'CONVERTED',label:'Converted',name:'Converted',category:'PERMANENT'},
   {value:'HEALING_PENDING',label:'Healing Pending',name:'Healing Pending',category:'TEMPORARY'},
   {value:'ACTION_SUCCESS_GUARANTEE',label:'Action Guaranteed',name:'Action Success Guarantee',category:'TEMPORARY'},

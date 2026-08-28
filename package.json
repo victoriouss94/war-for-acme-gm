@@ -1,11 +1,11 @@
 {
   "name": "gm-command-center",
   "private": true,
-  "version": "11.5.0",
+  "version": "11.6.1",
   "type": "module",
   "scripts": {
-    "lint": "node --check js/mechanics.js && node --check js/player-setup.js && node --check js/player-abilities.js && node --check js/phase-controller.js && node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/resolution-editor.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",
-    "typecheck": "node --check js/mechanics.js && node --check js/player-setup.js && node --check js/player-abilities.js && node --check js/phase-controller.js && node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/resolution-editor.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",
+    "lint": "node --check js/global-abilities.js && node --check js/mechanics.js && node --check js/player-setup.js && node --check js/player-abilities.js && node --check js/phase-controller.js && node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/resolution-editor.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",
+    "typecheck": "node --check js/global-abilities.js && node --check js/mechanics.js && node --check js/player-setup.js && node --check js/player-abilities.js && node --check js/phase-controller.js && node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/resolution-editor.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",
     "build": "node scripts/verify-build.mjs",
     "test": "node --test tests/*.test.mjs"
   },

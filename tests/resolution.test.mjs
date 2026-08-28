@@ -30,7 +30,7 @@ test('database and UI implement one GM-controlled resolution and precedent archi
   for(const table of ['resolution_sessions','resolution_session_events','gm_precedents','ai_drafts','ability_interactions','ai_usage_events','ai_usage_limits'])assert.match(sql,new RegExp(`create table public\\.${table}`));
   for(const pattern of [/for update/,/RESOLUTION_VERSION_CONFLICT/,/RESOLUTION_ALREADY_FINALIZED/,/target_teach_ai/,/interaction_signature/,/CONFLICTING/,/enable row level security/,/public\.can_edit_game/,/reserve_ai_usage_internal/,/complete_ai_usage_internal/])assert.match(sql,pattern);
   assert.doesNotMatch(sql,/grant (insert|update|delete).*resolution_sessions.*authenticated/i);
-  for(const pattern of [/resolution_sessions/,/search_gm_precedents/,/record_resolution_ai_proposal_internal/,/create_ai_draft_internal/,/Never invent a missing value or universal action order/,/requires_gm_decision/])assert.match(edge,pattern);
+  for(const pattern of [/resolution_sessions/,/search_gm_precedents/,/record_resolution_ai_proposal_internal/,/create_ai_draft_internal/,/Never resolve actions merely in submission order/,/requires_gm_decision/])assert.match(edge,pattern);
   for(const pattern of [/startResolutionSession/,/finalizeResolutionSession/,/reviewAiDraft/,/managePrecedent/,/setAiUsageLimit/,/table:'resolution_sessions'/])assert.match(cloud,pattern);
   assert.doesNotMatch(app,/priorityMap/);assert.doesNotMatch(html,/Blocks<\/li><li>Role Control/);
   for(const id of ['resolutionsView','resolutionSessionList','analyzeResolutionBtn','manualResolutionForm','teachAiFromResolution','learningView','precedentList','aiDraftList','abilityInteractionList','aiUsageLimitForm'])assert.match(html,new RegExp(`id="${id}"`));

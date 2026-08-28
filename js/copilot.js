@@ -1,5 +1,5 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.5.0';
-import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.5.0';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.6.1';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.6.1';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','phase_control','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
@@ -96,11 +96,11 @@ export function validateCopilotChanges(changes,gameState={},statusEffects=[]){
 
 export function copilotChangeLabel(change,gameState={},statusEffects=[]){
   const player=(gameState.players||[]).find(item=>item.id===change.target_id),role=(gameState.roles||[]).find(item=>item.id===change.value),faction=(gameState.factions||[]).find(item=>item.id===change.value),action=(gameState.actions||[]).find(item=>item.id===change.target_id);
-  if(change.kind==='remove_action')return 'Resolve and remove action: '+(action?.name||change.target_id);
-  if(change.kind==='set_player_alive')return (change.value==='true'?'Revive ':'Mark dead ')+(player?.name||change.target_id);
-  if(change.kind==='set_player_role')return 'Set '+(player?.name||change.target_id)+' role to '+(role?.name||change.value);
-  if(change.kind==='set_player_faction')return 'Set '+(player?.name||change.target_id)+' current faction to '+(faction?.name||change.value);
-  if(change.kind==='apply_status')return 'Apply '+statusLabel(parseStatusProposalValue(change.value)||{})+' to '+(player?.name||change.target_id);
+  if(change.kind==='remove_action')return 'Resolve and remove action: '+(action?.name||'Unknown action');
+  if(change.kind==='set_player_alive')return (change.value==='true'?'Revive ':'Mark dead ')+(player?.name||'Unknown player');
+  if(change.kind==='set_player_role')return 'Set '+(player?.name||'Unknown player')+' role to '+(role?.name||'Unknown role');
+  if(change.kind==='set_player_faction')return 'Set '+(player?.name||'Unknown player')+' current faction to '+(faction?.name||'Unknown faction');
+  if(change.kind==='apply_status')return 'Apply '+statusLabel(parseStatusProposalValue(change.value)||{})+' to '+(player?.name||'Unknown player');
   if(change.kind==='resolve_status'){const status=(statusEffects||[]).find(item=>item.id===change.target_id),target=(gameState.players||[]).find(item=>item.id===(status?.playerId||status?.player_id));return 'Resolve '+(status?statusLabel(status):'live status')+(target?' on '+target.name:'')}
   if(change.kind==='set_game_phase')return 'Set phase to '+change.value;
   if(change.kind==='set_game_day')return 'Set day to '+change.value;

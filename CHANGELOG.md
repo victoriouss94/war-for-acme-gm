@@ -1,5 +1,20 @@
 # Changelog
 
+## v11.6.1 — Human-Readable GM Outcomes
+
+- Changed normal Player Outcomes to the required `Player Name — Final Faction Name` format without `UNCHANGED` or database identifiers.
+- Added deterministic entity hydration and UUID masking across Master GM rulings, action history, phase history, ability usage history, and related resolution summaries.
+- Preserved stable IDs in structured resolution data while giving the AI explicit player, faction, role, ability, and target display metadata.
+- Updated finalized Resolution Sessions to show the final GM-approved outcome rather than continuing to present the earlier AI proposal.
+
+## v11.6.0 — Global Master Ability Resolution
+
+- Replaced the legacy no-order behavior with the global `BLOCKS → GUARANTEE → CONTROL → SWAPS → REDIRECTS → STATUS EFFECTS → INTEL → CONVERTS → KILLS → DOC` profile.
+- Expanded the versioned global encyclopedia to 37 standardized abilities, including Den Block, Villagers Block, Place Swap, Role Swap, and Redirect.
+- Added category, priority, timing, authority, original/effective targets, transformation history, generated-child lineage, and passive-trigger metadata to queued actions and approved events.
+- Updated Word import and Master GM prompts to map semantic wording while preserving source text and higher-authority game/role overrides.
+- Added additive RLS-protected database metadata, automatic global dataset activation, and server-side classification/order validation.
+
 ## v11.5.0 — Master GM Ruling, Approval & Usage Tracking
 
 - Added a firm, schema-v2 Master GM ruling contract covering action outcomes, final targets, passives, statuses, life/role/faction outcomes, grant changes, authority, and confidence.

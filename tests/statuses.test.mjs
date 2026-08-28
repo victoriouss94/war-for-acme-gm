@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {groupPlayerStatuses,normalizePlayerStatus,parseStatusProposalValue,playerMatchesStatusFilter,statusMutationPayload} from '../js/statuses.js';
+import {PLAYER_STATUS_TYPES,groupPlayerStatuses,normalizePlayerStatus,parseStatusProposalValue,playerMatchesStatusFilter,statusMutationPayload} from '../js/statuses.js';
 import {validateCopilotChanges} from '../js/copilot.js';
 
 const gameState={
@@ -56,4 +56,5 @@ test('database, AI, cloud, and GM UI implement controlled live status awareness'
   for(const pattern of [/rpc\('mutate_player_status'/,/rpc\('apply_player_status_changes'/,/table:'player_status_effects'/])assert.match(cloud,pattern);
   for(const pattern of [/groupPlayerStatuses/,/refreshPlayerStatuses/,/applyPlayerStatusChanges/,/Abilities owned \(not current statuses\)/])assert.match(app,pattern);
   for(const id of ['playerStatusFilter','playerStatusManager','playerStatusForm','statusType','statusCategory','statusVisibility','playerStatusDetail','playerStatusHistory'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const status of PLAYER_STATUS_TYPES)assert.match(html,new RegExp(`<option value="${status.value}">`));
 });

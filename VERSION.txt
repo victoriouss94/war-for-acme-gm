@@ -1,3 +1,3 @@
 GM Command Center
-Version: 11.5.0
-Build: Master GM Ruling, Approval, and Ability Usage Tracking
+Version: 11.6.1
+Build: Human-Readable Master GM Outcomes
