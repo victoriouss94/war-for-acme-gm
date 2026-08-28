@@ -1,5 +1,14 @@
 # Changelog
 
+## v11.8.0 — Global Role Configurations
+
+- Generalized role modes into arbitrary document-defined configurations, forms, states, phases, and stances without game-specific names or a fixed count.
+- Added rich role editing for configuration-specific active/passive abilities, defenses, restrictions, investigation appearances, uses, shared resources, switching conditions, one-way states, and cooldowns while keeping role-wide mechanics separate.
+- Added authoritative player configuration state, temporary multi-configuration access, manual GM changes, Realtime updates, and immutable transition history under existing authorization and RLS.
+- Made the Action Queue configuration-aware: current and temporary abilities are available, permitted pre-action switches are atomic, inactive configurations are rejected, and queued actions preserve readable configuration context.
+- Extended AI document analysis and approved Master GM rulings to preserve hierarchical configuration data and apply explicit `MODE_CHANGE` effects through the same audited approval transaction.
+- Added 35 focused configuration tests and retained the complete existing test suite.
+
 ## v11.7.2 — Collision-Safe Mode Action Queue
 
 - Fixed the production multi-mode action validator after its `player_id`, `ability_id`, and `mode_id` locals collided with database column names.

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.7.2">
+  <link rel="stylesheet" href="css/main.css?v=11.8.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -339,7 +339,7 @@
         <div class="section-heading"><div><p class="eyebrow">STRUCTURED ATTEMPT</p><h2 id="actionBuilderTitle">Queue Action</h2></div><button id="cancelActionEditBtn" class="secondary" type="button" hidden>Cancel Edit</button></div>
         <label>Action source<select id="actionSourceType"><option value="PLAYER">Player</option><option value="FACTION">Faction</option><option value="SYSTEM">Game / System Effect</option><option value="GM_MANUAL">GM Manual</option></select></label>
         <div id="actionPlayerFields"><label>Search acting player<input id="actionActorSearch" maxlength="120" placeholder="Search player, role, or faction"></label><label>Acting player<select id="actionActor"></select></label></div>
-        <section id="actionModeContext" class="action-mode-context" hidden><div class="mode-context-heading"><div><span class="eyebrow">MODE CONTEXT</span><strong id="actionCurrentMode">CURRENT MODE: UNKNOWN</strong></div><small>Selecting a context does not change the player's live mode.</small></div><div id="actionModePicker" class="action-mode-picker"></div><p id="actionModeNotice" class="muted"></p></section>
+        <section id="actionModeContext" class="action-mode-context" hidden><div class="mode-context-heading"><div><span class="eyebrow">CONFIGURATION CONTEXT</span><strong id="actionCurrentMode">CURRENT CONFIGURATION: UNKNOWN</strong></div><small>Only the current configuration, temporary access, or an allowed pre-action switch can be used.</small></div><div id="actionModePicker" class="action-mode-picker"></div><p id="actionModeNotice" class="muted"></p></section>
         <label id="actionFactionField" hidden>Acting faction<select id="actionFaction"></select></label>
         <label>Search available abilities<input id="actionAbilitySearch" maxlength="120" placeholder="Search abilities"></label>
         <div id="actionAbilityPicker" class="action-ability-picker"><p class="muted">Select an acting player to see effective abilities.</p></div>
@@ -561,9 +561,9 @@
         </label>
         <div id="roleAbilityPicker" class="role-ability-picker" aria-label="Select abilities from the Encyclopedia"></div>
         <div id="selectedRoleAbilities" class="selected-role-abilities" aria-live="polite"></div>
-        <label>Mode assignments<textarea id="roleModeAssignments" rows="4" maxlength="12000" placeholder="Robot Mode: Guard, Reflection&#10;Alt Mode: Den Block"></textarea></label>
-        <p class="form-notice">Optional. One mode per line. Abilities not assigned to a mode remain role-wide. Mode selection is context and never becomes the queued action.</p>
-        <label class="check"><input id="roleModeChoiceBeforeAction" type="checkbox"> Allow a mode context to be chosen before each action</label>
+        <label>Configurations / modes / forms / states<textarea id="roleModeAssignments" rows="9" maxlength="24000" placeholder="[Configuration Name]&#10;description: When this configuration applies&#10;active: Ability One, Ability Two&#10;passive: Passive Ability&#10;immunities: Death Immunity&#10;protections: Super Protect&#10;restrictions: Cannot target self&#10;investigation appearance: Alternate identity&#10;switch type: PLAYER_SELECTED&#10;switch cooldown: 1 cycle&#10;special rules: Shared uses persist across configurations"></textarea></label>
+        <p class="form-notice">Use any names from the source document. Abilities not placed in a configuration remain role-wide. Configuration names are context, never selectable abilities.</p>
+        <label class="check"><input id="roleModeChoiceBeforeAction" type="checkbox"> Allow the player’s configuration to switch before a queued action</label>
         <div class="grid2 compact-grid"><label>Ability uses<input id="roleAbilityUses" type="number" min="0" step="1"></label><label>Cooldowns<input id="roleCooldowns" maxlength="300"></label></div>
         <label>Immunities<input id="roleImmunities" maxlength="500" placeholder="Comma separated"></label>
         <label>Restrictions<input id="roleRestrictions" maxlength="1000" placeholder="Comma separated"></label>
@@ -727,9 +727,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.7.2"></script>
-<script src="js/cloud.js?v=11.7.2"></script>
+<script src="js/supabase-config.js?v=11.8.0"></script>
+<script src="js/cloud.js?v=11.8.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.7.2"></script>
+<script type="module" src="js/app.js?v=11.8.0"></script>
 </body>
 </html>
