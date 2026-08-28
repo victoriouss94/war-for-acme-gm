@@ -1,3 +1,3 @@
 GM Command Center
-Version: 11.6.2
-Build: Reliable Master GM Responses
+Version: 11.6.3
+Build: Collision-Safe Action Queue

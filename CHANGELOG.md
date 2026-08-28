@@ -1,5 +1,11 @@
 # Changelog
 
+## v11.6.3 — Collision-Safe Action Queue
+
+- Fixed the universal role-understanding Action Queue validator after it reintroduced ambiguous `player_id` and `ability_id` PL/pgSQL locals.
+- Preserved the integrated phase lock, authorization, target validation, faction actions, grants, cooldowns, and existing queued-action data.
+- Added a production-shaped rollback test for the public queue RPC and regression coverage for future migrations.
+
 ## v11.6.2 — Reliable Master GM Responses
 
 - Expanded the structured action-resolution response budget and reduced duplicate prose so complete rulings fit the strict Master GM schema.
