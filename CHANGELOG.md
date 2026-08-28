@@ -1,5 +1,11 @@
 # Changelog
 
+## v11.7.2 — Collision-Safe Mode Action Queue
+
+- Fixed the production multi-mode action validator after its `player_id`, `ability_id`, and `mode_id` locals collided with database column names.
+- Preserved the existing authorization, phase locking, action validation, role modes, abilities, and queued-action data.
+- Added a production-shaped rollback probe and regression coverage for the mode-aware action queue.
+
 ## v11.7.1 — Complete Transformers Role Modes
 
 - Re-read the exact uploaded Transformers DOCX (SHA-256 `81427a…aa04`) and rebuilt all 27 source-defined Robot/Alt mode roles against the existing Master Ability Encyclopedia.
