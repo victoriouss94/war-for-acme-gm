@@ -1,5 +1,5 @@
-import {TARGET_TYPES as MECHANIC_TARGET_TYPES,normalizeAbilityUnderstanding,normalizeTargeting} from './mechanics.js?v=11.6.1';
-import {classifyAbility} from './global-abilities.js?v=11.6.1';
+import {TARGET_TYPES as MECHANIC_TARGET_TYPES,normalizeAbilityUnderstanding,normalizeTargeting} from './mechanics.js?v=11.6.2';
+import {classifyAbility} from './global-abilities.js?v=11.6.2';
 
 export const ABILITY_SOURCE_TYPES=Object.freeze(['ROLE','FACTION','GM_GRANT','TEMPORARY_GRANT','PERMANENT_GRANT','MINIGAME_REWARD','EVENT_REWARD','STOLEN','COPIED','STATUS_EFFECT','ITEM','SPECIAL_MECHANIC','OTHER']);
 export const GRANT_DURATIONS=Object.freeze(['ONE_USE','LIMITED_USES','UNTIL_USED','UNTIL_END_OF_PHASE','UNTIL_END_OF_DAY','UNTIL_END_OF_NIGHT','UNTIL_END_OF_CYCLE','UNTIL_SPECIFIC_CYCLE','UNTIL_REMOVED','PERMANENT_FOR_GAME']);

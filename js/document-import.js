@@ -1,5 +1,5 @@
-import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=11.6.1';
-import {classifyAbility,globalAbilityDefinition} from './global-abilities.js?v=11.6.1';
+import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=11.6.2';
+import {classifyAbility,globalAbilityDefinition} from './global-abilities.js?v=11.6.2';
 
 export const MAX_DOCX_BYTES=10*1024*1024;
 export const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -397,4 +397,4 @@ export function compareGameImport(model,currentDocument){
 export function importSummary(model){
   const count=key=>model.sections?.[key]===false?0:(model[key]||[]).filter(item=>item.selected).length,analysis=model.analysis||{};return {factions:count('factions'),roles:count('roles'),abilities:count('abilities'),rules:count('rules'),mechanics:(model.roles||[]).filter(item=>item.selected).reduce((sum,item)=>sum+(item.mechanicalStatements||[]).length,0),mechanicsReview:(analysis.mechanicsReview||[]).length,roleModifiers:(model.roles||[]).filter(item=>item.selected).reduce((sum,item)=>sum+(item.abilityModifiers||[]).length,0),statuses:(model.statuses||[]).length,specialMechanics:(model.specialMechanics||[]).length,globalFallbacks:(analysis.globalFallbacks||[]).length,duplicates:(analysis.duplicates||[]).length,ambiguities:(analysis.ambiguities||[]).length,conflicts:(analysis.conflicts||[]).length,warnings:(model.warnings||[]).length};
 }
-import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=11.6.1';
+import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=11.6.2';

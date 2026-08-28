@@ -1,4 +1,5 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.95.0';
+import {extractStructuredOutputText,parseStructuredResponsePayload} from './response-parser.js';
 
 export const allowedOrigins=new Set([
   'https://victoriouss94.github.io','http://localhost:4173','http://127.0.0.1:4173','http://localhost:8080','http://127.0.0.1:8080'
@@ -15,7 +16,7 @@ export function createUserClient(authHeader:string){return createClient(Deno.env
 export function createServiceClient(){const url=Deno.env.get('SUPABASE_URL')||'',key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';if(!url||!key)throw new OpenAIServiceError('The secure AI persistence service is not configured.',503,'CONFIGURATION_ERROR');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})}
 export async function verifiedUser(client:any,authHeader:string){const token=authHeader.slice(7),{data,error}=await client.auth.getUser(token);if(error||!data?.user)return null;return data.user}
 export async function safetyIdentifier(userId:string){const encoded=new TextEncoder().encode(userId),digest=await crypto.subtle.digest('SHA-256',encoded);return 'gmcc_'+[...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('').slice(0,32)}
-export function extractOutputText(payload:any){if(typeof payload?.output_text==='string')return payload.output_text;for(const item of list(payload?.output,100))for(const content of list(item?.content,100))if(content?.type==='output_text'&&typeof content.text==='string')return content.text;return ''}
+export const extractOutputText=extractStructuredOutputText;
 
 export class OpenAIServiceError extends Error{
   status:number;code:string;
@@ -38,7 +39,8 @@ export async function structuredResponse(options:{model:string;userId:string;ins
     instructions:options.instructions,input:options.input,text:{verbosity:options.verbosity||'medium',format:{type:'json_schema',name:options.schemaName,strict:true,schema:options.schema}}
   })})}catch{throw new OpenAIServiceError('The AI service could not be reached.',502,'OPENAI_UNAVAILABLE')}
   const payload=await response.json().catch(()=>({}));if(!response.ok)throw apiError(payload,response.status);
-  try{return {result:JSON.parse(extractOutputText(payload)),responseId:textValue(payload?.id,200),usage:payload?.usage||null}}catch{throw new OpenAIServiceError('The AI returned an unreadable result.',502,'INVALID_AI_RESPONSE')}
+  const parsed=parseStructuredResponsePayload(payload);if(!parsed.ok)throw new OpenAIServiceError(parsed.message,502,parsed.code);
+  return {result:parsed.value,responseId:textValue(payload?.id,200),usage:payload?.usage||null};
 }
 
 export async function createEmbeddings(inputs:string[]){

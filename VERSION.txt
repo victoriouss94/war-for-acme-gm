@@ -1,3 +1,3 @@
 GM Command Center
-Version: 11.6.1
-Build: Human-Readable Master GM Outcomes
+Version: 11.6.2
+Build: Reliable Master GM Responses

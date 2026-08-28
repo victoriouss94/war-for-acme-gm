@@ -1,5 +1,11 @@
 # Changelog
 
+## v11.6.2 — Reliable Master GM Responses
+
+- Expanded the structured action-resolution response budget and reduced duplicate prose so complete rulings fit the strict Master GM schema.
+- Added explicit handling for truncated, filtered, refused, empty, failed, and malformed Responses API results instead of reporting every case as an unreadable result.
+- Preserved the safety guarantee that failed AI responses do not modify the game or save a proposed ruling.
+
 ## v11.6.1 — Human-Readable GM Outcomes
 
 - Changed normal Player Outcomes to the required `Player Name — Final Faction Name` format without `UNCHANGED` or database identifiers.

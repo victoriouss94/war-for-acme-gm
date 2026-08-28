@@ -154,4 +154,4 @@ export function usageAggregates(rows=[]){
   const group=key=>[...array(rows).reduce((map,row)=>{const id=String(row[key]||'');if(!id)return map;if(!map.has(id))map.set(id,[]);map.get(id).push(row);return map},new Map())].map(([id,items])=>({id,name:items[0][key.replace('_id','_name')]||({player_id:'Unknown player',role_id:'Unknown role',ability_id:'Unknown ability',faction_id:'Unknown faction'}[key]||'Unknown record'),...totals(items),abilities:items}));
   return {players:group('player_id'),roles:group('role_id'),abilities:group('ability_id'),totals:totals(rows)};
 }
-import {GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,normalizeResolutionAction} from './global-abilities.js?v=11.6.1';
+import {GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,normalizeResolutionAction} from './global-abilities.js?v=11.6.2';
