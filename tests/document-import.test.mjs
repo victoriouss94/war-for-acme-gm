@@ -67,7 +67,7 @@ test('recovers flat Word rosters with faction paragraphs and Robot Mode / Alt Mo
     paragraph('Neutrals'),paragraph('Sam'),paragraph('Sam can give the Allspark to another player.'),paragraph('Wincon — The Allspark ends with an Autobot.'),paragraph('Agent Simmons'),paragraph('Each night he captures one transformer.')
   ];
   const model=analyzeDocumentBlocks(blocks,{fileName:'transformers.docx'}),alpha=model.roles.find(role=>role.name==='Alpha — Megatron'),traitor=model.roles.find(role=>role.name==='Traitor — Punch/Counterpunch');
-  assert.deepEqual(model.factions.map(faction=>faction.className),['DEN','VILLAGER','NEUTRAL']);assert.equal(model.roles.length,5);assert.equal(alpha.abilityNames.length,2);assert.match(model.abilities.find(ability=>ability.name.includes('Fusion Cannon')).definition,/instant attacks/i);assert.equal(traitor.abilityNames.length,0);assert.equal(validateGameImport(model).valid,true);assert.ok(validateGameImport(model).warnings.some(message=>message.includes('Traitor')));
+  assert.deepEqual(model.factions.map(faction=>faction.className),['DEN','VILLAGER','NEUTRAL']);assert.equal(model.roles.length,5);assert.equal(alpha.abilityNames.length,0);assert.deepEqual(alpha.modes.map(mode=>mode.name),['Robot Mode','Alt Mode']);assert.match(alpha.modes[0].description,/instant attacks/i);assert.equal(model.abilities.some(ability=>/robot mode|alt mode/i.test(ability.name)),false);assert.equal(traitor.abilityNames.length,0);assert.equal(validateGameImport(model).valid,true);assert.ok(validateGameImport(model).warnings.some(message=>message.includes('Traitor')));
 });
 
 test('rejects an empty-role import even when a game name was inferred',()=>{

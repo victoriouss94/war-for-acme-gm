@@ -9,7 +9,7 @@ if(!sourcePath)throw new Error('Pass the path to transformers.docx.');
 export const courtroomAbilityNames=[
   'Basic Ask','Advanced Ask','Alignment Ask','Watch','Track','Action Check','Gravedigger','Map',
   'Den Regular Kill','Personal Instant Kill','Super Kill','Omega Kill','Poison','Mark','Roleblock',
-  'Drunk','Sober','Duel / Fight','Convert','Steal','Protect','Guard','Save','Heal','Super Protect',
+  'Drunk','Sober','Duel / Fight','Convert','Steal','Protect','Guard','Den Block','Save','Heal','Super Protect',
   'Death Immunity','Reflection','Counterattack','Bulletproof / Passive Immunity','Ability Amplify',
   'Additional Uses','Action Success Guarantee'
 ];
@@ -26,7 +26,7 @@ export const roleAbilityMap={
   'Seer – Nightbeat':{abilities:['Basic Ask','Advanced Ask','Track','Bulletproof / Passive Immunity'],primary:'Basic Ask',passive:'Bulletproof / Passive Immunity'},
   'Omega Supreme – 2 nd in command':{abilities:['Super Kill','Additional Uses','Ability Amplify'],primary:'Super Kill'},
   'Milf – Elita':{abilities:['Watch','Action Success Guarantee','Roleblock','Action Check'],primary:'Watch'},
-  'Den Blocker – Ironhide':{abilities:['Guard','Reflection','Bulletproof / Passive Immunity','Roleblock'],primary:'Guard',passive:'Bulletproof / Passive Immunity'},
+  'Den Blocker – Ironhide':{abilities:['Guard','Reflection','Bulletproof / Passive Immunity','Den Block'],primary:'Guard',passive:'Bulletproof / Passive Immunity'},
   'Protector – Trailbreaker':{abilities:['Protect'],primary:'Protect'},
   'Sting – Cosmos':{abilities:['Basic Ask','Advanced Ask','Watch'],primary:'Basic Ask'},
   'Martyr – Skids':{abilities:['Guard','Watch','Advanced Ask','Action Success Guarantee'],primary:'Guard'},
@@ -54,6 +54,12 @@ export const roleAbilityMap={
   'Unicron- Ultimate Neutral':{abilities:['Advanced Ask','Roleblock','Personal Instant Kill','Super Kill','Omega Kill','Mark','Additional Uses'],primary:'Mark'}
 };
 
+export const roleModeAbilityMap={
+  'Doc – Ratchet':{modes:{'Robot Mode':['Save','Heal'],'Alt Mode':['Protect']},roleWide:[]},
+  'Den Blocker – Ironhide':{modes:{'Robot Mode':['Guard','Reflection','Bulletproof / Passive Immunity'],'Alt Mode':['Den Block']},roleWide:[]},
+  'Ultimate – Optimus':{modes:{'Robot Mode':['Basic Ask','Protect','Roleblock','Save','Death Immunity'],'Alt Mode':[]},roleWide:['Personal Instant Kill','Super Kill']}
+};
+
 const converted=await mammoth.convertToHtml({buffer:readFileSync(sourcePath)});
 const model=analyzeDocumentBlocks(htmlToDocumentBlocks(converted.value),{fileName:'transformers.docx'});
 const validation=validateGameImport(model);
@@ -78,10 +84,12 @@ const roles=model.roles.map(source=>{
     return ability?`${ability.name}: ${ability.definition}`:name;
   });
   const inference=mapping.inferred?' The Word document did not provide mechanics for this role; Convert is an AI-inferred placeholder that should be reviewed by a GM.':'';
+  const modeMapping=roleModeAbilityMap[source.name],modeSource=new Map((source.modes||[]).map(mode=>[mode.name,mode]));
   return {
     id:randomUUID(),name:source.name,factionName:source.factionName,alignment:source.alignment||'',
     description:source.description||'The source document listed this role without a mechanics description.',
     tags:mapping.abilities,primaryAbility:mapping.primary||mapping.abilities[0],passiveAbility:mapping.passive||'',
+    modes:modeMapping?Object.entries(modeMapping.modes).map(([name,abilityNames])=>({name,abilityNames,sourceText:modeSource.get(name)?.sourceText||'',sourceLocation:modeSource.get(name)?.sourceLocation||''})):[],roleWideAbilityNames:modeMapping?.roleWide||mapping.abilities,modeSelectionPolicy:modeMapping?'CHOOSE_BEFORE_ACTION':'CURRENT_ONLY',
     abilityUses:source.abilityUses??null,cooldowns:source.cooldowns||'',immunities:source.immunities||[],
     restrictions:source.restrictions||[],winCondition:source.winCondition||'',notes:source.notes||'',
     gmNotes:`Courtroom mappings: ${mapping.abilities.join(', ')}. Role-specific text in Description overrides the standardized defaults when explicit.${inference}${originalAbilities.length?` Original Word modes: ${originalAbilities.join(' | ')}`:''}`,

@@ -1,5 +1,12 @@
 # Changelog
 
+## v11.7.0 — Multi-Mode Action Context
+
+- Separated role modes from selectable actions with the required Player → Mode → Ability → Target → Queue flow.
+- Added role-wide, mode-specific, passive, current-mode, and temporary multi-mode access filtering plus server validation for distinct mode and ability IDs.
+- Relinked the source-backed Ironhide, Ratchet, and Optimus mode mechanics without deleting legacy import records, actions, players, comments, or audit history.
+- Updated the role editor and AI Word importer to persist Role → Mode → Ability relationships instead of creating abilities named after modes.
+
 ## v11.6.3 — Collision-Safe Action Queue
 
 - Fixed the universal role-understanding Action Queue validator after it reintroduced ambiguous `player_id` and `ability_id` PL/pgSQL locals.

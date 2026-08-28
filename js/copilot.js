@@ -1,5 +1,5 @@
-import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.6.3';
-import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.6.3';
+import {parseStatusProposalValue,statusLabel} from './statuses.js?v=11.7.0';
+import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=11.7.0';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','phase_control','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
