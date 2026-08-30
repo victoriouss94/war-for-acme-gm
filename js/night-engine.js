@@ -1,4 +1,5 @@
-import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,createGeneratedEffect,globalAbilityDefinition,normalizeResolutionAction,transformAction} from './global-abilities.js?v=12.0.0';
+import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,createGeneratedEffect,globalAbilityDefinition,normalizeResolutionAction,transformAction} from './global-abilities.js?v=12.0.1';
+import {abilityDisablingStatuses,statusAppliesToPhase} from './player-runtime.js?v=12.0.1';
 
 export const NIGHT_ENGINE_VERSION='1.0.0';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
@@ -83,7 +84,13 @@ export function resolveNightDeterministically(input={}){
     for(const action of submittedActions){const actor=playerMap.get(action.actionUserId);if(action.modeId&&action.modeId!==actor?.modeId&&!temporaryModes.get(actor?.id)?.has(action.modeId))mark(action,'INELIGIBLE_EFFECT',`${action.abilityName} belongs to an inaccessible mode for ${actor.name}.`,[])}
     for(const action of submittedActions)if(!playerMap.get(action.actionUserId)?.alive&&action.status!=='RESOLVED')mark(action,'INELIGIBLE_EFFECT','The acting player is missing or was not alive in the starting snapshot.',[]);
     for(const action of submittedActions)if(['FAILURE','BLOCKED','CANCELLED','INELIGIBLE_EFFECT'].includes(action.forceResult)&&action.status!=='RESOLVED')mark(action,action.forceResult,action.forceReason||'A GM correction overrode this attempt before downstream recalculation.',[]);
-    const canExecute=action=>{if(action.status==='RESOLVED')return false;if(action.blocked&&!action.guaranteed){mark(action,'BLOCKED','An applicable block prevented this active action.',[]);return false}emit('ACTION_ABOUT_TO_EXECUTE',{action_id:action.id,actor_player_id:action.actionUserId,target_ids:action.effectiveTargetIds});return true};
+    const canExecute=action=>{
+      if(action.status==='RESOLVED')return false;
+      if(abilityDisablingStatuses(ctx.statusEffects,action.actionUserId,snapshot).length){mark(action,'BLOCKED','An active capture/ability-disable effect prevents this player from acting in this phase.',[]);action.useDisposition='NOT_CONSUMED';return false;}
+      const persistentBlock=action.blockable&&ctx.statusEffects.some(effect=>String(effect.playerId??effect.player_id)===action.actionUserId&&String(effect.statusType??effect.status_type).toUpperCase()==='ROLEBLOCK'&&statusAppliesToPhase(effect,snapshot));
+      if((action.blocked||persistentBlock)&&!action.guaranteed){mark(action,'BLOCKED','An applicable block prevented this active action.',[]);return false;}
+      emit('ACTION_ABOUT_TO_EXECUTE',{action_id:action.id,actor_player_id:action.actionUserId,target_ids:action.effectiveTargetIds});return true;
+    };
     const futureActions=stage=>allActions.filter(action=>GLOBAL_RESOLUTION_ORDER.indexOf(action.resolutionCategory)>=GLOBAL_RESOLUTION_ORDER.indexOf(stage)&&action.status!=='RESOLVED');
     const transformed=(action,type,to,by,reason)=>{const changed=transformAction(action,{type,toTargetIds:unique(to),byActionId:by.id,reason});Object.assign(action,changed);emit('ACTION_REDIRECTED',{action_id:action.id,by_action_id:by.id,transformation:type,from_target_ids:changed.transformationHistory.at(-1).fromTargetIds,to_target_ids:changed.effectiveTargetIds});trace(`${action.abilityName} target transformed by ${type}.`,{action_id:action.id,from:changed.transformationHistory.at(-1).fromTargetIds,to:changed.effectiveTargetIds});};
     const runStage=(stage,handler)=>{if(stage==='DOC'&&ctx.stage==='KILLS')trace('KILLS stage completed.');ctx.stage=stage;trace(`${stage.replaceAll('_',' ')} stage started.`);const queue=allActions.filter(action=>action.resolutionCategory===stage&&action.status!=='RESOLVED').sort((a,b)=>a.order-b.order);for(let index=0;index<queue.length;index++)handler(queue[index],queue);trace(`${stage.replaceAll('_',' ')} stage completed.`)};
