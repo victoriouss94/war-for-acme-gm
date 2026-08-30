@@ -1,5 +1,5 @@
-import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=11.9.0';
-import {classifyAbility,globalAbilityDefinition} from './global-abilities.js?v=11.9.0';
+import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=12.0.0';
+import {classifyAbility,globalAbilityDefinition as encyclopediaAbilityDefinition} from './global-abilities.js?v=12.0.0';
 
 export const MAX_DOCX_BYTES=10*1024*1024;
 export const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -12,6 +12,7 @@ const tempId=prefix=>prefix+'-'+(++generatedId)+'-'+(globalThis.crypto?.randomUU
 const titleCase=value=>text(value).replace(/\b\w/g,letter=>letter.toUpperCase());
 const splitList=value=>text(value).split(/[,;|]/).map(text).filter(Boolean);
 const safeNumber=value=>{const match=String(value??'').match(/\d+/);return match?Number(match[0]):null};
+function globalAbilityDefinition(input={}){const source=text([input.name,input.definition].filter(Boolean).join(' ')),direct=encyclopediaAbilityDefinition(input);if(direct)return direct;if(/\b(?:standard\s+)?(?:insta(?:nt)?\s+kill|pik)s?\b/i.test(source))return encyclopediaAbilityDefinition({name:'Personal Instant Kill'});if(/\b(?:actions?\s+(?:will\s+be\s+)?guaranteed|guarantee(?:d)?\s+actions?)\b/i.test(source))return encyclopediaAbilityDefinition({name:'Action Success Guarantee'});return null}
 const uniqueNames=values=>[...new Map(values.filter(Boolean).map(value=>[normalizeImportName(value),text(value)])).values()];
 
 function decodeHtml(value){
@@ -122,7 +123,7 @@ function createFaction(name,fields={}){const clean=text(name);return {tempId:tem
 function createRole(name,fields={}){const clean=text(name);return {tempId:tempId('role'),name:clean,factionTempId:null,factionName:'',alignment:'',description:'',activeAbilityName:'',passiveAbilityName:'',abilityNames:[],roleWideAbilityNames:[],modes:[],modeSelectionPolicy:'CURRENT_ONLY',abilityUses:null,cooldowns:'',restrictions:[],immunities:[],abilityModifiers:[],statusInteractions:[],relationships:[],mechanicalStatements:[],understanding:{},unresolvedComponents:[],sourceVersion:'',winCondition:'',notes:'',gmNotes:'',tags:[],roleType:ROLE_TYPES.STANDARD,abilityDataStatus:ABILITY_DATA_STATUSES.POSSIBLY_INCOMPLETE,basicEvidence:'',slotCount:1,enabled:true,selected:true,confidence:.75,sourceText:clean,sourceLocation:'',duplicateOfTempId:null,duplicateDecision:'merge',...fields}}
 function classifyImportedRole(role){const classification=classifyRoleAbilityData({...role,tags:role.abilityNames});role.roleType=classification.roleType;role.abilityDataStatus=classification.abilityDataStatus;role.basicEvidence=classification.basicEvidence;if(role.roleType===ROLE_TYPES.BASIC){role.abilityNames=[];role.activeAbilityName='';role.passiveAbilityName=''}return role}
 function addMissingAbilityWarning(model,role){classifyImportedRole(role);if(role.abilityDataStatus===ABILITY_DATA_STATUSES.POSSIBLY_INCOMPLETE)model.warnings.push(createWarning('possibly-incomplete-role','No ability data or explicit Basic Role evidence was detected for '+role.name+'. Review before import.','warning',role.tempId))}
-function createAbility(name,fields={}){const clean=text(name);return {tempId:tempId('ability'),name:clean,definition:'',category:'Other',phase:'Any',mechanics:[],mechanicalStatements:[],understanding:{},targeting:{},mapping:'CUSTOM',stableAbilityId:'',baseStandardAbilityId:'',baseStandardAbilityName:'',customIdentity:false,factionAction:false,globalAction:false,performerRequired:false,unresolvedComponents:[],modifiers:[],interactions:[],selected:true,confidence:.72,matchStatus:'new',matchKey:'',decision:'create-new',possibleMatches:[],sourceText:clean,sourceLocation:'',...fields}}
+function createAbility(name,fields={}){const clean=text(name),semantic=globalAbilityDefinition({name:clean,definition:fields.definition});return {tempId:tempId('ability'),name:clean,definition:'',category:'Other',phase:'Any',mechanics:[],mechanicalStatements:[],understanding:{},targeting:{},mapping:'CUSTOM',stableAbilityId:'',baseStandardAbilityId:'',baseStandardAbilityName:'',engineBehavior:semantic?.behavior||{},ruleMappingStatus:semantic?'MAPPED':'NEEDS_RULE_MAPPING',customIdentity:false,factionAction:false,globalAction:false,performerRequired:false,unresolvedComponents:[],modifiers:[],interactions:[],selected:true,confidence:.72,matchStatus:'new',matchKey:'',decision:'create-new',possibleMatches:[],sourceText:clean,sourceLocation:'',...fields}}
 
 const flatFactionHeaders=new Map([
   ['den',{name:'Den',className:'DEN'}],['mafia',{name:'Mafia',className:'DEN'}],['wolves',{name:'Wolves',className:'DEN'}],['decepticons',{name:'Decepticons',className:'DEN'}],['cult',{name:'Cult',className:'DEN'}],
@@ -415,4 +416,4 @@ export function compareGameImport(model,currentDocument){
 export function importSummary(model){
   const count=key=>model.sections?.[key]===false?0:(model[key]||[]).filter(item=>item.selected).length,analysis=model.analysis||{};return {factions:count('factions'),roles:count('roles'),abilities:count('abilities'),rules:count('rules'),mechanics:(model.roles||[]).filter(item=>item.selected).reduce((sum,item)=>sum+(item.mechanicalStatements||[]).length,0),mechanicsReview:(analysis.mechanicsReview||[]).length,roleModifiers:(model.roles||[]).filter(item=>item.selected).reduce((sum,item)=>sum+(item.abilityModifiers||[]).length,0),statuses:(model.statuses||[]).length,specialMechanics:(model.specialMechanics||[]).length,globalFallbacks:(analysis.globalFallbacks||[]).length,duplicates:(analysis.duplicates||[]).length,ambiguities:(analysis.ambiguities||[]).length,conflicts:(analysis.conflicts||[]).length,warnings:(model.warnings||[]).length};
 }
-import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=11.9.0';
+import {ABILITY_DATA_STATUSES,ROLE_TYPES,classifyRoleAbilityData} from './player-setup.js?v=12.0.0';

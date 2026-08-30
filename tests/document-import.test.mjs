@@ -54,6 +54,16 @@ test('AI normalization creates reviewable ability placeholders and warnings for 
   assert.equal(model.abilities[0].name,'Moon Sight');assert.ok(model.warnings.some(item=>item.code==='missing-ability-definition'));assert.ok(model.warnings.some(item=>item.code==='ai-review'));assert.equal(validateGameImport(model).valid,true);
 });
 
+test('AI import maps familiar human rule phrases to executable encyclopedia mechanics',()=>{
+  const model=normalizeAiDocumentImport({game:{name:'Phrase Game'},factions:[{name:'Town',class_name:'VILLAGER'}],abilities:[{name:'2 standard insta kills',definition:'The role receives 2 standard insta kills.'},{name:'block the den',definition:'Block the den tonight.'},{name:'Guaranteed Orders',definition:'Their actions will be guaranteed.'},{name:'Temporal Collapse',definition:'Reverse an undefined timeline.'}],roles:[{name:'Captain',faction_name:'Town',ability_names:['2 standard insta kills','block the den','Guaranteed Orders','Temporal Collapse']}],rules:[]},{fileName:'phrases.docx'});
+  const byName=name=>model.abilities.find(item=>item.name===name);
+  assert.equal(byName('2 standard insta kills').baseStandardAbilityId,'personal_instant_kill');
+  assert.equal(byName('block the den').baseStandardAbilityId,'den_block');
+  assert.equal(byName('Guaranteed Orders').baseStandardAbilityId,'action_success_guarantee');
+  assert.equal(byName('Temporal Collapse').ruleMappingStatus,'NEEDS_RULE_MAPPING');
+  assert.match(byName('Temporal Collapse').sourceText,/timeline/i);
+});
+
 test('AI block preparation preserves document structure and rejects oversized extracted text',()=>{
   assert.deepEqual(prepareDocumentBlocksForAi([heading(2,'Roles'),{type:'table',headers:['Role'],rows:[['Guardian']]}]).map(block=>block.type),['heading','table']);
   assert.throws(()=>prepareDocumentBlocksForAi(Array.from({length:Math.ceil(MAX_AI_DOCUMENT_CHARS/12000)+2},()=>({type:'paragraph',text:'x'.repeat(12000)}))),/too much extracted text/i);

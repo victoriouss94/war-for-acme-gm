@@ -1,5 +1,5 @@
 const FINAL_RESULTS=new Set(['SUCCESS','FAILURE','BLOCKED','CANCELLED','INELIGIBLE_EFFECT']);
-const STATUSES=new Set(['RESOLVED','GM_REVIEW_REQUIRED','TECHNICAL_FAILURE']);
+const STATUSES=new Set(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','TECHNICAL_FAILURE']);
 const array=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
 const id=value=>text(value).toLowerCase();
@@ -19,7 +19,7 @@ export function validateStructuredResolution(resolution,{queuedActions=[],player
   const errors=[],affectedActionIds=[],queued=array(queuedActions),results=array(resolution?.action_results),knownPlayers=new Set(array(players).map(player=>text(player?.id)).filter(Boolean)),queuedIds=new Set(queued.map(actionId)),seen=new Set();
   const fail=(message,action='')=>{errors.push(message);if(action)affectedActionIds.push(action)};
   if(!resolution||typeof resolution!=='object'||Array.isArray(resolution))return {valid:false,errors:['No structured resolution object was returned.'],affectedActionIds:queued.map(actionId).filter(Boolean)};
-  if(!STATUSES.has(text(resolution.resolution_status).toUpperCase()))fail('resolution_status must be RESOLVED, GM_REVIEW_REQUIRED, or TECHNICAL_FAILURE.');
+  if(!STATUSES.has(text(resolution.resolution_status).toUpperCase()))fail('resolution_status must be RESOLVED, RESOLVED_WITH_AI_ASSISTANCE, GM_REVIEW_REQUIRED, or TECHNICAL_FAILURE.');
   if(text(resolution.resolution_status).toUpperCase()==='TECHNICAL_FAILURE')fail('A technical failure cannot be saved as a GM ruling.');
   if(!text(resolution?.master_ruling?.headline))fail('The MASTER GM RULING headline is missing.');
   if(!text(resolution?.master_ruling?.summary)&&!text(resolution.final_ruling))fail('The MASTER GM RULING summary is missing.');
@@ -47,7 +47,7 @@ export function validateStructuredResolution(resolution,{queuedActions=[],player
   for(const outcome of array(resolution.player_outcomes)){const playerId=text(outcome?.player_id);if(!playerId||knownPlayers.size&&!knownPlayers.has(playerId))fail('A player outcome references a nonexistent player.');if(playerId&&!text(outcome?.player_name))fail('A player outcome is missing its readable player name.');if(!Array.isArray(outcome?.changes))fail('A player outcome must contain a structured changes array.');}
   const status=text(resolution.resolution_status).toUpperCase(),questions=array(resolution.unresolved_questions).filter(item=>text(item));
   if(status==='GM_REVIEW_REQUIRED'&&!questions.length)fail('GM_REVIEW_REQUIRED must identify the exact unresolved question.');
-  if(status==='RESOLVED'&&questions.length)fail('A RESOLVED ruling cannot contain unresolved material questions.');
+  if(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE'].includes(status)&&questions.length)fail('A resolved ruling cannot contain unresolved material questions.');
   return {valid:errors.length===0,errors:[...new Set(errors)],affectedActionIds:[...new Set(affectedActionIds.filter(Boolean))]};
 }
 

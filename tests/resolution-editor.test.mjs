@@ -9,6 +9,14 @@ const abilities=[{id:'kill',name:'Personal Instant Kill'},{id:'reflect',name:'Re
 const factions=[{id:'town',name:'Town'},{id:'den',name:'Den'}];
 const actions=[{id:'a1',sourcePlayerId:'riz',abilityId:'kill',name:'Personal Instant Kill',roleId:'sheriff',roleVersion:3,abilitySource:'ROLE',targetIds:['sky']},{id:'a2',sourcePlayerId:'aj',abilityId:'super',name:'Super Kill',roleId:'basic',roleVersion:1,abilitySource:'MINIGAME_REWARD',playerAbilityGrantId:'00000000-0000-0000-0000-000000000001',targetIds:['sky']}];
 
+test('explicit conversion role removal survives the GM editor and approval payload',()=>{
+  const draft=buildResolutionDraft({proposal:{player_outcomes:[{player_id:'riz',role_id:'',role_after_resolution:'',faction_id:'den',changes:[{type:'ROLE',before:'sheriff',after:''}]}]},players,actions:[]});
+  const outcome=finalResolutionPayload(draft).player_outcomes.find(item=>item.player_id==='riz');
+  assert.equal(outcome.role_id,'');
+  assert.equal(outcome.faction_id,'den');
+  assert.equal(outcome.changes[0].type,'ROLE');
+});
+
 test('AI proposal becomes one editable result per stable queued action',()=>{
   const draft=buildResolutionDraft({proposal:{schema_version:2,action_results:[{action_id:'a1',result:'SUCCESS',use_disposition:'CONSUMED',final_target_ids:['sky'],affected_player_ids:['sky'],reason:'Kill lands.'}],final_ruling:'Sky dies.',confidence:'HIGH'},actions,players});
   assert.equal(draft.action_results.length,2);assert.equal(draft.action_results[0].role_version,3);assert.equal(draft.action_results[1].ability_source,'MINIGAME_REWARD');assert.equal(draft.player_outcomes.length,3);

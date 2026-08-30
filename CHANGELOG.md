@@ -1,5 +1,13 @@
 # Changelog
 
+## v12.0.0 — Deterministic Night Resolution Engine
+
+- Made the staged rule/event engine the primary night resolver across Blocks, Guarantee, Control, Swaps, Redirects, Status Effects, Intel, Converts, Kills, and Doc, with passives and generated effects handled automatically.
+- Added immutable simulation snapshots, proposed state, replayable random outcomes, resolution traces, isolated AI adjudication for unknown mechanics, GM correction recalculation, and additive Supabase persistence.
+- Replaced the default full-night AI workflow with Resolve Night while preserving editable GM review and the existing atomic Approve & Apply transaction.
+- Upgraded document normalization to store executable encyclopedia behavior and flag unknown source text as `NEEDS_RULE_MAPPING` instead of inventing rules.
+- Added deterministic unit, migration, importer, replay, multi-mode, passive, generated-effect, correction, and full-night acceptance coverage.
+
 ## v11.9.0 — Guaranteed Structured Master GM Rulings
 
 - Enforced a complete resolution contract at the Edge Function boundary, including an explicit status, phase, Master GM ruling, one final result per queued action, readable names, player outcomes, and unresolved questions.

@@ -27,7 +27,9 @@ test('structured response parser distinguishes refusal, empty output, and malfor
 
 test('Master GM action rulings use the expanded low-verbosity response budget',async()=>{
   const source=await readFile(new URL('../supabase/functions/gm-copilot/index.ts',import.meta.url),'utf8');
-  assert.match(source,/maxOutputTokens:resolvingActions\?18000:6500/);
+  assert.match(source,/const RESOLUTION_MAX_OUTPUT_TOKENS=18_000/);
+  assert.match(source,/maxOutputTokens:resolvingActions\?RESOLUTION_MAX_OUTPUT_TOKENS:6500/);
+  assert.match(source,/schemaName:'master_gm_resolution_repair',maxOutputTokens:RESOLUTION_MAX_OUTPUT_TOKENS/);
   assert.match(source,/effort:resolvingActions\?'low'/);
   assert.match(source,/verbosity:resolvingActions\?'low':'medium'/);
   assert.match(source,/do not repeat the same rationale/i);

@@ -11,6 +11,9 @@ export const GLOBAL_AUTHORITY_PRECEDENCE=Object.freeze([
 export const PASSIVE_RESOLUTION_NOTE='PASSIVES — EVENT/TRIGGER BASED';
 export const HEAL_RESOLUTION_NOTE='HEAL — DOC ABILITY / ANY-TIME RESOLUTION';
 
+export const ENGINE_EFFECTS=Object.freeze(['BLOCK_ACTION','ALLOW_ACTION','GENERATE_ACTION','SWAP_TARGET_POSITION','SWAP_ROLE_CONTEXT','CHANGE_TARGET','APPLY_PROTECTION','APPLY_STATUS','REMOVE_STATUS','INVESTIGATE','CHANGE_FACTION','ATTEMPT_KILL','PREVENT_DEATH','GRANT_ABILITY_USE','REMOVE_ABILITY_USE','CHANGE_MODE']);
+export const ENGINE_TAGS=Object.freeze(['STANDARD_KILL','SUPER_KILL','OMEGA_KILL','INTEL','ACTIVE_ACTION','PASSIVE','FACTION_ACTION','REDIRECTABLE','REFLECTABLE','BLOCKABLE','PROTECTABLE','ROLE_WIDE','MODE_SPECIFIC']);
+
 const clean=(value,limit=12000)=>String(value??'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim().slice(0,limit);
 const key=value=>clean(value,500).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const slug=value=>key(value).replace(/\s+/g,'_');
@@ -58,6 +61,46 @@ const entries=[
   ['Bulletproof / Passive Immunity','Protection','PASSIVES','Passive','PASSIVE','Automatic strong immunity against applicable targeted abilities, including Personal Instant Kill, Super Kill, and Omega Kill, unless an explicit mechanic bypasses it.','passive, immunity, bulletproof',['bulletproof','passive immunity']]
 ];
 
+const executableBehavior=Object.freeze({
+  roleblock:{effect:'BLOCK_ACTION',scope:'PLAYER',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  den_block:{effect:'BLOCK_ACTION',scope:'FACTION',factionKind:'DEN',tags:['ACTIVE_ACTION','FACTION_ACTION','BLOCKABLE']},
+  villagers_block:{effect:'BLOCK_ACTION',scope:'FACTION',factionKind:'VILLAGER',tags:['ACTIVE_ACTION','FACTION_ACTION','BLOCKABLE']},
+  action_success_guarantee:{effect:'ALLOW_ACTION',scope:'PLAYER_ACTIONS',tags:['ACTIVE_ACTION','BLOCKABLE']},
+  place_swap:{effect:'SWAP_TARGET_POSITION',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  role_swap:{effect:'SWAP_ROLE_CONTEXT',requiresExplicitRule:true,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  redirect:{effect:'CHANGE_TARGET',transformation:'REDIRECT',tags:['ACTIVE_ACTION','BLOCKABLE']},
+  guard:{effect:'CHANGE_TARGET',transformation:'GUARD',tags:['ACTIVE_ACTION','BLOCKABLE']},
+  drunk:{effect:'APPLY_STATUS',statusType:'DRUNK',activates:'AFTER_NIGHT_RESOLUTION',expires:'AFTER_HANGING',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  sober:{effect:'APPLY_STATUS',statusType:'SOBER',activates:'AFTER_NIGHT_RESOLUTION',expires:'AFTER_HANGING',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  steal:{effect:'REMOVE_ABILITY_USE',requiresExplicitRule:true,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  poison:{effect:'APPLY_STATUS',statusType:'POISON',duration:2,healRemoves:true,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  mark:{effect:'APPLY_STATUS',statusType:'MARK',mayGenerate:'personal_instant_kill',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  ability_amplify:{effect:'APPLY_STATUS',statusType:'ABILITY_AMPLIFIED',upgrades:{personal_instant_kill:'super_kill'},tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  additional_uses:{effect:'GRANT_ABILITY_USE',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  protect:{effect:'APPLY_PROTECTION',protectionTier:1,stopsKillTier:1,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  super_protect:{effect:'APPLY_PROTECTION',protectionTier:2,stopsKillTier:3,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  basic_ask:{effect:'INVESTIGATE',intelType:'BASIC_ALIGNMENT',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  advanced_ask:{effect:'INVESTIGATE',intelType:'EXACT_ROLE',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  alignment_ask:{effect:'INVESTIGATE',intelType:'EXACT_FACTION',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  watch:{effect:'INVESTIGATE',intelType:'VISITORS',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  track:{effect:'INVESTIGATE',intelType:'VISITS',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  action_check:{effect:'INVESTIGATE',intelType:'ACTIONS_RECEIVED',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  gravedigger:{effect:'INVESTIGATE',intelType:'DEAD_ROLE',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  map:{effect:'INVESTIGATE',intelType:'LIVING_ABILITY_NAMES',tags:['ACTIVE_ACTION','INTEL','BLOCKABLE']},
+  convert:{effect:'CHANGE_FACTION',dropsOldRole:true,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  den_regular_kill:{effect:'ATTEMPT_KILL',killTier:1,tags:['ACTIVE_ACTION','FACTION_ACTION','STANDARD_KILL','BLOCKABLE','REDIRECTABLE','REFLECTABLE','PROTECTABLE']},
+  personal_instant_kill:{effect:'ATTEMPT_KILL',killTier:1,tags:['ACTIVE_ACTION','STANDARD_KILL','BLOCKABLE','REDIRECTABLE','REFLECTABLE','PROTECTABLE']},
+  super_kill:{effect:'ATTEMPT_KILL',killTier:2,bypassesProtectionTier:1,tags:['ACTIVE_ACTION','SUPER_KILL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  omega_kill:{effect:'ATTEMPT_KILL',killTier:3,visitorCollateral:true,bypassesProtectionTier:1,tags:['ACTIVE_ACTION','OMEGA_KILL','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  duel_fight:{effect:'ATTEMPT_KILL',requiresExplicitRule:true,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  save:{effect:'PREVENT_DEATH',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  heal:{effect:'REMOVE_STATUS',statusTypes:['POISON','DRUNK','SOBER','MARK'],tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
+  reflection:{effect:'CHANGE_TARGET',transformation:'REFLECTION',trigger:'PLAYER_TARGETED',tags:['PASSIVE','REFLECTABLE']},
+  death_immunity:{effect:'PREVENT_DEATH',trigger:'PLAYER_ABOUT_TO_DIE',tags:['PASSIVE']},
+  counterattack:{effect:'GENERATE_ACTION',generatedAbility:'personal_instant_kill',trigger:'PLAYER_TARGETED_BY_KILL',tags:['PASSIVE']},
+  bulletproof:{effect:'PREVENT_DEATH',trigger:'PLAYER_TARGETED_BY_KILL',tags:['PASSIVE']}
+});
+
 const targetFor=name=>{
   if(['Death Immunity','Counterattack','Bulletproof / Passive Immunity','Reflection'].includes(name))return {type:'NO_TARGET',selectionRuleType:'HARD_SELECTION_RESTRICTION'};
   if(name==='Map')return {type:'GLOBAL',selectionRuleType:'HARD_SELECTION_RESTRICTION'};
@@ -68,7 +111,7 @@ const targetFor=name=>{
 };
 
 export const GLOBAL_ABILITY_DEFINITIONS=Object.freeze(entries.map(([name,category,resolutionCategory,phase,activePassive,definition,mechanics,aliases])=>Object.freeze({
-  abilityId:stableId(name),name,category,resolutionCategory,resolutionPriority:resolutionCategory==='PASSIVES'?null:priority(resolutionCategory),resolutionTiming:name==='Heal'?'ANY_TIME':resolutionCategory==='PASSIVES'?'EVENT_TRIGGERED':'ORDERED_STAGE',phase,activePassive,definition,mechanics:mechanics.split(',').map(item=>item.trim()),aliases:Object.freeze(aliases),targeting:Object.freeze(targetFor(name)),globalDefault:true
+  abilityId:stableId(name),name,category,resolutionCategory,resolutionPriority:resolutionCategory==='PASSIVES'?null:priority(resolutionCategory),resolutionTiming:name==='Heal'?'ANY_TIME':resolutionCategory==='PASSIVES'?'EVENT_TRIGGERED':'ORDERED_STAGE',phase,activePassive,definition,mechanics:mechanics.split(',').map(item=>item.trim()),aliases:Object.freeze(aliases),targeting:Object.freeze(targetFor(name)),behavior:Object.freeze(executableBehavior[stableId(name)]||{effect:'CUSTOM',requiresExplicitRule:true,tags:[]}),globalDefault:true
 })));
 
 const byName=new Map(GLOBAL_ABILITY_DEFINITIONS.flatMap(ability=>[[key(ability.name),ability],...ability.aliases.map(alias=>[key(alias),ability])]));

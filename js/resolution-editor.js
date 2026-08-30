@@ -81,7 +81,7 @@ export function normalizeStatusEffect(input={}){
 }
 
 export function normalizePlayerOutcome(input={},player={}){
-  return {player_id:text(input.player_id||player.id,100),player_name:text(input.player_name||player.name,200),life_state:upper(input.life_state,'UNCHANGED',LIFE_STATES),role_id:text(input.role_id||player.roleId,100),faction_id:text(input.faction_id||player.currentFactionId,100),changes:array(input.changes).slice(0,100).map(change=>({...change})),alive_after_resolution:input.alive_after_resolution??(String(input.life_state).toUpperCase()==='DEAD'?false:player.alive!==false),role_after_resolution:text(input.role_after_resolution||input.role_id||player.roleId,200),mode_after_resolution:text(input.mode_after_resolution||player.modeName,200),summary:text(input.summary,2000)};
+  return {player_id:text(input.player_id||player.id,100),player_name:text(input.player_name||player.name,200),life_state:upper(input.life_state,'UNCHANGED',LIFE_STATES),role_id:text(input.role_id??player.roleId,100),faction_id:text(input.faction_id??player.currentFactionId??player.factionId,100),changes:array(input.changes).slice(0,100).map(change=>({...change})),alive_after_resolution:input.alive_after_resolution??(String(input.life_state).toUpperCase()==='DEAD'?false:player.alive!==false),role_after_resolution:text(input.role_after_resolution??input.role_id??player.roleId,200),mode_after_resolution:text(input.mode_after_resolution??player.modeName,200),summary:text(input.summary,2000)};
 }
 
 export function buildResolutionDraft({proposal={},actions=[],players=[]}={}){
@@ -118,10 +118,10 @@ export function finalResolutionPayload(draft={},legacy={}){
 
 export function validateResolutionDraft(draft,{actions=[],players=[],roles=[],abilities=[],factions=[],allowWarnings=false}={}){
   const errors=[],warnings=[],playerIds=new Set(players.map(item=>String(item.id))),roleIds=new Set(roles.map(item=>String(item.id))),abilityIds=new Set(abilities.map(item=>String(item.id))),factionIds=new Set(factions.map(item=>String(item.id))),actionIds=new Set(actions.map(item=>String(item.id))),seen=new Set();
-  if(!['RESOLVED','GM_REVIEW_REQUIRED'].includes(text(draft.resolution_status).toUpperCase()))errors.push('The resolution needs a valid final status.');
+  if(!['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED'].includes(text(draft.resolution_status).toUpperCase()))errors.push('The resolution needs a valid final status.');
   if(!text(draft.master_ruling?.headline)||!text(draft.master_ruling?.summary||draft.final_ruling))errors.push('The Master GM ruling is incomplete.');
   if(text(draft.resolution_status).toUpperCase()==='GM_REVIEW_REQUIRED'&&!array(draft.unresolved_questions).length)errors.push('GM review requires an explicit unresolved question.');
-  if(text(draft.resolution_status).toUpperCase()==='RESOLVED'&&array(draft.unresolved_questions).length)errors.push('Resolve or remove the unresolved questions before approval.');
+  if(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE'].includes(text(draft.resolution_status).toUpperCase())&&array(draft.unresolved_questions).length)errors.push('Resolve or remove the unresolved questions before approval.');
   if(!array(draft.action_results).length&&actions.length)errors.push('Every submitted action needs a final result.');
   if(array(draft.action_results).length!==actions.length)errors.push(`Every queued action must have exactly one result (${actions.length} expected).`);
   for(const result of array(draft.action_results)){
@@ -164,4 +164,4 @@ export function usageAggregates(rows=[]){
   const group=key=>[...array(rows).reduce((map,row)=>{const id=String(row[key]||'');if(!id)return map;if(!map.has(id))map.set(id,[]);map.get(id).push(row);return map},new Map())].map(([id,items])=>({id,name:items[0][key.replace('_id','_name')]||({player_id:'Unknown player',role_id:'Unknown role',ability_id:'Unknown ability',faction_id:'Unknown faction'}[key]||'Unknown record'),...totals(items),abilities:items}));
   return {players:group('player_id'),roles:group('role_id'),abilities:group('ability_id'),totals:totals(rows)};
 }
-import {GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,normalizeResolutionAction} from './global-abilities.js?v=11.9.0';
+import {GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,normalizeResolutionAction} from './global-abilities.js?v=12.0.0';

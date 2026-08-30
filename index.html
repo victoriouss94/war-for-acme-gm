@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GM Command Center — Generic Social Deduction Engine</title>
-  <link rel="stylesheet" href="css/main.css?v=11.9.0">
+  <link rel="stylesheet" href="css/main.css?v=12.0.0">
 </head>
 <body class="auth-pending">
 <header class="topbar">
@@ -314,7 +314,7 @@
       <div class="horizontal-actions phase-operation-actions">
         <button id="startGamePhaseBtn" type="button">Start Game</button>
         <button id="pauseResumeGameBtn" class="secondary" type="button" hidden>Pause Game</button>
-        <button id="resolveCurrentPhaseBtn" type="button" hidden>Resolve Current Phase</button>
+        <button id="resolveCurrentPhaseBtn" type="button" hidden>Resolve Night</button>
         <button id="advanceGamePhaseBtn" type="button" hidden>Advance Phase</button>
       </div>
       <div id="startGamePhasePanel" class="phase-confirmation-panel" hidden>
@@ -363,7 +363,7 @@
           <small>Explicit current-game rules and role text override these global defaults. Actions are classified before resolution and are never resolved merely in submission order.</small>
         </section>
         <div id="queueList"></div>
-        <button id="startResolutionSessionBtn" class="full" type="button">Resolve Current Phase</button>
+        <button id="startResolutionSessionBtn" class="full" type="button">Resolve Night</button>
       </div>
     </div>
     <div class="phase-lower-grid">
@@ -385,9 +385,9 @@
           <div class="section-heading"><div><p class="eyebrow">GM REVIEW</p><h2 id="resolutionHeading">Resolution</h2><p id="resolutionMeta" class="muted"></p></div><span id="resolutionStateBadge" class="permission-badge"></span></div>
           <div id="resolutionConcurrencyNotice" class="form-notice" aria-live="polite"></div>
           <section class="resolution-snapshot"><h3>Submitted Actions</h3><div id="resolutionActions"></div></section>
-          <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>AI Resolution</h3><button id="analyzeResolutionBtn" type="button">Analyze with AI</button></div><div id="resolutionAiOutput"><p class="muted">No AI proposal yet. Manual resolution is always available.</p></div></section>
+          <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>System Resolution</h3><div><button id="recalculateResolutionBtn" class="secondary" type="button">Recalculate</button><button id="analyzeResolutionBtn" type="button">Resolve Night</button></div></div><div id="resolutionAiOutput"><p class="muted">No system simulation yet. Standard mechanics resolve without AI; the GM reviews before anything is applied.</p></div></section>
           <form id="manualResolutionForm" class="manual-resolution-form">
-            <div class="section-heading"><div><p class="eyebrow">FINAL AUTHORITY</p><h3>Resolution Editor</h3><p class="muted">Review every AI determination, edit anything that is wrong, then approve one final ruling. Nothing below changes live game state until Approve &amp; Apply succeeds.</p></div></div>
+            <div class="section-heading"><div><p class="eyebrow">FINAL AUTHORITY</p><h3>Resolution Editor</h3><p class="muted">Review the system result and any isolated AI adjudications, edit anything that is wrong, then approve one final ruling. Nothing below changes live game state until Approve &amp; Apply succeeds.</p></div></div>
             <label>Resolution title<input id="resolutionTitle" maxlength="200"></label>
             <label>Summary<textarea id="resolutionSummary" rows="2" maxlength="4000"></textarea></label>
             <section class="ruling-editor-section"><h4>Resolution Order &amp; Action Results</h4><p class="muted">One submitted action remains one attempt even when it redirects, reflects, or affects many players.</p><div id="resolutionActionEditor"></div></section>
@@ -727,9 +727,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.56.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/supabase-config.js?v=11.9.0"></script>
-<script src="js/cloud.js?v=11.9.0"></script>
+<script src="js/supabase-config.js?v=12.0.0"></script>
+<script src="js/cloud.js?v=12.0.0"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=11.9.0"></script>
+<script type="module" src="js/app.js?v=12.0.0"></script>
 </body>
 </html>
