@@ -43,8 +43,17 @@ test('routine Supabase auth events do not restart the whole authenticated app',(
   assert.match(handler,/renderChrome\(\);return/);
 });
 
+test('Supabase auth callbacks defer profile requests until after the auth lock is released',()=>{
+  const listener=cloud.slice(cloud.indexOf('authListener=client.auth.onAuthStateChange'),cloud.indexOf('return {available:true,session}'));
+  assert.match(listener,/onAuthStateChange\(\(event,next\)=>\{/);
+  assert.match(listener,/setTimeout\(async\(\)=>\{/);
+  assert.match(listener,/\},0\)/);
+  assert.doesNotMatch(listener,/queueMicrotask/);
+  assert.doesNotMatch(listener,/onAuthStateChange\(async/);
+});
+
 test('the public entry point cache-busts current app and style assets',()=>{
   assert.match(html,/css\/main\.css\?v=12\.2\.0/);
-  assert.match(html,/js\/cloud\.js\?v=12\.1\.2/);
+  assert.match(html,/js\/cloud\.js\?v=12\.2\.1/);
   assert.match(html,/js\/app\.js\?v=12\.2\.0/);
 });

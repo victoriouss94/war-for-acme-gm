@@ -1,5 +1,11 @@
 # Changelog
 
+## v12.2.1 — Supabase Login Deadlock Repair
+
+- Deferred account-profile restoration until after Supabase releases its authentication callback lock.
+- Preserved same-session coalescing so password sign-in and auth notifications cannot duplicate profile requests.
+- Added regression coverage for the non-blocking authentication callback and refreshed the public cloud-client cache key.
+
 ## v12.2.0 — Canonical Night Resolution Repair
 
 - Extended the existing `resolveNightDeterministically` pipeline instead of adding a second resolver.

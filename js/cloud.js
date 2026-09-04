@@ -96,9 +96,11 @@
     if(session)await setSession(session,{touchLogin:true});
     authListener=client.auth.onAuthStateChange((event,next)=>{
       if(event==='INITIAL_SESSION')return;
-      queueMicrotask(async()=>{
+      // Supabase holds an internal auth lock while this callback runs. Defer all
+      // profile/database work to a later task so it cannot deadlock that lock.
+      setTimeout(async()=>{
         try{const sameUser=Boolean(next?.user?.id&&session?.user?.id===next.user.id);if(next&&profile&&(event==='TOKEN_REFRESHED'||event==='SIGNED_IN'&&sameUser))session=next;else await setSession(next,{touchLogin:event==='SIGNED_IN'});await onAuth?.(next,event)}catch(error){console.error('Could not restore account profile',error);await client.auth.signOut({scope:'local'});await setSession(null);await onAuth?.(null,event)}
-      });
+      },0);
     }).data.subscription;
     return {available:true,session};
   }
