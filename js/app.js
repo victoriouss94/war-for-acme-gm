@@ -285,7 +285,7 @@ function showView(viewId){
   if(viewId==='accountView'&&!cloudSession)viewId='gamesView';
   document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===viewId));
   document.querySelectorAll('.view').forEach(view=>view.classList.toggle('active',view.id===viewId));
-  if(viewId==='gamesView')renderGames();
+  renderView(viewId);
 }
 function resetEditorContext(){
   editingAbilityId=null;editingRoleId=null;selectedRoleAbilityIds.clear();editingActionId=null;selectedActionTargetIds.clear();selectedEffectiveAbilityKey='';selectedActionModeId='';
@@ -1297,10 +1297,28 @@ function renderSettings(){
   renderGmAccess();
   const documentImports=cloudImports.length?cloudImports:[...(state.imports||[])].reverse(),latest=documentImports[0];$('sourceDocumentInfo').innerHTML=latest?'<p class="source-document-name"><strong>'+esc(latest.source_file_name||latest.fileName)+'</strong></p><p class="muted">Imported '+esc(formatDateTime(latest.created_at||latest.importedAt))+' • '+esc(latest.import_kind||latest.kind||'initial')+'</p>':'<p class="muted">This game was not created from a Word document.</p>';$('reimportWordBtn').disabled=!canEditGame();$('importHistoryList').innerHTML=documentImports.map((item,index)=>{const summary=item.summary||{},warnings=item.warnings||[];return '<article class="import-history-entry"><strong>'+esc(item.source_file_name||item.fileName)+'</strong><p class="muted">'+esc(formatDateTime(item.created_at||item.importedAt))+' • '+esc(item.import_kind||item.kind||'initial')+'</p><button class="secondary view-import-summary" data-index="'+index+'">View Import Summary</button> '+(item.storage_path?'<button class="secondary download-source-document" data-index="'+index+'">Download Original</button>':'')+'<div class="import-summary-detail" data-summary-index="'+index+'" hidden><p>'+esc((summary.roles||0)+' roles • '+(summary.factions||0)+' factions • '+(summary.abilities||0)+' abilities • '+(summary.rules||0)+' rules')+'</p><ul>'+warnings.map(message=>'<li>'+esc(message)+'</li>').join('')+'</ul></div></article>'}).join('');document.querySelectorAll('.view-import-summary').forEach(button=>button.onclick=()=>{const detail=document.querySelector('[data-summary-index="'+button.dataset.index+'"]');detail.hidden=!detail.hidden});document.querySelectorAll('.download-source-document').forEach(button=>button.onclick=async()=>{const item=documentImports[Number(button.dataset.index)];try{await GMCloud.downloadImport(item)}catch(error){alert('Could not download the source document: '+error.message)}});
 }
-function renderAll(){
-  renderChrome();renderGames();renderAccount();if(!state)return;
-  renderSelects();renderRoleAbilityPicker();renderRoleEditorAccess();renderDashboard();renderFactions();renderRoles();renderPlayers();renderRosterSetup();renderQueue();renderResolutions();renderCopilot();renderLearning();renderGlobalSettings();renderStats();renderRules();renderEncyclopedia();renderOfficialAbilities();renderHistory();renderSettings();
+function activeViewId(){return document.querySelector('.view.active')?.id||'gamesView'}
+function renderView(viewId=activeViewId()){
+  if(viewId==='gamesView'){renderGames();return}
+  if(viewId==='accountView'){renderAccount();return}
+  if(!state)return;
+  renderSelects();
+  if(viewId==='dashboardView')renderDashboard();
+  else if(viewId==='factionsView')renderFactions();
+  else if(viewId==='rolesView'){renderRoleAbilityPicker();renderRoleEditorAccess();renderRoles();renderRoleModifierEditor()}
+  else if(viewId==='playersView'){renderPlayers();renderRosterSetup()}
+  else if(viewId==='queueView')renderQueue();
+  else if(viewId==='resolutionsView')renderResolutions();
+  else if(viewId==='copilotView')renderCopilot();
+  else if(viewId==='learningView')renderLearning();
+  else if(viewId==='globalSettingsView')renderGlobalSettings();
+  else if(viewId==='statisticsView')renderStats();
+  else if(viewId==='rulesView')renderRules();
+  else if(viewId==='encyclopediaView'){renderEncyclopedia();renderOfficialAbilities()}
+  else if(viewId==='historyView')renderHistory();
+  else if(viewId==='settingsView')renderSettings();
 }
+function renderAll(){renderChrome();renderView(activeViewId())}
 
 function metaFromCloud(row,existing={}){return normalizeMeta({...existing,id:row.id,name:row.name,theme:row.theme,description:row.description,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at,shareCode:row.share_code,memberRole:row.member_role||existing.memberRole||'viewer'})}
 async function refreshCloudGames(){
@@ -1325,7 +1343,7 @@ async function refreshOpenGame(showConflict=false){
 }
 function renderPresence(presence){const entries=Object.values(presence).flat(),unique=[...new Map(entries.map(entry=>[entry.userId,entry])).values()];$('presenceList').innerHTML=unique.map(entry=>'<span class="presence-chip">'+esc(entry.name)+(entry.editing?' • editing '+esc(entry.editing):'')+'</span>').join('')||'<span class="muted">No connected GMs.</span>'}
 async function subscribeToOpenGame(){
-  if(!cloudSession||!currentGame()||cloudChannelGameId===currentGame().id)return;cloudChannelGameId=currentGame().id;setConnection('syncing','Connecting');await GMCloud.subscribe(currentGame().id,{onDocument:async row=>{if(row.version<=cloudVersion)return;if(row.updated_by===GMCloud.user()?.id){cloudVersion=Math.max(cloudVersion,row.version);return}if(cloudDirty||cloudSaveInFlight){alert('Another GM saved a newer change while you had unsaved edits. The newest server version will be loaded.');cloudDirty=false;await refreshOpenGame(true);return}const updater=cloudContext?.members?.find(member=>member.user_id===row.updated_by)?.profiles?.display_name||'Another GM';applyCloudDocument(row,updater)},onMembership:async payload=>{const changed=payload.new?.user_id?payload.new:payload.old;if(payload.eventType==='DELETE'&&changed?.user_id===GMCloud.user()?.id)return loseGameAccess(currentGame().id);await refreshOpenGame()},onInvites:async()=>{if(currentGame()?.memberRole==='owner')await refreshOpenGame()},onStatuses:async()=>{await refreshPlayerStatuses();if(selectedStatusPlayerId)await refreshPlayerStatusHistory();renderAll()},onAbilities:async()=>{await refreshPlayerAbilityState();renderAll()},onResolution:async()=>{await Promise.all([refreshAiGmData(),refreshPlayerAbilityState(),refreshGamePhaseContext()]);renderAll()},onPhase:async()=>{await refreshGamePhaseContext();renderAll()},onLearning:async()=>{await refreshAiGmData()},onPresence:renderPresence,onStatus:async status=>{if(status==='SUBSCRIBED'){setConnection('live','Live');await refreshOpenGame()}else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setConnection('offline','Reconnecting');else if(status==='CLOSED')setConnection('offline','Offline')}})
+  if(!cloudSession||!currentGame()||cloudChannelGameId===currentGame().id)return;cloudChannelGameId=currentGame().id;setConnection('syncing','Connecting');await GMCloud.subscribe(currentGame().id,{onDocument:async row=>{if(row.version<=cloudVersion)return;if(row.updated_by===GMCloud.user()?.id){cloudVersion=Math.max(cloudVersion,row.version);return}if(cloudDirty||cloudSaveInFlight){alert('Another GM saved a newer change while you had unsaved edits. The newest server version will be loaded.');cloudDirty=false;await refreshOpenGame(true);return}const updater=cloudContext?.members?.find(member=>member.user_id===row.updated_by)?.profiles?.display_name||'Another GM';applyCloudDocument(row,updater)},onMembership:async payload=>{const changed=payload.new?.user_id?payload.new:payload.old;if(payload.eventType==='DELETE'&&changed?.user_id===GMCloud.user()?.id)return loseGameAccess(currentGame().id);await refreshOpenGame()},onInvites:async()=>{if(currentGame()?.memberRole==='owner')await refreshOpenGame()},onStatuses:async()=>{await refreshPlayerStatuses();if(selectedStatusPlayerId)await refreshPlayerStatusHistory();renderAll()},onAbilities:async()=>{await refreshPlayerAbilityState();renderAll()},onResolution:async()=>{await Promise.all([refreshAiGmData(),refreshPlayerAbilityState(),refreshGamePhaseContext()]);renderAll()},onPhase:async()=>{await refreshGamePhaseContext();renderAll()},onLearning:async()=>{await refreshAiGmData()},onPresence:renderPresence,onStatus:status=>{if(status==='SUBSCRIBED')setConnection('live','Live');else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setConnection('offline','Reconnecting');else if(status==='CLOSED')setConnection('offline','Offline')}})
 }
 async function handleCloudAuth(session){
   const previousUserId=cloudSession?.user?.id;cloudSession=session;cloudChannelGameId=null;

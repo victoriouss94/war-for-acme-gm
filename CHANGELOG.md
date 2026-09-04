@@ -1,5 +1,11 @@
 # Changelog
 
+## v12.1.1 — Login Performance
+
+- Render only the visible application screen instead of rebuilding every hidden game-management screen after login and each live update.
+- Removed the redundant full active-game reload that ran immediately after the Realtime channel subscribed.
+- Preserved on-demand rendering, live updates, authorization, game data, and the existing Supabase structure.
+
 ## v12.1.0 — Tracker-Style Night Resolution Review
 
 - Replaced the separate Master GM report presentation with the existing player-tracker card layout for night-resolution review.
