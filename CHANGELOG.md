@@ -1,5 +1,13 @@
 # Changelog
 
+## v12.1.0 — Tracker-Style Night Resolution Review
+
+- Replaced the separate Master GM report presentation with the existing player-tracker card layout for night-resolution review.
+- Shows every roster entry in tracker order, including no-action players, with current live state beside the proposed night state.
+- Keeps submitted actions visually secondary to structured final outcomes, causes, intel results, target changes, modes, statuses, deaths, survivals, and conversions.
+- Added per-result editing shortcuts, affected-result recalculation, and the existing atomic Approve & Apply action at the bottom of the tracker review.
+- Generates morning-summary counts from the structured proposed state without applying or inventing live changes.
+
 ## v12.0.0 — Deterministic Night Resolution Engine
 
 - Made the staged rule/event engine the primary night resolver across Blocks, Guarantee, Control, Swaps, Redirects, Status Effects, Intel, Converts, Kills, and Doc, with passives and generated effects handled automatically.

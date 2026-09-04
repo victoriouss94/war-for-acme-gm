@@ -5,6 +5,13 @@ import {readFile} from 'node:fs/promises';
 const [html,app,cloud,aiImportFunction,aiService,sql,importSql,inviteSql,accountSql]=await Promise.all([
   readFile('index.html','utf8'),readFile('js/app.js','utf8'),readFile('js/cloud.js','utf8'),readFile('supabase/functions/gm-document-import/index.ts','utf8'),readFile('supabase/functions/_shared/ai-service.ts','utf8'),readFile('supabase/migrations/202608080001_shared_game_documents.sql','utf8'),readFile('supabase/migrations/20260808173057_word_document_imports.sql','utf8'),readFile('supabase/migrations/20260808175237_complete_gm_invitation_system.sql','utf8'),readFile('supabase/migrations/20260808193900_username_password_accounts.sql','utf8')
 ]);
+const [resolutionReview,styles]=await Promise.all([readFile('js/resolution-review.js','utf8'),readFile('css/main.css','utf8')]);
+
+test('night results render through the existing player tracker review pattern',()=>{
+  for(const pattern of [/buildTrackerResolutionReview/,/playerReviewIdentityHtml/,/trackerPlayerResolutionHtml/,/data-edit-resolution-action/,/RESOLUTION PREVIEW/,/PROPOSED NIGHT STATE/i,/Current live state/,/Proposed night result/,/Recalculate Affected Results/,/Approve &amp; Apply/])assert.match(app,pattern);
+  for(const pattern of [/TRACKER_RESULT_BADGES/,/SUCCESS/,/FAILED/,/BLOCKED/,/PROTECTED/,/SURVIVED/,/DEAD/,/REDIRECTED/,/REFLECTED/,/IMMUNE/,/CONVERTED/,/MARKED/,/POISONED/,/PENDING/,/NO_EFFECT/])assert.match(resolutionReview,pattern);
+  assert.match(styles,/\.tracker-review-card/);assert.match(styles,/\.player-card/);assert.match(html,/Tracker Resolution Preview/);
+});
 
 test('roles and rules have separate game views and complete editors',()=>{
   for(const id of ['rolesView','rulesView','roleActiveAbility','rolePassiveAbility','roleGmNotes','roleStatusFilter','ruleVisibility','ruleEnabled','browseRoleTemplatesBtn','roleTemplateSelect'])assert.match(html,new RegExp(`id="${id}"`));
