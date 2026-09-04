@@ -3,7 +3,7 @@
   const usernamePattern=/^[A-Za-z0-9][A-Za-z0-9_-]{2,29}$/;
   const accountDomain=config.accountDomain||'users.bipjqwemwqivyassibqm.supabase.co';
   const authStorageKey='gm-command-center-auth-v7';
-  let client=null,session=null,profile=null,channel=null,authListener=null;
+  let client=null,session=null,profile=null,channel=null,authListener=null,pendingSessionSetup=null,pendingSessionToken='';
   const required=()=>{if(!client)throw new Error('Shared database is not configured.');return client};
   const unwrap=({data,error})=>{if(error)throw error;return data};
   const normalizeUsername=value=>String(value||'').trim().toLowerCase();
@@ -77,8 +77,10 @@
   }
 
   async function setSession(next,{touchLogin=false}={}){
+    const token=next?.access_token||'';
+    if(next&&pendingSessionSetup&&pendingSessionToken===token){await pendingSessionSetup;session=next;return session}
     session=next;profile=null;
-    if(session)await loadProfile(touchLogin);
+    if(session){pendingSessionToken=token;const setup=loadProfile(touchLogin);pendingSessionSetup=setup;try{await setup}finally{if(pendingSessionSetup===setup){pendingSessionSetup=null;pendingSessionToken=''}}}
     return session;
   }
 
@@ -93,8 +95,9 @@
     }
     if(session)await setSession(session,{touchLogin:true});
     authListener=client.auth.onAuthStateChange((event,next)=>{
+      if(event==='INITIAL_SESSION')return;
       queueMicrotask(async()=>{
-        try{await setSession(next,{touchLogin:event==='SIGNED_IN'});await onAuth?.(next)}catch(error){console.error('Could not restore account profile',error);await client.auth.signOut({scope:'local'});await setSession(null);await onAuth?.(null)}
+        try{const sameUser=Boolean(next?.user?.id&&session?.user?.id===next.user.id);if(next&&profile&&(event==='TOKEN_REFRESHED'||event==='SIGNED_IN'&&sameUser))session=next;else await setSession(next,{touchLogin:event==='SIGNED_IN'});await onAuth?.(next,event)}catch(error){console.error('Could not restore account profile',error);await client.auth.signOut({scope:'local'});await setSession(null);await onAuth?.(null,event)}
       });
     }).data.subscription;
     return {available:true,session};

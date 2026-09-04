@@ -1,3 +1,3 @@
 GM Command Center
-Version: 12.1.1
-Build: Lazy Screen Rendering and Login Performance
+Version: 12.1.2
+Build: Lazy Rendering and Auth Event Deduplication

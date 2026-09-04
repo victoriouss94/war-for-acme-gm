@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const app=await readFile('js/app.js','utf8');
+const cloud=await readFile('js/cloud.js','utf8');
 const html=await readFile('index.html','utf8');
 
 test('the app renders only the active screen during authentication and live updates',()=>{
@@ -33,7 +34,17 @@ test('Realtime subscription does not repeat the full game bootstrap load',()=>{
   assert.match(subscription,/status==='SUBSCRIBED'\)setConnection\('live','Live'\)/);
 });
 
+test('routine Supabase auth events do not restart the whole authenticated app',()=>{
+  assert.match(cloud,/if\(event==='INITIAL_SESSION'\)return/);
+  assert.match(cloud,/event==='TOKEN_REFRESHED'\|\|event==='SIGNED_IN'&&sameUser/);
+  assert.match(cloud,/pendingSessionSetup&&pendingSessionToken===token/);
+  const handler=app.slice(app.indexOf('async function handleCloudAuth'),app.indexOf('async function initializeCloud'));
+  assert.match(handler,/sameUser&&\(event==='TOKEN_REFRESHED'\|\|event==='SIGNED_IN'\)/);
+  assert.match(handler,/renderChrome\(\);return/);
+});
+
 test('the public entry point cache-busts the performance release',()=>{
-  assert.match(html,/css\/main\.css\?v=12\.1\.1/);
-  assert.match(html,/js\/app\.js\?v=12\.1\.1/);
+  assert.match(html,/css\/main\.css\?v=12\.1\.2/);
+  assert.match(html,/js\/cloud\.js\?v=12\.1\.2/);
+  assert.match(html,/js\/app\.js\?v=12\.1\.2/);
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## v12.1.2 — Auth Event Performance
+
+- Treat background token refreshes and repeated same-user sign-in notifications as session updates instead of full application logins.
+- Ignore the duplicate initial-session event because startup already restores and validates that session explicitly.
+- Coalesce concurrent profile restoration for the same access token into one database request.
+
 ## v12.1.1 — Login Performance
 
 - Render only the visible application screen instead of rebuilding every hidden game-management screen after login and each live update.
