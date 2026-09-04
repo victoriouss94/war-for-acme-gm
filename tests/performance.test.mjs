@@ -43,8 +43,8 @@ test('routine Supabase auth events do not restart the whole authenticated app',(
   assert.match(handler,/renderChrome\(\);return/);
 });
 
-test('the public entry point cache-busts the performance release',()=>{
-  assert.match(html,/css\/main\.css\?v=12\.1\.2/);
+test('the public entry point cache-busts current app and style assets',()=>{
+  assert.match(html,/css\/main\.css\?v=12\.2\.0/);
   assert.match(html,/js\/cloud\.js\?v=12\.1\.2/);
-  assert.match(html,/js\/app\.js\?v=12\.1\.2/);
+  assert.match(html,/js\/app\.js\?v=12\.2\.0/);
 });

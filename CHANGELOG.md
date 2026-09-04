@@ -1,5 +1,14 @@
 # Changelog
 
+## v12.2.0 — Canonical Night Resolution Repair
+
+- Extended the existing `resolveNightDeterministically` pipeline instead of adding a second resolver.
+- Added deterministic Capture, temporary Role Swap context, structured Steal use removal, and declared/persisted Duel outcomes.
+- Corrected diagnostics so they count only AI adjudications actually consumed by the engine; standardized nights report zero AI fallback calls.
+- Added one structured morning result with deaths, survived attacks, statuses, intel, conversions, generated effects, and proposed state.
+- Made Player / Action / Result the primary full-roster preview, with detailed cards, diagnostics, GM editing, recalculation, and atomic approval retained below it.
+- Added a comprehensive known-mechanics acceptance night covering every resolution stage, passives, generated effects, mode defenses, state calculation, and zero-AI operation.
+
 ## v12.1.2 — Auth Event Performance
 
 - Treat background token refreshes and repeated same-user sign-in notifications as session updates instead of full application logins.

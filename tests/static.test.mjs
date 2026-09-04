@@ -8,9 +8,9 @@ const [html,app,cloud,aiImportFunction,aiService,sql,importSql,inviteSql,account
 const [resolutionReview,styles]=await Promise.all([readFile('js/resolution-review.js','utf8'),readFile('css/main.css','utf8')]);
 
 test('night results render through the existing player tracker review pattern',()=>{
-  for(const pattern of [/buildTrackerResolutionReview/,/playerReviewIdentityHtml/,/trackerPlayerResolutionHtml/,/data-edit-resolution-action/,/RESOLUTION PREVIEW/,/PROPOSED NIGHT STATE/i,/Current live state/,/Proposed night result/,/Recalculate Affected Results/,/Approve &amp; Apply/])assert.match(app,pattern);
+  for(const pattern of [/buildTrackerResolutionReview/,/playerReviewIdentityHtml/,/trackerPlayerResolutionHtml/,/trackerResolutionTableHtml/,/Player actions and outcomes/,/AI fallback calls/,/data-edit-resolution-action/,/RESOLUTION PREVIEW/,/PROPOSED NIGHT STATE/i,/Current live state/,/Proposed night result/,/Recalculate Affected Results/,/Approve &amp; Apply/])assert.match(app,pattern);
   for(const pattern of [/TRACKER_RESULT_BADGES/,/SUCCESS/,/FAILED/,/BLOCKED/,/PROTECTED/,/SURVIVED/,/DEAD/,/REDIRECTED/,/REFLECTED/,/IMMUNE/,/CONVERTED/,/MARKED/,/POISONED/,/PENDING/,/NO_EFFECT/])assert.match(resolutionReview,pattern);
-  assert.match(styles,/\.tracker-review-card/);assert.match(styles,/\.player-card/);assert.match(html,/Tracker Resolution Preview/);
+  assert.match(styles,/\.tracker-review-card/);assert.match(styles,/\.tracker-primary-table/);assert.match(styles,/\.player-card/);assert.match(html,/Tracker Resolution Preview/);
 });
 
 test('roles and rules have separate game views and complete editors',()=>{

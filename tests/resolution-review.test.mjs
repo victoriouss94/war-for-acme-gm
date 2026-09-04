@@ -32,7 +32,8 @@ const draft={
     {player_id:'cap',life_state:'UNCHANGED'}
   ],
   status_effects:[{operation:'APPLY',player_id:'petyr',status_type:'CAPTURED',status_name:'Captured',status_category:'HARMFUL',state:'ACTIVE'}],
-  grant_effects:[]
+  grant_effects:[],
+  observability:{canonical_resolver:'resolveNightDeterministically',submitted_action_count:3,engine_resolved_count:3,ai_fallback_call_count:0,unresolved_interaction_count:0,generated_effect_count:1}
 };
 
 test('tracker review preserves the existing roster order and includes no-action players',()=>{
@@ -67,6 +68,7 @@ test('result badges cover reflection, protection, failure, pending, and intel st
   const labels=trackerActionBadges({result:'FAILURE',reflected:true,protected:true,resolution_category:'INTEL'}).map(item=>item.label);
   assert.deepEqual(labels,['REFLECTED','PROTECTED','INTEL','FAILED']);
   assert.equal(trackerActionBadges({result:'PENDING'})[0].label,'PENDING');
+  assert.deepEqual(trackerActionBadges({result:'SUCCESS',resolution_category:'KILLS',reason:'Hel dies from Personal Instant Kill.'}).map(item=>item.label),['DEAD']);
 });
 
 test('proposed deaths and conversions do not mutate the current roster',()=>{
@@ -78,4 +80,14 @@ test('proposed deaths and conversions do not mutate the current roster',()=>{
   assert.equal(roster.find(player=>player.id==='idle').alive,true);
   assert.equal(review.summary.deaths[0].name,'Hel');
   assert.equal(review.summary.conversions[0].name,'Hel');
+});
+
+test('primary table includes every player and diagnostics expose actual AI fallback usage',()=>{
+  const review=buildTrackerResolutionReview({draft,roster,roles,factions,submittedActions});
+  assert.equal(review.tableRows.length,5);
+  assert.deepEqual(review.tableRows.map(row=>row.playerName),['Penny','Petyr','Nora','Cap','Hel']);
+  assert.equal(review.tableRows.find(row=>row.playerName==='Hel').actionLabel,'No action');
+  assert.equal(review.diagnostics.canonicalResolver,'resolveNightDeterministically');
+  assert.equal(review.diagnostics.aiFallbackCalls,0);
+  assert.equal(review.diagnostics.engineResolved,3);
 });
