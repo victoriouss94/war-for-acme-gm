@@ -68,11 +68,17 @@
   async function loadProfile(touchLogin=false){
     if(!session?.user){profile=null;return null}
     const fields='id,username,username_normalized,display_name,created_at,updated_at,last_login_at,legacy_account';
-    const request=touchLogin
-      ?required().from('profiles').update({last_login_at:new Date().toISOString()}).eq('id',session.user.id).select(fields).single()
-      :required().from('profiles').select(fields).eq('id',session.user.id).single();
-    const loaded=unwrap(await request);
+    let loaded;
+    try{loaded=unwrap(await required().from('profiles').select(fields).eq('id',session.user.id).single())}
+    catch(error){
+      console.warn('Account profile metadata is unavailable; continuing with the authenticated session.',error);
+      loaded={id:session.user.id,username:session.user.user_metadata?.username||'',username_normalized:normalizeUsername(session.user.user_metadata?.username),display_name:session.user.user_metadata?.display_name||session.user.user_metadata?.username||'GM',created_at:session.user.created_at||null,updated_at:null,last_login_at:null,legacy_account:false};
+    }
     profile=loaded;
+    if(touchLogin){
+      const loggedInAt=new Date().toISOString();profile.last_login_at=loggedInAt;
+      setTimeout(async()=>{try{unwrap(await required().from('profiles').update({last_login_at:loggedInAt}).eq('id',session.user.id))}catch(error){console.warn('Last-login timestamp could not be recorded.',error)}},0);
+    }
     return loaded;
   }
 

@@ -52,10 +52,12 @@ test('Supabase auth callbacks defer profile requests until after the auth lock i
   assert.doesNotMatch(listener,/onAuthStateChange\(async/);
 });
 
-test('login restores the profile with one request and loads the active game in the background',()=>{
+test('login treats profile metadata and timestamps as non-blocking and loads the active game in the background',()=>{
   const profileLoader=cloud.slice(cloud.indexOf('async function loadProfile'),cloud.indexOf('async function setSession'));
-  assert.match(profileLoader,/const request=touchLogin/);
-  assert.doesNotMatch(profileLoader,/let loaded=.*profiles.*select[\s\S]*if\(touchLogin\)/);
+  assert.match(profileLoader,/catch\(error\).*continuing with the authenticated session/s);
+  assert.match(profileLoader,/session\.user\.user_metadata\?\.username/);
+  assert.match(profileLoader,/setTimeout\(async\(\)=>\{try\{unwrap\(await required\(\)\.from\('profiles'\)\.update/);
+  assert.match(profileLoader,/Last-login timestamp could not be recorded/);
   const handler=app.slice(app.indexOf('async function handleCloudAuth'),app.indexOf('async function initializeCloud'));
   assert.match(app,/async function bootstrapOpenGameAfterLogin\(gameId\)/);
   assert.match(handler,/setTimeout\(\(\)=>\{void bootstrapOpenGameAfterLogin\(activeGameId\)\},0\)/);
@@ -65,6 +67,6 @@ test('login restores the profile with one request and loads the active game in t
 
 test('the public entry point cache-busts current app and style assets',()=>{
   assert.match(html,/css\/main\.css\?v=12\.2\.0/);
-  assert.match(html,/js\/cloud\.js\?v=12\.2\.2/);
+  assert.match(html,/js\/cloud\.js\?v=12\.2\.3/);
   assert.match(html,/js\/app\.js\?v=12\.2\.2/);
 });

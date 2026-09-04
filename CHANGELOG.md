@@ -1,5 +1,11 @@
 # Changelog
 
+## v12.2.3 — Resilient Account Profile Restoration
+
+- Kept valid Supabase sessions signed in when optional public profile metadata is unavailable.
+- Added a safe username/display-name fallback from the authenticated user record without using that metadata for authorization.
+- Moved the last-login timestamp update out of the critical login path so an RLS or missing-row response cannot reject authentication.
+
 ## v12.2.2 — Progressive Login Bootstrap
 
 - Reduced account-profile restoration from two sequential database requests to one update-and-return request.
