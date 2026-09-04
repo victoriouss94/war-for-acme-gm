@@ -1,7 +1,7 @@
 {
   "name": "gm-command-center",
   "private": true,
-  "version": "12.2.1",
+  "version": "12.2.2",
   "type": "module",
   "scripts": {
     "lint": "node --check js/global-abilities.js && node --check js/night-engine.js && node --check js/mechanics.js && node --check js/player-setup.js && node --check js/role-modes.js && node --check js/player-abilities.js && node --check js/phase-controller.js && node --check js/document-import.js && node --check js/statuses.js && node --check js/resolution.js && node --check js/resolution-editor.js && node --check js/resolution-review.js && node --check js/copilot.js && node --check js/app.js && node --check js/cloud.js && node --check js/supabase-config.js",

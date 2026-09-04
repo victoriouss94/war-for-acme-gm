@@ -52,8 +52,19 @@ test('Supabase auth callbacks defer profile requests until after the auth lock i
   assert.doesNotMatch(listener,/onAuthStateChange\(async/);
 });
 
+test('login restores the profile with one request and loads the active game in the background',()=>{
+  const profileLoader=cloud.slice(cloud.indexOf('async function loadProfile'),cloud.indexOf('async function setSession'));
+  assert.match(profileLoader,/const request=touchLogin/);
+  assert.doesNotMatch(profileLoader,/let loaded=.*profiles.*select[\s\S]*if\(touchLogin\)/);
+  const handler=app.slice(app.indexOf('async function handleCloudAuth'),app.indexOf('async function initializeCloud'));
+  assert.match(app,/async function bootstrapOpenGameAfterLogin\(gameId\)/);
+  assert.match(handler,/setTimeout\(\(\)=>\{void bootstrapOpenGameAfterLogin\(activeGameId\)\},0\)/);
+  assert.doesNotMatch(handler,/await refreshOpenGame\(\)/);
+  assert.doesNotMatch(handler,/await subscribeToOpenGame\(\)/);
+});
+
 test('the public entry point cache-busts current app and style assets',()=>{
   assert.match(html,/css\/main\.css\?v=12\.2\.0/);
-  assert.match(html,/js\/cloud\.js\?v=12\.2\.1/);
-  assert.match(html,/js\/app\.js\?v=12\.2\.0/);
+  assert.match(html,/js\/cloud\.js\?v=12\.2\.2/);
+  assert.match(html,/js\/app\.js\?v=12\.2\.2/);
 });

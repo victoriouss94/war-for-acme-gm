@@ -62,7 +62,8 @@ test('Phase 1 UI and Edge Functions wire retrieval, global order, citations, and
   for(const pattern of [/match_game_knowledge/,/source_catalog/,/requires_gm_decision/,/BLOCKS, GUARANTEE, CONTROL, SWAPS, REDIRECTS, STATUS EFFECTS, INTEL, CONVERTS, KILLS, DOC/,/Never resolve actions merely in submission order/,/record_master_gm_exchange_internal/])assert.match(copilot,pattern);
   for(const pattern of [/input_file/,/application\/pdf/,/createEmbeddings/,/complete_knowledge_ingestion/,/fail_knowledge_ingestion/])assert.match(ingest,pattern);
   assert.match(cloud,/official_document_versions!official_document_versions_document_id_fkey/);
-  assert.match(app,/if\(currentGame\(\)\)\{await refreshOpenGame\(\);await subscribeToOpenGame\(\)\}/);
+  assert.match(app,/async function bootstrapOpenGameAfterLogin\(gameId\)/);
+  assert.match(app,/await refreshOpenGame\(\);[\s\S]*await subscribeToOpenGame\(\)/);
   assert.match(app,/Reference data could not be loaded:/);
   assert.doesNotMatch(app,/class="danger delete-role"/);
 });

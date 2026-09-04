@@ -1351,13 +1351,22 @@ function renderPresence(presence){const entries=Object.values(presence).flat(),u
 async function subscribeToOpenGame(){
   if(!cloudSession||!currentGame()||cloudChannelGameId===currentGame().id)return;cloudChannelGameId=currentGame().id;setConnection('syncing','Connecting');await GMCloud.subscribe(currentGame().id,{onDocument:async row=>{if(row.version<=cloudVersion)return;if(row.updated_by===GMCloud.user()?.id){cloudVersion=Math.max(cloudVersion,row.version);return}if(cloudDirty||cloudSaveInFlight){alert('Another GM saved a newer change while you had unsaved edits. The newest server version will be loaded.');cloudDirty=false;await refreshOpenGame(true);return}const updater=cloudContext?.members?.find(member=>member.user_id===row.updated_by)?.profiles?.display_name||'Another GM';applyCloudDocument(row,updater)},onMembership:async payload=>{const changed=payload.new?.user_id?payload.new:payload.old;if(payload.eventType==='DELETE'&&changed?.user_id===GMCloud.user()?.id)return loseGameAccess(currentGame().id);await refreshOpenGame()},onInvites:async()=>{if(currentGame()?.memberRole==='owner')await refreshOpenGame()},onStatuses:async()=>{await refreshPlayerStatuses();if(selectedStatusPlayerId)await refreshPlayerStatusHistory();renderAll()},onAbilities:async()=>{await refreshPlayerAbilityState();renderAll()},onResolution:async()=>{await Promise.all([refreshAiGmData(),refreshPlayerAbilityState(),refreshGamePhaseContext()]);renderAll()},onPhase:async()=>{await refreshGamePhaseContext();renderAll()},onLearning:async()=>{await refreshAiGmData()},onPresence:renderPresence,onStatus:status=>{if(status==='SUBSCRIBED')setConnection('live','Live');else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setConnection('offline','Reconnecting');else if(status==='CLOSED')setConnection('offline','Offline')}})
 }
+async function bootstrapOpenGameAfterLogin(gameId){
+  try{
+    if(!cloudSession||currentGame()?.id!==gameId)return;
+    await refreshOpenGame();
+    if(!cloudSession||currentGame()?.id!==gameId)return;
+    await subscribeToOpenGame();
+    setConnection('live','Live');
+  }catch(error){setConnection('offline',navigator.onLine?'Sync error':'Offline');console.error('Could not finish loading the active game',error)}
+}
 async function handleCloudAuth(session,event='INITIAL_SESSION'){
   const previousUserId=cloudSession?.user?.id,sameUser=Boolean(previousUserId&&session?.user?.id===previousUserId);cloudSession=session;
   if(sameUser&&(event==='TOKEN_REFRESHED'||event==='SIGNED_IN')){renderChrome();return}
   cloudChannelGameId=null;
   if(!session){if(authInitialized&&previousUserId){clearAuthenticatedState();clearAccountFields();setAuthMode('login')}authInitialized=true;setConnection('offline','Offline');renderAll();showView('gamesView');return}
   if(previousUserId&&previousUserId!==session.user.id)clearAuthenticatedState();authInitialized=true;
-  setConnection('syncing','Connecting');try{await refreshCloudGames();if(currentGame()){await refreshOpenGame();await subscribeToOpenGame()}setNotice($('authMessage'),'');setConnection('live','Live');if(pendingInviteCode){showView('gamesView');$('joinGamePanel').hidden=false;$('joinGameCode').value=pendingInviteCode}}catch(error){setConnection('offline','Sync error');setNotice($('authMessage'),'Could not load shared games. Please try again.','error');console.error(error)}
+  setConnection('syncing','Connecting');try{await refreshCloudGames();setNotice($('authMessage'),'');if(pendingInviteCode){showView('gamesView');$('joinGamePanel').hidden=false;$('joinGameCode').value=pendingInviteCode}const activeGameId=currentGame()?.id;if(activeGameId){setConnection('syncing','Loading game');setTimeout(()=>{void bootstrapOpenGameAfterLogin(activeGameId)},0)}else setConnection('live','Live')}catch(error){setConnection('offline','Sync error');setNotice($('authMessage'),'Could not load shared games. Please try again.','error');console.error(error)}
 }
 async function initializeCloud(){
   try{const result=await GMCloud.init(handleCloudAuth);cloudAvailable=result.available;if(!cloudAvailable){setNotice($('authMessage'),'The shared database client could not load. Check your network connection.','error');setConnection('offline','Offline');document.body.classList.remove('auth-pending');return}await handleCloudAuth(result.session,'INITIAL_SESSION')}catch(error){setNotice($('authMessage'),'The account service could not be reached. Please try again.','error');setConnection('offline','Offline');document.body.classList.remove('auth-pending');console.error(error)}

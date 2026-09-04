@@ -1,5 +1,11 @@
 # Changelog
 
+## v12.2.2 — Progressive Login Bootstrap
+
+- Reduced account-profile restoration from two sequential database requests to one update-and-return request.
+- Made the authenticated games screen available before the last-open game loads its larger history, status, ability, phase, AI, and knowledge datasets.
+- Kept active-game synchronization and Realtime subscription running immediately in the background with an explicit loading indicator and regression coverage.
+
 ## v12.2.1 — Supabase Login Deadlock Repair
 
 - Deferred account-profile restoration until after Supabase releases its authentication callback lock.

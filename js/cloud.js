@@ -67,11 +67,11 @@
 
   async function loadProfile(touchLogin=false){
     if(!session?.user){profile=null;return null}
-    let loaded=unwrap(await required().from('profiles').select('id,username,username_normalized,display_name,created_at,updated_at,last_login_at,legacy_account').eq('id',session.user.id).single());
-    if(touchLogin){
-      const loggedInAt=new Date().toISOString();
-      loaded=unwrap(await required().from('profiles').update({last_login_at:loggedInAt}).eq('id',session.user.id).select('id,username,username_normalized,display_name,created_at,updated_at,last_login_at,legacy_account').single());
-    }
+    const fields='id,username,username_normalized,display_name,created_at,updated_at,last_login_at,legacy_account';
+    const request=touchLogin
+      ?required().from('profiles').update({last_login_at:new Date().toISOString()}).eq('id',session.user.id).select(fields).single()
+      :required().from('profiles').select(fields).eq('id',session.user.id).single();
+    const loaded=unwrap(await request);
     profile=loaded;
     return loaded;
   }
