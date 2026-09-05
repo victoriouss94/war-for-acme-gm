@@ -11,7 +11,7 @@ for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-c
 const app=await readFile('js/app.js','utf8');
 for(const module of ['document-import','copilot','knowledge','statuses','resolution','player-setup','phase-controller','mechanics'])if(!app.includes(`from './${module}.js?v=12.0.1'`))throw new Error(`app.js does not load the versioned js/${module}.js`);
 if(!app.includes("from './player-abilities.js?v=12.2.7'"))throw new Error('app.js does not load the dead-player ability fix');
-if(!app.includes("from './resolution-editor.js?v=12.2.0'"))throw new Error('app.js does not load the versioned resolution editor');
+if(!app.includes("from './resolution-editor.js?v=12.2.9'"))throw new Error('app.js does not load the versioned resolution editor');
 if(!app.includes("from './global-abilities.js?v=12.0.1'"))throw new Error('app.js does not load the versioned global resolution module');
 if(!app.includes("from './role-modes.js?v=12.0.1'"))throw new Error('app.js does not load the versioned role mode module');
 const release=JSON.parse(await readFile('package.json','utf8')).version;

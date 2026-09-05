@@ -9,6 +9,15 @@ const abilities=[{id:'kill',name:'Personal Instant Kill'},{id:'reflect',name:'Re
 const factions=[{id:'town',name:'Town'},{id:'den',name:'Den'}];
 const actions=[{id:'a1',sourcePlayerId:'riz',abilityId:'kill',name:'Personal Instant Kill',roleId:'sheriff',roleVersion:3,abilitySource:'ROLE',targetIds:['sky']},{id:'a2',sourcePlayerId:'aj',abilityId:'super',name:'Super Kill',roleId:'basic',roleVersion:1,abilitySource:'MINIGAME_REWARD',playerAbilityGrantId:'00000000-0000-0000-0000-000000000001',targetIds:['sky']}];
 
+test('approval normalizes legacy GM override metadata without losing valid audit evidence',()=>{
+  for(const value of [false,true,null,undefined,[],42,{reason:'GM confirmed',changes:['target']},'Legacy GM reason']){
+    const draft=buildResolutionDraft({proposal:{action_results:[{action_id:'a1',gm_override:value,result:'SUCCESS'}]},actions:[actions[0]],players});
+    const payload=finalResolutionPayload(draft),expected=typeof value==='string'||value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+    assert.deepEqual(payload.action_results[0].gm_override,expected);
+    assert.deepEqual(payload.events.find(event=>event.action_id==='a1'&&event.gm_override!==undefined).gm_override,expected);
+  }
+});
+
 test('explicit conversion role removal survives the GM editor and approval payload',()=>{
   const draft=buildResolutionDraft({proposal:{player_outcomes:[{player_id:'riz',role_id:'',role_after_resolution:'',faction_id:'den',changes:[{type:'ROLE',before:'sheriff',after:''}]}]},players,actions:[]});
   const outcome=finalResolutionPayload(draft).player_outcomes.find(item=>item.player_id==='riz');
