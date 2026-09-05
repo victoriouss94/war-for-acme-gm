@@ -1,3 +1,4 @@
+const hasFactionChange=outcome=>Boolean(outcome.faction_id)&&outcome.original_faction_id!=null&&outcome.faction_id!==outcome.original_faction_id;
 const RESULTS=new Set(['SUCCESS','FAILURE','BLOCKED','CANCELLED','INELIGIBLE_EFFECT']);
 const USE_RESULTS=new Set(['CONSUMED','REFUNDED','NOT_CONSUMED','NOT_APPLICABLE']);
 const LIFE_STATES=new Set(['UNCHANGED','ALIVE','DEAD','REVIVED']);
@@ -83,7 +84,13 @@ export function normalizeStatusEffect(input={}){
 }
 
 export function normalizePlayerOutcome(input={},player={}){
-  return {player_id:text(input.player_id||player.id,100),player_name:text(input.player_name||player.name,200),life_state:upper(input.life_state,'UNCHANGED',LIFE_STATES),role_id:text(input.role_id??player.roleId,100),faction_id:text(input.faction_id??player.currentFactionId??player.factionId,100),changes:array(input.changes).slice(0,100).map(change=>({...change})),alive_after_resolution:input.alive_after_resolution??(String(input.life_state).toUpperCase()==='DEAD'?false:player.alive!==false),role_after_resolution:text(input.role_after_resolution??input.role_id??player.roleId,200),mode_after_resolution:text(input.mode_after_resolution??player.modeName,200),summary:text(input.summary,2000)};
+  const factionChange=array(input.changes).find(change=>change.type==='FACTION');
+  // Keep the pre-resolution faction across editor round trips, including manual edits.
+  const original=Object.hasOwn(input,'original_faction_id')?input.original_faction_id:player.currentFactionId??player.factionId??factionChange?.before??null;
+  const originalFaction=original==null?null:text(original,100),finalFaction=text(input.faction_id??player.currentFactionId??player.factionId,100);
+  const changes=array(input.changes).slice(0,100).filter(change=>change.type!=='FACTION').map(change=>({...change}));
+  if(originalFaction!==null&&finalFaction!==originalFaction)changes.push({...factionChange,type:'FACTION',before:originalFaction,after:finalFaction});
+  return {player_id:text(input.player_id||player.id,100),player_name:text(input.player_name||player.name,200),life_state:upper(input.life_state,'UNCHANGED',LIFE_STATES),role_id:text(input.role_id??player.roleId,100),faction_id:finalFaction,original_faction_id:originalFaction,changes,alive_after_resolution:input.alive_after_resolution??(String(input.life_state).toUpperCase()==='DEAD'?false:player.alive!==false),role_after_resolution:text(input.role_after_resolution??input.role_id??player.roleId,200),mode_after_resolution:text(input.mode_after_resolution??player.modeName,200),summary:text(input.summary,2000)};
 }
 
 export function buildResolutionDraft({proposal={},actions=[],players=[]}={}){
@@ -108,14 +115,14 @@ export function resolutionEvents(draft={}){
   for(const outcome of array(draft.player_outcomes)){
     if(outcome.life_state==='DEAD')events.push({action_id:'',event_type:'DEATH',actor_player_id:'',target_player_id:outcome.player_id,ability_id:'',affected_player_ids:[outcome.player_id],uses_consumed:0,uses_refunded:0,result:'DEAD',summary:outcome.summary||'Player died.',role_id:outcome.role_id,role_version:1,ability_source:'',source_type:'',source_faction_id:'',original_target_ids:[outcome.player_id],final_target_ids:[outcome.player_id]});
     if(['ALIVE','REVIVED'].includes(outcome.life_state))events.push({action_id:'',event_type:outcome.life_state==='REVIVED'?'STATE_CHANGE':'SURVIVAL',actor_player_id:'',target_player_id:outcome.player_id,ability_id:'',affected_player_ids:[outcome.player_id],uses_consumed:0,uses_refunded:0,result:outcome.life_state,summary:outcome.summary||`Player ${outcome.life_state.toLowerCase()}.`,role_id:outcome.role_id,role_version:1,ability_source:'',source_type:'',source_faction_id:'',original_target_ids:[outcome.player_id],final_target_ids:[outcome.player_id]});
-    if(outcome.faction_id)events.push({action_id:'',event_type:'CONVERSION',actor_player_id:'',target_player_id:outcome.player_id,ability_id:'',affected_player_ids:[outcome.player_id],uses_consumed:0,uses_refunded:0,result:'FACTION_SET',summary:outcome.summary||'Final faction state recorded.',role_id:outcome.role_id,role_version:1,ability_source:'',source_type:'',source_faction_id:outcome.faction_id,original_target_ids:[outcome.player_id],final_target_ids:[outcome.player_id]});
+    if(hasFactionChange(outcome))events.push({action_id:'',event_type:'CONVERSION',actor_player_id:'',target_player_id:outcome.player_id,ability_id:'',affected_player_ids:[outcome.player_id],uses_consumed:0,uses_refunded:0,result:'FACTION_SET',summary:outcome.summary||'Final faction state recorded.',role_id:outcome.role_id,role_version:1,ability_source:'',source_type:'',source_faction_id:outcome.faction_id,original_target_ids:[outcome.player_id],final_target_ids:[outcome.player_id]});
   }
   return events.slice(0,2000);
 }
 
 export function finalResolutionPayload(draft={},legacy={}){
-  const clean=buildResolutionDraft({proposal:draft,actions:array(draft.action_results).map(item=>({id:item.action_id,abilityId:item.ability_id,name:item.ability_name,sourcePlayerId:item.actor_player_id,sourceFactionId:item.source_faction_id,roleId:item.role_id,roleVersion:item.role_version,targetIds:item.original_target_ids,abilitySource:item.ability_source})),players:array(draft.player_outcomes).map(item=>({id:item.player_id,roleId:item.role_id,currentFactionId:item.faction_id}))});
-  clean.events=resolutionEvents(clean);clean.proposed_order=clean.resolution_order;clean.expected_results=clean.action_results.map(item=>`${item.ability_name||item.ability_id}: ${item.result}${item.reason?' — '+item.reason:''}`);clean.status_changes=clean.status_effects.map(item=>`${item.operation}: ${item.status_name} → ${item.player_id}`);clean.deaths=clean.player_outcomes.filter(item=>item.life_state==='DEAD').map(item=>item.player_id);clean.conversions=clean.player_outcomes.filter(item=>item.faction_id).map(item=>`${item.player_id} → ${item.faction_id}`);clean.abilities_consumed=clean.action_results.filter(item=>item.use_disposition==='CONSUMED').map(item=>item.action_id);clean.reasoning=clean.why;return {...legacy,...clean};
+  const clean=buildResolutionDraft({proposal:draft,actions:array(draft.action_results).map(item=>({id:item.action_id,abilityId:item.ability_id,name:item.ability_name,sourcePlayerId:item.actor_player_id,sourceFactionId:item.source_faction_id,roleId:item.role_id,roleVersion:item.role_version,targetIds:item.original_target_ids,abilitySource:item.ability_source})),players:array(draft.player_outcomes).map(item=>({id:item.player_id,roleId:item.role_id,currentFactionId:item.original_faction_id??array(item.changes).find(change=>change.type==='FACTION')?.before}))});
+  clean.events=resolutionEvents(clean);clean.proposed_order=clean.resolution_order;clean.expected_results=clean.action_results.map(item=>`${item.ability_name||item.ability_id}: ${item.result}${item.reason?' — '+item.reason:''}`);clean.status_changes=clean.status_effects.map(item=>`${item.operation}: ${item.status_name} → ${item.player_id}`);clean.deaths=clean.player_outcomes.filter(item=>item.life_state==='DEAD').map(item=>item.player_id);clean.conversions=clean.player_outcomes.filter(hasFactionChange).map(item=>`${item.player_id} → ${item.faction_id}`);clean.abilities_consumed=clean.action_results.filter(item=>item.use_disposition==='CONSUMED').map(item=>item.action_id);clean.reasoning=clean.why;return {...legacy,...clean};
 }
 
 export function validateResolutionDraft(draft,{actions=[],players=[],roles=[],abilities=[],factions=[],allowWarnings=false}={}){

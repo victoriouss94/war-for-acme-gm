@@ -9,6 +9,37 @@ const abilities=[{id:'kill',name:'Personal Instant Kill'},{id:'reflect',name:'Re
 const factions=[{id:'town',name:'Town'},{id:'den',name:'Den'}];
 const actions=[{id:'a1',sourcePlayerId:'riz',abilityId:'kill',name:'Personal Instant Kill',roleId:'sheriff',roleVersion:3,abilitySource:'ROLE',targetIds:['sky']},{id:'a2',sourcePlayerId:'aj',abilityId:'super',name:'Super Kill',roleId:'basic',roleVersion:1,abilitySource:'MINIGAME_REWARD',playerAbilityGrantId:'00000000-0000-0000-0000-000000000001',targetIds:['sky']}];
 
+test('unchanged factions are not reported as conversions',()=>{
+  const payload=finalResolutionPayload(buildResolutionDraft({actions,players}));
+  assert.deepEqual(payload.conversions,[]);
+  assert.equal(payload.events.filter(event=>event.event_type==='CONVERSION').length,0);
+});
+
+test('real and manually edited conversions retain their original faction across approval round trips',()=>{
+  const draft=buildResolutionDraft({proposal:{player_outcomes:[{player_id:'riz',faction_id:'den',changes:[{type:'FACTION',before:'town',after:'den'}]}]},players});
+  for(let round=0,payload=draft;round<3;round++){
+    payload=finalResolutionPayload(payload);
+    assert.deepEqual(payload.conversions,['riz → den']);
+    assert.equal(payload.events.filter(event=>event.event_type==='CONVERSION').length,1);
+    assert.equal(payload.player_outcomes[0].original_faction_id,'town');
+  }
+  const manual=buildResolutionDraft({actions,players});
+  const outcome=manual.player_outcomes.find(item=>item.player_id==='riz');
+  outcome.faction_id='den';
+  const approved=finalResolutionPayload(manual);
+  assert.deepEqual(approved.conversions,['riz → den']);
+  approved.player_outcomes.find(item=>item.player_id==='riz').faction_id='town';
+  const reverted=finalResolutionPayload(approved);
+  assert.deepEqual(reverted.conversions,[]);
+  assert.equal(reverted.events.filter(event=>event.event_type==='CONVERSION').length,0);
+  assert.deepEqual(reverted.player_outcomes.find(item=>item.player_id==='riz').changes,[]);
+});
+
+test('legacy outcomes need change evidence before reporting a conversion',()=>{
+  assert.deepEqual(finalResolutionPayload({player_outcomes:[{player_id:'riz',faction_id:'den'}]}).conversions,[]);
+  assert.deepEqual(finalResolutionPayload({player_outcomes:[{player_id:'riz',faction_id:'den',changes:[{type:'FACTION',before:'town',after:'den'}]}]}).conversions,['riz → den']);
+});
+
 test('approval normalizes legacy GM override metadata without losing valid audit evidence',()=>{
   for(const value of [false,true,null,undefined,[],42,{reason:'GM confirmed',changes:['target']},'Legacy GM reason']){
     const draft=buildResolutionDraft({proposal:{action_results:[{action_id:'a1',gm_override:value,result:'SUCCESS'}]},actions:[actions[0]],players});
