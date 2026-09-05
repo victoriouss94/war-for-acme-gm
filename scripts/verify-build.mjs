@@ -13,6 +13,7 @@ for(const module of ['document-import','copilot','knowledge','statuses','resolut
 if(!app.includes("from './resolution-editor.js?v=12.2.0'"))throw new Error('app.js does not load the versioned resolution editor');
 if(!app.includes("from './global-abilities.js?v=12.0.1'"))throw new Error('app.js does not load the versioned global resolution module');
 if(!app.includes("from './role-modes.js?v=12.0.1'"))throw new Error('app.js does not load the versioned role mode module');
-if(!app.includes("from './night-engine.js?v=12.2.0'"))throw new Error('app.js does not load the deterministic night engine');
+const release=JSON.parse(await readFile('package.json','utf8')).version;
+if(!app.includes(`from './night-engine.js?v=${release}'`))throw new Error('app.js does not load the current deterministic night engine');
 if(!app.includes("from './resolution-review.js?v=12.2.0'"))throw new Error('app.js does not load the tracker-style resolution review module');
 console.log('Static build verified:',files.join(', '));

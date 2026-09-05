@@ -213,6 +213,7 @@
         <label>Player name<input id="playerName" placeholder="Discord name"></label>
         <label>Role<select id="playerRole"><option value="">Unassigned</option></select></label>
         <button id="addPlayerBtn" class="full">Add Player</button>
+        <p id="playerFormNotice" class="notice" role="alert" hidden></p>
       </aside>
       <div class="panel">
         <div class="filters player-filters"><input id="playerSearch" placeholder="Search player, role, faction, or status"><select id="playerLifeFilter"><option value="ALL">Alive and dead</option><option value="ALIVE">Alive only</option><option value="DEAD">Dead only</option></select><select id="playerStatusFilter"><option value="ALL">All status conditions</option><option value="ANY_ACTIVE">Any active status</option><option value="PENDING">Pending effects</option><option value="EXPIRING_CURRENT">Expiring this cycle</option><option value="ROLEBLOCK">Blocked</option><option value="DEN_BLOCKED">Den Blocked</option><option value="VILLAGERS_BLOCKED">Villagers Blocked</option><option value="FACTION_ACTION_BLOCKED">Faction Actions Blocked</option><option value="MARK">Marked</option><option value="POISON">Poisoned</option><option value="PROTECT">Protected</option><option value="SUPER_PROTECT">Super Protected</option><option value="GUARDED">Guarded</option><option value="DRUNK">Drunk</option><option value="SOBER">Sober</option><option value="DEATH_IMMUNITY">Death Immune</option><option value="BULLETPROOF">Bulletproof</option><option value="REDIRECT">Redirected</option><option value="PLACE_SWAP">Place Swapped</option><option value="ROLE_SWAP">Role Swapped</option><option value="REFLECTION">Reflection</option><option value="COUNTERATTACK">Counterattack Ready</option><option value="CONVERTED">Converted</option><option value="HEALING_PENDING">Healing Pending</option><option value="ACTION_SUCCESS_GUARANTEE">Action Guaranteed</option><option value="ABILITY_AMPLIFY">Ability Amplified</option><option value="ADDITIONAL_USES">Additional Uses</option></select></div>
@@ -730,6 +731,6 @@
 <script src="js/supabase-config.js?v=12.0.1"></script>
 <script src="js/cloud.js?v=12.2.4"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=12.2.4"></script>
+<script type="module" src="js/app.js?v=12.2.5"></script>
 </body>
 </html>
