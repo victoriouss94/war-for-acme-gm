@@ -19,6 +19,17 @@ const standardRole={id:'powered',name:'Sheriff',roleType:'STANDARD',activeAbilit
 const basicRole={id:'basic',name:'Basic Villager',roleType:'BASIC',activeAbilityId:'',passiveAbilityId:'',tags:[],abilityUses:null};
 const grant=(patch={})=>normalizeAbilityGrant({id:'g1',game_id:'game',player_id:'p1',ability_id:'kill',source_type:'MINIGAME_REWARD',source_reference:'Trivia',reason:'Won trivia.',uses_granted:1,uses_remaining:1,duration_type:'UNTIL_USED',granted_cycle:3,granted_phase:'Night',status:'ACTIVE',version:1,...patch});
 
+test('dead players retain their inventory but cannot use role or granted abilities',()=>{
+  const input={player:{...player,roleId:'powered',alive:false},role:standardRole,abilities,grants:[grant({ability_id:'protect'})],game:{currentDay:3,currentPhase:'Night'}};
+  const before=JSON.stringify(input),result=effectivePlayerAbilities(input);
+  assert.equal(result.abilities.length,3);
+  for(const ability of result.abilities){assert.equal(ability.available,false);assert.equal(ability.reasons[0],'PLAYER_DEAD');}
+  assert.equal(JSON.stringify(input),before);
+  const revived=effectivePlayerAbilities({...input,player:{...input.player,alive:true}});
+  assert.ok(revived.abilities.some(ability=>ability.available));
+  assert.ok(revived.abilities.every(ability=>!ability.reasons.includes('PLAYER_DEAD')));
+});
+
 test('Basic Role stays ability-free while its player receives an existing granted ability',()=>{
   const result=effectivePlayerAbilities({player,role:basicRole,abilities,grants:[grant()],statuses:[],resolutionEvents:[],game:{currentDay:3,currentPhase:'Night'}});
   assert.equal(basicRole.tags.length,0);assert.equal(result.abilities.length,1);assert.equal(result.abilities[0].abilityId,'kill');assert.equal(result.abilities[0].sourceType,'MINIGAME_REWARD');assert.equal(result.abilities[0].usesRemaining,1);assert.equal(abilities.filter(item=>item.id==='kill').length,1);
