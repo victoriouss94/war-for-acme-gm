@@ -6,6 +6,23 @@ const players=['blocker','actor','target','helper'].map(id=>({id,name:id,alive:t
 const action=(id,name,actor,target,extra={})=>({id,name,sourcePlayerId:actor,targetIds:[target],...extra});
 const run=(actions,extra={})=>resolveNightDeterministically({gameId:'audit',round:1,phase:'Night',players,actions,...extra});
 
+test('audit: failed, blocked and ineligible granted actions retain uses',()=>{
+  const cases=[
+    [action('block','Roleblock','blocker','actor'),action('attempt','Basic Ask','actor','target',{playerAbilityGrantId:'grant'})],
+    [action('protect','Protect','helper','target'),action('attempt','Personal Instant Kill','actor','target',{playerAbilityGrantId:'grant'})],
+    [action('attempt','Heal','actor','target',{playerAbilityGrantId:'grant'})]
+  ];
+  for(const actions of cases){const result=run(actions),attempt=result.action_results.find(a=>a.action_id==='attempt');assert.notEqual(attempt.result,'SUCCESS');assert.equal(attempt.use_disposition,'NOT_CONSUMED');assert.deepEqual(result.abilities_consumed,[]);}
+  assert.equal(run([action('attempt','Basic Ask','actor','target',{playerAbilityGrantId:'grant'})]).action_results[0].use_disposition,'CONSUMED');
+});
+
+test('audit: multiple GM action corrections survive one recalculation and replay',()=>{
+  const input={players,actions:[action('first','Personal Instant Kill','actor','target'),action('second','Personal Instant Kill','helper','blocker')]};
+  const before=resolveNightDeterministically(input);
+  const corrected=recalculateNight(before,input,{actionCorrections:[{actionId:'first',actionPatch:{forceResult:'CANCELLED'}},{actionId:'second',actionPatch:{forceResult:'FAILURE'}}]});
+  for(const result of [corrected,recalculateNight(corrected,input,{})]){assert.equal(result.action_results.find(a=>a.action_id==='first').result,'CANCELLED');assert.equal(result.action_results.find(a=>a.action_id==='second').result,'FAILURE');assert.ok(result.player_outcomes.every(p=>p.alive_after_resolution));assert.equal(result.observability.ai_fallback_call_count,0);}
+});
+
 test('audit: GM reclassification executes a custom kill and survives replay',()=>{
   const input={players,abilities:[{id:'silas',name:'Silas – Basic hunter — Ability',engineBehavior:{effect:'CUSTOM',requiresExplicitRule:true}}],actions:[action('fox','Silas – Basic hunter — Ability','actor','target',{abilityId:'silas'})]};
   const before=resolveNightDeterministically(input);
