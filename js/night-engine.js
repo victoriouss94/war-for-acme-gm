@@ -1,4 +1,4 @@
-import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAndOrderActions,createGeneratedEffect,globalAbilityDefinition,normalizeResolutionAction,transformAction} from './global-abilities.js?v=12.0.1';
+import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,classifyAndOrderActions,createGeneratedEffect,globalAbilityDefinition,normalizeResolutionAction,transformAction} from './global-abilities.js?v=12.0.1';
 import {abilityDisablingStatuses,statusAppliesToPhase} from './player-runtime.js?v=12.0.1';
 
 export const NIGHT_ENGINE_VERSION='1.1.0';
@@ -39,7 +39,15 @@ function behaviorFor(action,ability){
 }
 
 function normalizeEngineAction(raw,index,abilityById){
-  const ability=abilityById.get(text(raw.abilityId??raw.ability_id)),normalized=normalizeResolutionAction(raw,{ability}),behavior=behaviorFor(normalized,ability),definition=behavior.standard;
+  const ability=abilityById.get(text(raw.abilityId??raw.ability_id)),normalized=normalizeResolutionAction(raw,{ability});
+  // Only recalculation creates this explicit GM classification. Keep the source
+  // ability identity, but execute the reviewed standard instead of stale imports.
+  if(raw.gmResolutionClassification){
+    const reviewed=raw.gmResolutionClassification,standard=globalAbilityDefinition(reviewed.name);
+    Object.assign(normalized,classifyAbility({name:reviewed.name},reviewed));
+    normalized.engineBehavior=standard?.behavior||{effect:'CUSTOM',requiresExplicitRule:true,tags:[]};
+  }
+  const behavior=behaviorFor(normalized,ability),definition=behavior.standard;
   const runtimeCapture=!definition&&key(normalized.standardizedAbilityType||normalized.abilityName)==='capture',resolutionCategory=runtimeCapture?'STATUS_EFFECTS':normalized.resolutionCategory;
   return {...normalized,standardizedAbilityType:runtimeCapture?'Capture':normalized.standardizedAbilityType,resolutionCategory,resolutionPriority:runtimeCapture?GLOBAL_RESOLUTION_ORDER.indexOf('STATUS_EFFECTS')+1:normalized.resolutionPriority,requiresGmClassification:runtimeCapture?false:normalized.requiresGmClassification,classificationSource:runtimeCapture?'CURRENT_GAME_ROLE_TEXT':normalized.classificationSource,submissionIndex:index,abilityId:text(raw.abilityId??raw.ability_id??definition?.abilityId,120),roleId:text(raw.roleId??raw.role_id??raw.sourceRoleId,120),modeId:text(raw.modeId??raw.mode_id,120),modeName:text(raw.modeName??raw.mode_name,200),sourceFactionId:text(raw.sourceFactionId??raw.source_faction_id,120),parameters:clone(raw.parameters||{}),behavior:Object.freeze({...behavior}),tags:unique(behavior.tags||definition?.behavior?.tags),strength:Number(raw.strength??behavior.killTier??behavior.protectionTier)||0,forceResult:text(raw.forceResult??raw.force_result,40).toUpperCase(),forceReason:text(raw.forceReason??raw.force_reason,4000),blockable:raw.blockable!==false&&(behavior.tags||[]).includes('BLOCKABLE'),redirectable:raw.redirectable!==false&&(behavior.tags||[]).includes('REDIRECTABLE'),reflectable:raw.reflectable!==false&&(behavior.tags||[]).includes('REFLECTABLE'),protectable:raw.protectable!==false&&(behavior.tags||[]).includes('PROTECTABLE'),blocked:false,guaranteed:false,status:'QUEUED',triggeredEffects:[],generatedEffects:[],result:'PENDING',reason:'',affectedPlayerIds:[],useDisposition:raw.playerAbilityGrantId?'NOT_CONSUMED':'NOT_APPLICABLE'};
 }
@@ -73,7 +81,7 @@ export function resolveNightDeterministically(input={}){
     const adjudicationByAction=new Map(ctx.adjudications.map(item=>[text(item.action_id??item.actionId,160),item]));
     const unresolved=(action,question)=>{const actor=playerMap.get(action.actionUserId),item={id:`unknown:${action.id}`,action:clone(action),player:{...actor,roleName:roleMap.get(actor?.roleId)?.name||''},originalText:action.originalText||abilityById.get(action.abilityId)?.definition||'',relevantGameRules:snapshot.rules,relevantPrecedents:snapshot.precedents,conflictingMechanics:[],question};ctx.unresolved.push(item);mark(action,'INELIGIBLE_EFFECT','This custom interaction requires a GM-reviewed structured rule before its effect can be applied.',[]);trace('Unknown interaction isolated for review.',{action_id:action.id,question});return true};
     for(const action of submittedActions){
-      const adjudication=adjudicationByAction.get(action.id);
+      const adjudication=action.gmResolutionClassification?null:adjudicationByAction.get(action.id);
       if(adjudication?.status!=='ADJUDICATED'||!['HIGH','MEDIUM'].includes(adjudication.confidence)||adjudication.behavior?.requiresExplicitRule!==false||!GLOBAL_RESOLUTION_ORDER.includes(adjudication.resolution_category))continue;
       const definition=globalAbilityDefinition(adjudication.standardized_type),overrides=Object.fromEntries(Object.entries(adjudication.behavior).filter(([,value])=>value!==null));
       const behavior={...definition?.behavior,...overrides,standard:definition};
@@ -84,7 +92,10 @@ export function resolveNightDeterministically(input={}){
       ctx.usedAdjudicationIds.add(action.id);
     }
     submittedActions.sort((left,right)=>{const leftStage=GLOBAL_RESOLUTION_ORDER.indexOf(left.resolutionCategory),rightStage=GLOBAL_RESOLUTION_ORDER.indexOf(right.resolutionCategory);return (leftStage<0?999:leftStage)-(rightStage<0?999:rightStage)||left.submissionIndex-right.submissionIndex}).forEach((action,index)=>{action.order=index+1});
-    for(const action of submittedActions.filter(item=>item.resolutionCategory==='UNCLASSIFIED'))unresolved(action,'Which executable category, effect primitive, tags, and strength apply to this custom ability?');
+    // A GM can cancel an invalid imported attempt without first inventing an
+    // executable classification for it. Other eligibility checks remain below.
+    for(const action of submittedActions)if(action.forceResult==='CANCELLED')mark(action,'CANCELLED',action.forceReason||'A GM cancelled this attempt before downstream recalculation.',[]);
+    for(const action of submittedActions.filter(item=>item.resolutionCategory==='UNCLASSIFIED'&&item.status!=='RESOLVED'))unresolved(action,'Which executable category, effect primitive, tags, and strength apply to this custom ability?');
     for(const action of submittedActions){const actor=playerMap.get(action.actionUserId);if(action.modeId&&action.modeId!==actor?.modeId&&!temporaryModes.get(actor?.id)?.has(action.modeId))mark(action,'INELIGIBLE_EFFECT',`${action.abilityName} belongs to an inaccessible mode for ${actor?.name||'the missing player'}.`,[])}
     for(const action of submittedActions)if(!playerMap.get(action.actionUserId)?.alive&&action.status!=='RESOLVED')mark(action,'INELIGIBLE_EFFECT','The acting player is missing or was not alive in the starting snapshot.',[]);
     for(const action of submittedActions)if(['FAILURE','BLOCKED','CANCELLED','INELIGIBLE_EFFECT'].includes(action.forceResult)&&action.status!=='RESOLVED')mark(action,action.forceResult,action.forceReason||'A GM correction overrode this attempt before downstream recalculation.',[]);
@@ -162,6 +173,9 @@ export function recalculateNight(previous={},input={},correction={}){
   const overrides=new Map(array(previous.recalculation?.action_overrides).map(item=>[item.action_id,clone(item.patch)]));
   const prior=previous.recalculation?.correction;if(!overrides.size&&prior?.actionId)overrides.set(prior.actionId,clone(prior.actionPatch||{}));
   if(correction.actionId)overrides.set(correction.actionId,{...overrides.get(correction.actionId),...clone(correction.actionPatch||{})});
+  for(const patch of overrides.values())if(patch.standardizedAbilityType){
+    patch.gmResolutionClassification={name:patch.standardizedAbilityType,resolutionCategory:patch.resolutionCategory,resolutionTiming:patch.resolutionTiming};
+  }
   const next=resolveNightDeterministically({...input,randomOutcomes:previous.random_outcomes||previous.randomOutcomes||{},aiAdjudications:correction.aiAdjudications??input.aiAdjudications,rules:[...array(input.rules),...array(correction.rules)],actions:array(input.actions).map(action=>({...action,...overrides.get(action.id)}))});
   next.recalculation={from_resolution_id:text(previous.starting_snapshot?.resolution_id||previous.observability?.resolution_id,120),earliest_affected_stage:GLOBAL_RESOLUTION_ORDER[stageIndex],random_outcomes_reused:true,correction:clone(correction),action_overrides:[...overrides].map(([action_id,patch])=>({action_id,patch}))};
   return next;
