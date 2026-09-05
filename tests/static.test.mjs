@@ -21,7 +21,7 @@ test('roles and rules have separate game views and complete editors',()=>{
 });
 
 test('shared saves are debounced, version checked, and game scoped',()=>{
-  assert.match(app,/setTimeout\(flushCloudSave,750\)/);
+  assert.match(app,/queueCloudSave\(750\)/);
   assert.match(cloud,/expected_version:version/);
   assert.match(cloud,/filter:'game_id=eq\.'\+gameId/);
   assert.match(cloud,/channel\('game:'\+gameId/);

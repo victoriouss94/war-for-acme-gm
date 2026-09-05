@@ -1,5 +1,12 @@
 # Changelog
 
+## v12.2.4 — Production Sync Recovery
+
+- Stopped PostgREST 14 from infinitely retrying stale game mutations by translating every currently reachable optimistic-lock conflict from SQLSTATE `40001` to the non-retryable `PT422` application response.
+- Added bounded exponential save retries that pause while offline or hidden and offer an explicit manual retry instead of polling forever.
+- Prevented duplicate role-assignment, phase-start, queued-action removal, and historical-correction mutations while one request is already running.
+- Coalesced bursty Realtime phase, ability, and learning updates so a single database change no longer fans out into overlapping refresh storms.
+
 ## v12.2.3 — Resilient Account Profile Restoration
 
 - Kept valid Supabase sessions signed in when optional public profile metadata is unavailable.
