@@ -14,7 +14,17 @@ Migrations: `20260906013303_close_legacy_game_rooms_anonymous_access` and `20260
 - `tests/invitation-lifecycle-rollback.sql` verified revoked/expired/invalid invitations are rejected, repeat revocation does not duplicate history, failed redemption consumes no uses, existing members cannot join twice, reusable viewer invitations work after removal, and pasted lowercase codes with whitespace normalize correctly. Only a newly generated fixture invitation's expiry was seeded into the past; all fixture records were rolled back and verified absent.
 - These are actual database RPC tests under authenticated-role claims, not real-token browser authentication or simultaneous-client tests. No existing account membership was changed persistently.
 
-## Important limitations
+## Document-source cleanup policies
+
+The Storage cleanup predicates incorrectly tested registration through the caller's RLS-filtered view of import/document metadata. After a source uploader was removed from a synthetic game, both DELETE predicates returned true for a still-registered source. The Word import SELECT policy separately allows the original uploader to read their source, so the registration guard could not reliably protect that file. No real file was deleted to demonstrate this; no exploitation claim is made.
+
+Migration `20260906030803_protect_registered_document_sources_from_cleanup` replaces the registration subqueries with one private, owner/prefix-scoped predicate. It reads registration independently of membership visibility and fails closed for unknown buckets or missing ownership. Its privileged execution is limited to this boolean check, with an empty search path and no anonymous EXECUTE. A narrow own-unregistered knowledge SELECT policy also supplies the read permission needed to clean up failed knowledge registrations. Registered knowledge access and existing Word source read behavior remain unchanged.
+
+`tests/storage-cleanup-policies-rollback.sql` evaluates the real catalog policy expressions under authenticated claims across 14 cases: registered sources after removal, own unregistered reads/cleanup, mismatched ownership, foreign prefixes, and existing read rules. Additional null/unknown-bucket checks and helper grants pass. The pre-fix registered cleanup decisions were true; after the repair both are false. Synthetic application metadata and membership are rolled back and verified absent. This is database policy coverage, not a real Storage HTTP upload/download/delete round trip. No Storage rows, object bytes, buckets or platform-managed grants were changed; the two private buckets still contain seven objects total.
+
+Supabase-guided review preserved the distinction between Storage policies and managed Storage data: [access control](https://supabase.com/docs/guides/storage/security/access-control), [read-only Storage schema guidance](https://supabase.com/docs/guides/storage/schema/design). Security advisors remain unchanged at 45 warnings and one informational notice.
+
+## Remaining security limitations
 
 The legacy policies were a real anonymous-access exposure. There is no evidence in this audit establishing whether anyone exploited it. Excess maintenance grants are defense-in-depth hardening; this audit did not demonstrate a browser REST route that could invoke TRUNCATE.
 
