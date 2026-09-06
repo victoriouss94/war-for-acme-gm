@@ -8,6 +8,12 @@
 
 Migrations: `20260906013303_close_legacy_game_rooms_anonymous_access` and `20260906013822_restrict_client_table_maintenance_privileges`.
 
+## Additional rollback integration evidence
+
+- `tests/mutation-authorization-rollback.sql` exercised 24 public mutations as both a nonmember and a viewer: 48 permission denials. This includes game edits/deletion, rules, knowledge metadata, modes, grants, queue operations, phase operations, deterministic simulation saves, both finalization endpoints, role-assignment previews, conversation creation and membership administration. Nonmembers could not read the game, viewers could, and denied calls left the document version and open resolution session unchanged.
+- `tests/invitation-lifecycle-rollback.sql` verified revoked/expired/invalid invitations are rejected, repeat revocation does not duplicate history, failed redemption consumes no uses, existing members cannot join twice, reusable viewer invitations work after removal, and pasted lowercase codes with whitespace normalize correctly. Only a newly generated fixture invitation's expiry was seeded into the past; all fixture records were rolled back and verified absent.
+- These are actual database RPC tests under authenticated-role claims, not real-token browser authentication or simultaneous-client tests. No existing account membership was changed persistently.
+
 ## Important limitations
 
 The legacy policies were a real anonymous-access exposure. There is no evidence in this audit establishing whether anyone exploited it. Excess maintenance grants are defense-in-depth hardening; this audit did not demonstrate a browser REST route that could invoke TRUNCATE.
