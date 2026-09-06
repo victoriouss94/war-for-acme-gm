@@ -1,0 +1,85 @@
+-- Owner UUID and SQL-escaped poisonResolutionFixture() JSON supplied in memory.
+begin;
+select set_config('request.jwt.claims','{"sub":"__AUDIT_OWNER_UUID__","role":"authenticated","is_anonymous":false}',true);
+set local role authenticated;
+do $test$
+declare gid uuid:=gen_random_uuid(); fixture jsonb:='__ENGINE_FIXTURE_JSON__'::jsonb;
+  ver integer; session_row public.resolution_sessions; approved public.resolution_sessions; phase_row public.game_phases;
+  effect public.player_status_effects; extra_effect public.player_status_effects; extra_session public.resolution_sessions; repeated_session public.resolution_sessions; preview jsonb; denied boolean; i integer; idem uuid:=gen_random_uuid(); saved_ver integer; events_before integer;
+begin
+  fixture:=replace(fixture::text,'__AUDIT_GAME_UUID__',gid::text)::jsonb;
+  perform public.create_game(gid,fixture->'document');
+  select version into ver from public.game_documents where game_id=gid;
+  perform public.start_game_phase(gid,ver,'NIGHT_0','Isolated Poison lifecycle');
+  select version into ver from public.game_documents where game_id=gid;
+  denied:=false;
+  begin perform public.start_resolution_session(gid,ver);
+  exception when sqlstate '22023' then denied:=sqlerrm='ACTION_QUEUE_EMPTY';end;
+  if not denied then raise exception 'An empty phase without a due consequence opened a review'; end if;
+  perform public.queue_player_action(gid,ver,fixture#>'{actions,0}',null);
+  select version into ver from public.game_documents where game_id=gid;
+  session_row:=public.start_resolution_session(gid,ver);
+  session_row:=public.save_deterministic_resolution(session_row.id,session_row.lock_version,fixture->'proposal');
+  perform public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'ruling','Approve isolated Poison application',false,'GAME_SPECIFIC','{}',gen_random_uuid(),false,false);
+  select * into effect from public.player_status_effects where game_id=gid and status_type='POISON';
+  fixture:=replace(fixture::text,'__AUDIT_STATUS_UUID__',effect.id::text)::jsonb;
+  if effect.expires_at_cycle<>2 or effect.expires_at_phase<>'Day' or effect.remaining_duration is not null then raise exception 'Poison did not retain its two-day deadline'; end if;
+  -- A new due marker after finalized actions must not replay those actions.
+  extra_effect:=public.mutate_player_status(gid,null,'APPLY',jsonb_build_object('player_id','audit-actor','status_type','POISON','status_name','Temporary due marker','expires_at_cycle',0,'expires_at_phase','Night','reason','Verify status-only follow-up'));
+  select version into ver from public.game_documents where game_id=gid;
+  extra_session:=public.start_resolution_session(gid,ver);
+  if extra_session.id=session_row.id or jsonb_array_length(extra_session.submitted_actions)<>0 then raise exception 'Finalized actions were replayed for a new timed effect'; end if;
+  repeated_session:=public.start_resolution_session(gid,ver);
+  if repeated_session.id<>extra_session.id then raise exception 'Repeated status review created another open session'; end if;
+  perform public.approve_and_apply_resolution(extra_session.id,extra_session.lock_version,fixture->'dueRuling','Close isolated follow-up check without application',false,'GAME_SPECIFIC','{}',gen_random_uuid(),false,true);
+  -- Clock-order this fixture's rejected follow-up after its finalized action
+  -- review. Only this synthetic row is adjusted; every RPC runs authenticated.
+  execute 'reset role';
+  update public.resolution_sessions set created_at=extra_session.created_at+interval '1 second' where id=extra_session.id and game_id=gid;
+  execute 'set local role authenticated';
+  select version into ver from public.game_documents where game_id=gid;
+  repeated_session:=public.start_resolution_session(gid,ver);
+  if repeated_session.id=extra_session.id or jsonb_array_length(repeated_session.submitted_actions)<>0 then raise exception 'Rejected timed review replayed finalized actions'; end if;
+  perform public.approve_and_apply_resolution(repeated_session.id,repeated_session.lock_version,fixture->'dueRuling','Close isolated repeated follow-up without application',false,'GAME_SPECIFIC','{}',gen_random_uuid(),false,true);
+  perform public.mutate_player_status(gid,extra_effect.id,'RESOLVE',jsonb_build_object('reason','End isolated follow-up marker check'));
+  for i in 1..3 loop
+    select version into ver from public.game_documents where game_id=gid;
+    select * into phase_row from public.game_phases where game_id=gid and status='CURRENT';
+    preview:=public.preview_game_phase_advance(gid,phase_row.id,phase_row.queue_version);
+    if jsonb_array_length(preview->'due_status_consequences')<>0 or jsonb_array_length(preview->'expiring_statuses')<>0 then raise exception 'Poison is due or expiring too early'; end if;
+    perform public.advance_game_phase(gid,ver,phase_row.id,phase_row.queue_version,false,'Advance before Poison deadline');
+    if not exists(select 1 from public.player_status_effects where id=effect.id and state='ACTIVE') then raise exception 'Poison silently expired'; end if;
+  end loop;
+  select version into ver from public.game_documents where game_id=gid;
+  select * into phase_row from public.game_phases where game_id=gid and status='CURRENT';
+  if phase_row.cycle<>2 or phase_row.phase<>'Day' then raise exception 'Wrong due phase'; end if;
+  preview:=public.preview_game_phase_advance(gid,phase_row.id,phase_row.queue_version);
+  if jsonb_array_length(preview->'due_status_consequences')<>1 then raise exception 'Missing due Poison preview'; end if;
+  denied:=false;
+  begin perform public.advance_game_phase(gid,ver,phase_row.id,phase_row.queue_version,true,'Attempt unsafe deadline advance');
+  exception when sqlstate '55000' then denied:=sqlerrm='TIMED_CONSEQUENCES_REQUIRE_RESOLUTION';end;
+  if not denied then raise exception 'Due consequence could be skipped'; end if;
+  session_row:=public.start_resolution_session(gid,ver);
+  if jsonb_array_length(session_row.submitted_actions)<>0 then raise exception 'Status-only session invented an action'; end if;
+  session_row:=public.save_deterministic_resolution(session_row.id,session_row.lock_version,fixture->'dueProposal');
+  if session_row.status<>'GM_REVIEW' or session_row.engine_status<>'RESOLVED' then raise exception 'Timed proposal was not saved for review'; end if;
+  if (select document#>>'{data,players,1,alive}' from public.game_documents where game_id=gid)<>'true' then raise exception 'Player changed before approval'; end if;
+  denied:=false;
+  begin perform public.approve_and_apply_resolution(session_row.id,session_row.lock_version,jsonb_set(fixture->'dueRuling','{other_effects,0,target_id}',to_jsonb(gen_random_uuid()::text)),'Reject unsupported status-death evidence',false,'GAME_SPECIFIC','{}',gen_random_uuid(),false,false);
+  exception when sqlstate '22023' then denied:=sqlerrm='RULING_WARNINGS_REQUIRE_GM_OVERRIDE';end;
+  if not denied then raise exception 'Invented status consequence bypassed the death warning'; end if;
+  approved:=public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'dueRuling','Approve the due Poison consequence',false,'GAME_SPECIFIC','{}',idem,false,false);
+  if approved.status<>'FINALIZED' then raise exception 'Timed ruling not finalized'; end if;
+  if (select document#>>'{data,players,1,alive}' from public.game_documents where game_id=gid)<>'false' then raise exception 'Approved Poison death not applied'; end if;
+  if exists(select 1 from public.player_status_effects where id=effect.id and state in ('ACTIVE','PENDING')) then raise exception 'Poison consequence remained active after approval'; end if;
+  select version into saved_ver from public.game_documents where game_id=gid;
+  select count(*) into events_before from public.resolution_session_events where session_id=session_row.id;
+  perform public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'dueRuling','Replay the same approved Poison consequence',false,'GAME_SPECIFIC','{}',idem,false,false);
+  if (select version from public.game_documents where game_id=gid)<>saved_ver or (select count(*) from public.resolution_session_events where session_id=session_row.id)<>events_before then raise exception 'Poison replay duplicated state or events'; end if;
+  if (select count(*) from public.resolution_session_events where session_id=session_row.id and event_type='DEATH')<>1 then raise exception 'Expected exactly one death event'; end if;
+  select * into phase_row from public.game_phases where game_id=gid and status='CURRENT';
+  perform public.advance_game_phase(gid,saved_ver,phase_row.id,phase_row.queue_version,false,'Advance after Poison ruling');
+  perform set_config('audit.result',jsonb_build_object('game_id',gid,'checks','two-day persistence; due preview; skip denied; empty queue resolution only when due; finalized actions not replayed after rejected follow-up; no preapproval death; atomic death/removal; idempotent replay; subsequent advancement')::text,true);
+end $test$;
+select current_setting('audit.result')::jsonb as verification;
+rollback;

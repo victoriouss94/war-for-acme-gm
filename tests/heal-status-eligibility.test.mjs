@@ -36,7 +36,7 @@ test('Heal removes current harmful statuses including pending hanging events',()
 });
 
 test('Heal respects explicit end boundaries and does not mutate status history',()=>{
-  for(const effect of [{...status,expires_at_cycle:1},{...status,expires_at_cycle:2,expires_at_phase:'Day'}]){
+  for(const effect of [{...status,status_type:'MARK',expires_at_cycle:1},{...status,status_type:'MARK',expires_at_cycle:2,expires_at_phase:'Day'}]){
     const before=structuredClone(effect),ruling=heal([effect]);
     assert.equal(ruling.action_results[0].result,'INELIGIBLE_EFFECT');
     assert.deepEqual(ruling.status_effects,[]);

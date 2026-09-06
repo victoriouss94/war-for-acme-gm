@@ -1,3 +1,5 @@
+import {poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
+
 const array=value=>Array.isArray(value)?value:[];
 const integer=(value,fallback=0)=>Number.isInteger(Number(value))?Number(value):fallback;
 
@@ -92,6 +94,11 @@ export function normalizeAdvancePreview(raw={}){
     cooldownUpdates:array(raw.cooldown_updates??raw.cooldownUpdates),
     abilityRefreshes:array(raw.ability_refreshes??raw.abilityRefreshes),
     pendingEffects:array(raw.pending_effects??raw.pendingEffects),
+    dueStatusConsequences:array(raw.due_status_consequences??raw.dueStatusConsequences),
     timers:array(raw.timers)
   };
+}
+
+export function phaseNeedsResolution(phase,statuses=[]){
+  return Boolean(phase&&(array(phase.actions??phase.action_queue).length||array(statuses).some(effect=>poisonDueAtPhaseEnd(effect,phase))));
 }

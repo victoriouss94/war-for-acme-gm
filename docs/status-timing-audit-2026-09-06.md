@@ -18,8 +18,23 @@ This is a verified partial audit, not a declaration that every workflow works.
 - All integration fixtures use BEGIN/ROLLBACK, not live game simulation. No fixture game remained after verification. Role simulation is database integration coverage, not a fresh browser password-login test.
 - Migration `20260906020625_preserve_future_status_timers.sql` was applied and verified. Supabase-guided least-privilege checks retain the helper in the private schema with no browser EXECUTE permission. Existing RPC permissions are unchanged. Security advisors remained at 45 warnings and one informational notice, unchanged from the preceding audit.
 
+## Poison deadline repair — 12.2.14
+
+The confirmed early-expiry/missing-consequence defect is repaired in the existing deterministic resolver, phase controller and GM approval path. No second engine or new action type was introduced.
+
+- Newly applied global Poison uses an explicit end-of-Day deadline two cycles later, not a two-phase countdown. Night 0 application is due at the end of Day 2. Explicit stored cycle/phase deadlines take precedence. Ordinary advancement retains active Poison until its consequence is reviewed.
+- A due Poison enters the existing pending-death/DOC stage without inventing a submitted action, consuming another ability use, or calling AI. Heal at the deadline cancels the consequence; blocked Heal does not. Save and Death Immunity prevent the tested standard pending death; ordinary Protect does not cleanse Poison.
+- Consequences are shown with player names and explanations in the review, including players who submitted no action. Nothing is applied to live players until Approve & Apply.
+- Due consequences prevent phase advancement even if advancing with unresolved actions is otherwise allowed. Empty queues can open the existing resolution session only when a due consequence exists.
+- A new consequence after a finalized queue creates a status-only follow-up. Open reviews are reused, including creation-time ties. Rejecting and reopening a follow-up cannot replay the previously approved actions. The latter case was reproduced as a failing database assertion before repair.
+- Server death-warning validation requires a real, same-game, currently due Poison status and matching removal; invented status evidence remains rejected without the GM's existing explicit override.
+
+Verification: 384 JavaScript tests passed, zero failures/skips, including the supplied DOCX; package syntax checks and static build passed. The actual engine → editor → public session/save/approval/advance rollback fixture verifies two-day persistence, no preapproval mutation, status-only saving, rejection/reopen safety, atomic death/removal, exactly one death event, idempotent replay and subsequent advancement. The history-tab review handler is covered by a JavaScript handler test, not a fresh browser end-to-end test. Existing future-status and grant-boundary RPC fixtures also pass.
+
+Four additive production migrations implement the lifecycle and retry guards: `20260906024156`, `20260906024347`, `20260906024737`, and `20260906025741`. Supabase-guided verification confirmed the new helper remains private/invoker with browser EXECUTE revoked, and existing privileged RPC authorization/search paths remain intact. Advisors remain 45 warnings plus one informational notice; this is not a clean security certification. No Edge Function change was required.
+
 ## Remaining investigation
 
-Poison is confirmed incomplete: a real engine ruling approved in a rollback fixture generated a two-phase countdown despite its two-day description. It expired on Day1 → Night1 after application at Night0, with the player alive. A separate overdue-status resolver test also returned RESOLVED with no death or review flag. No automatic delayed-death path was found in the resolver or phase function. Resolving this properly requires an explicit timed-consequence review/approval path, including phases with no submitted actions (currently disabled in the UI), not merely relabeling the countdown. This remains open; no live Poison data was rewritten.
+Poison visit-contagion, arbitrary game-specific Poison modifiers, and full passive analytics are not certified by the deadline repair. Legacy statuses already marked expired were not resurrected, and historical deaths were not guessed. These remain separate audit work.
 
 Explicit-deadline preview overlap and approval support for future application metadata also require further checks. Existing ambiguous legacy timers were not guessed or rewritten. The live Transformers game was not modified by this audit.

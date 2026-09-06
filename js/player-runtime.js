@@ -21,6 +21,18 @@ export function abilityDisablingStatuses(statuses,playerId,game){
   ));
 }
 
+// Poison is a delayed consequence, not an ordinary expiring buff. The global
+// deadline is the end of the second following Day; explicit deadlines win.
+export function poisonDueAtPhaseEnd(effect={},game={}){
+  if(String(value(effect,'statusType','status_type')).toUpperCase()!=='POISON'||String(effect.state).toUpperCase()!=='ACTIVE')return false;
+  const cycle=Number(game.currentDay??game.cycle??game.round??0),phase=game.currentPhase??game.phase;
+  const start=cycleNumber(value(effect,'appliedAtCycle','applied_at_cycle'));
+  if(start!=null&&(cycle<start||cycle===start&&value(effect,'appliedAtPhase','applied_at_phase')==='Night'&&phase==='Day'))return false;
+  const explicit=cycleNumber(value(effect,'expiresAtCycle','expires_at_cycle')),deadline=explicit??(start==null?null:start+2);
+  if(deadline==null||cycle<deadline)return false;
+  return cycle>deadline||value(effect,'expiresAtPhase','expires_at_phase')!=='Night'||phase==='Night';
+}
+
 export function roleAbilityCounter(grants,playerId,roleId,abilityId){
   // A consumed counter must still shadow the unlimited base option. Revoking
   // the counter is an explicit GM decision to restore the role's own limits.
