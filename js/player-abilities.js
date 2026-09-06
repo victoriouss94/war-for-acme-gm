@@ -34,7 +34,8 @@ export function grantIsCurrent(rawGrant,game={},at=new Date()){
   if(grant.expiresCycle!=null&&cycle>grant.expiresCycle)return false;
   const grantedCycle=grant.grantedCycle??cycle;
   if(grant.durationType==='UNTIL_END_OF_PHASE'&&(cycle>grantedCycle||cycle===grantedCycle&&grant.grantedPhase&&phase&&grant.grantedPhase!==phase))return false;
-  if(grant.durationType==='UNTIL_END_OF_DAY'&&(cycle>grantedCycle||cycle===grantedCycle&&grant.grantedPhase==='Day'&&phase==='Night'))return false;
+  const endDayCycle=grantedCycle+(grant.grantedPhase==='Night'?1:0);
+  if(grant.durationType==='UNTIL_END_OF_DAY'&&(cycle>endDayCycle||cycle===endDayCycle&&phase==='Night'))return false;
   if(['UNTIL_END_OF_NIGHT','UNTIL_END_OF_CYCLE'].includes(grant.durationType)&&cycle>grantedCycle)return false;
   return true;
 }

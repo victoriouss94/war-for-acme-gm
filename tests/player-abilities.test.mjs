@@ -5,6 +5,17 @@ import {abilityTargeting,effectivePlayerAbilities,grantIsCurrent,normalizeAbilit
 import {inferMasterIntent,MASTER_GM_TOOLS,toolsForMasterIntent} from '../supabase/functions/_shared/master-gm.js';
 
 const player={id:'p1',name:'AJ',roleId:'basic',alive:true,currentFactionId:'village'};
+
+test('end-of-day grants created at night remain available through the next day only',()=>{
+  const base={status:'ACTIVE',duration_type:'UNTIL_END_OF_DAY',granted_cycle:0,granted_phase:'Night',expires_cycle:1,expires_phase:'Day',uses_remaining:1};
+  assert.equal(grantIsCurrent(base,{currentDay:0,currentPhase:'Night'}),true);
+  assert.equal(grantIsCurrent(base,{currentDay:1,currentPhase:'Day'}),true);
+  assert.equal(grantIsCurrent(base,{currentDay:1,currentPhase:'Night'}),false);
+  assert.equal(grantIsCurrent(base,{currentDay:2,currentPhase:'Day'}),false);
+  assert.equal(grantIsCurrent({...base,granted_cycle:1,granted_phase:'Day'},{currentDay:1,currentPhase:'Night'}),false);
+  assert.equal(grantIsCurrent({...base,status:'REVOKED'},{currentDay:1,currentPhase:'Day'}),false);
+  assert.equal(grantIsCurrent({...base,uses_remaining:0},{currentDay:1,currentPhase:'Day'}),false);
+});
 const target={id:'p2',name:'Sky',roleId:'powered',alive:true,currentFactionId:'neutral'};
 const dead={id:'p3',name:'Ruby',roleId:'powered',alive:false,currentFactionId:'village'};
 const abilities=[
