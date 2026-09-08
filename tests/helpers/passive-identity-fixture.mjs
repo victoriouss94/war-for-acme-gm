@@ -22,9 +22,9 @@ export function passiveIdentityFixture({swapRoles=false}={}){
   const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions});
   const ruling=finalResolutionPayload(buildResolutionDraft({proposal,actions,players:document.data.players}));
   return {document,actions,proposal,ruling,expectedAlive:swapRoles?['audit-actor','audit-target','audit-swapper']:['audit-actor'],expectedPassives:swapRoles?[
-    {playerId:'audit-target',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4}
+    {playerId:'audit-target',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-target']}
   ]:[
-    {playerId:'audit-actor',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4},
-    {playerId:'audit-target',abilityId:'audit-counterattack',roleId:'audit-counter',roleVersion:7}
+    {playerId:'audit-actor',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-actor']},
+    {playerId:'audit-target',abilityId:'audit-counterattack',roleId:'audit-counter',roleVersion:7,targetIds:['audit-actor']}
   ]};
 }

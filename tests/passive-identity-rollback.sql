@@ -35,6 +35,16 @@ begin
         and e.actor_player_id=expected->>'playerId' and e.ability_id=expected->>'abilityId'
         and e.role_id=expected->>'roleId' and e.role_version=(expected->>'roleVersion')::integer;
     if event_count<>1 then raise exception 'Expected one official passive event for %, got %',expected,event_count; end if;
+    if exists(select 1 from public.resolution_session_events e
+      where e.session_id=approved.id and e.event_type='PASSIVE_TRIGGER'
+        and e.actor_player_id=expected->>'playerId' and e.ability_id=expected->>'abilityId'
+        and (to_jsonb(e.original_target_ids) is distinct from expected->'targetIds'
+          or to_jsonb(e.final_target_ids) is distinct from expected->'targetIds'
+          or e.outcome->'original_target_ids' is distinct from expected->'targetIds'
+          or e.outcome->'final_target_ids' is distinct from expected->'targetIds'
+          or e.outcome->'effective_target_ids' is distinct from expected->'targetIds'
+          or e.outcome->>'submitted_attempt' is distinct from 'false'))
+      then raise exception 'PASSIVE_TARGET_PROJECTION_MISMATCH'; end if;
     if not exists(select 1 from jsonb_array_elements(analytics->'rows') r where r->>'player_id'=expected->>'playerId'
       and r->>'ability_id'=expected->>'abilityId' and r->>'role_id'=expected->>'roleId'
       and (r->>'role_version')::integer=(expected->>'roleVersion')::integer and (r->>'passive_triggers')::integer=1 and (r->>'attempts')::integer=0)
@@ -46,6 +56,11 @@ begin
   select count(*) into event_count from public.resolution_session_events e where e.session_id=approved.id;
   perform public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'ruling','Identical retry',false,'GAME_SPECIFIC','{}',approval_key,false,false);
   if (select count(*) from public.resolution_session_events e where e.session_id=approved.id)<>event_count then raise exception 'Approval retry duplicated passive events'; end if;
+  if exists(select 1 from public.resolution_session_events e where e.session_id=approved.id
+    and e.event_type in ('PASSIVE_TRIGGER','PASSIVE_PREVENTED')
+    and (e.outcome->'original_target_ids' is distinct from to_jsonb(e.original_target_ids)
+      or e.outcome->'final_target_ids' is distinct from to_jsonb(e.final_target_ids)))
+    then raise exception 'Approval retry corrupted passive targets'; end if;
   if exists(select 1 from public.game_documents gd cross join lateral jsonb_array_elements(gd.document#>'{data,players}') p
     join lateral jsonb_array_elements(fixture#>'{document,data,players}') original on original->>'id'=p->>'id'
     where gd.game_id=gid and p->>'roleId' is distinct from original->>'roleId') then raise exception 'Temporary passive context permanently changed player role'; end if;

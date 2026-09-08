@@ -95,7 +95,7 @@ async function handlerFixture(t,body,options={}){
   const rpcCalls=[],userRpcCalls=[],rows={
     game_members:{member_role:options.memberRole??'gm'},
     game_documents:{document:{},version:1},
-    resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:[{id:'action-1'}],pre_resolution_state:{}}
+    resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:options.actions||[{id:'action-1'}],pre_resolution_state:options.snapshot||{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
     rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:null}},
@@ -115,6 +115,19 @@ async function handlerFixture(t,body,options={}){
   const response=await handler(new Request('https://synthetic.invalid/gm-copilot',{method:'POST',headers:{Authorization:'Bearer synthetic-session','Content-Type':'application/json',Origin:'https://victoriouss94.github.io'},body:JSON.stringify({gameId,resolutionSessionId:sessionId,task:options.task??'adjudicate_interaction',message:options.message,interaction:{question:'Synthetic?',interaction_id:'interaction-1',action_id:'action-1'}})}));
   return {response,rpcCalls,userRpcCalls,calls,logs};
 }
+test('canonical queue actor alias retains relevant role context without including unrelated players',async t=>{
+  // Real normalized public-queue records contain both actorId and sourcePlayerId.
+  const actions=[{id:'action-1',actorId:'actor',sourcePlayerId:'actor',abilityId:'ability',targetIds:['target']}];
+  const snapshot={players:[{id:'actor',roleId:'actor-role'},{id:'target',roleId:'target-role'},{id:'unrelated',roleId:'unrelated-role'}],roles:[{id:'actor-role',description:'Actor source rule'},{id:'target-role'},{id:'unrelated-role'}],abilities:[{id:'ability',definition:'Exact custom rule'},{id:'unrelated-ability'}],rules:[]};
+  const before=structuredClone(snapshot),{response,calls}=await handlerFixture(t,payload('{"action_id":"action-1","interaction_id":"interaction-1"}'),{actions,snapshot});
+  assert.equal(response.status,200);assert.equal(calls.length,1);
+  const context=JSON.parse(calls[0].input).relevant_snapshot;
+  assert.deepEqual(context.players.map(p=>p.id),['actor','target']);
+  assert.deepEqual(context.roles.map(r=>r.id),['actor-role','target-role']);
+  assert.equal(context.roles[0].description,'Actor source rule');assert.deepEqual(context.abilities.map(a=>a.id),['ability']);
+  assert.deepEqual(snapshot,before);
+});
+
 test('actual adjudication handler records reported usage when parsing fails',async t=>{
   const {response,rpcCalls}=await handlerFixture(t,payload('{'));
   assert.equal(response.status,502);
