@@ -110,6 +110,17 @@ function reviewItem({game={},role=null,ability=null,mechanic=null,code='',messag
   const type=mechanic?.type||code||'UNRESOLVED';return {id:mechanic?.id||[game.id||'game',role?.id||ability?.id||'record',slug(type),stableHash(message)].join(':'),gameId:game.id||'',gameName:game.name||'',roleId:role?.id||'',roleName:role?.name||'',abilityId:ability?.id||mechanic?.sourceAbilityId||'',abilityName:ability?.name||mechanic?.sourceAbilityName||'',mechanicType:type,confidence:mechanic?.confidence??0,interpretationState:mechanic?.interpretationState||'NEEDS_REVIEW',originalText:mechanic?.originalText||role?.sourceText||ability?.definition||'',parsedUnderstanding:mechanic?.summary||message,knownComponents:mechanic?[mechanic.type,...mechanic.effects,...mechanic.conditions].filter(Boolean):[],unknownComponents:mechanic?.unresolvedComponents||[],possibleInterpretations:mechanic?.possibleInterpretations||[],source:mechanic?.sourceLocation||role?.sourceLocation||ability?.sourceLocation||'',origin:mechanic?.origin||'AI_INTERPRETATION_PENDING',code,current,proposed};
 }
 
+// The backend transports source/context; use the existing normalizer for UI identity and details.
+export function normalizeCloudMechanicsReviews(rows=[]){
+  return (Array.isArray(rows)?rows:[]).flatMap(item=>{
+    if(item?.projectionContext?.version!==1)return [item];
+    const context=record(item.projectionContext),mechanic=normalizeMechanic(item.current,context);
+    if(!(mechanic.originalText||mechanic.summary||mechanic.name)||!mechanic.requiresReview)return [];
+    const role=item.roleId?{id:item.roleId,name:item.roleName,sourceText:item.roleSourceText,sourceLocation:item.roleSourceLocation}:null,ability=item.abilityId?{id:item.abilityId,name:item.abilityName,definition:item.abilityDefinition,sourceLocation:item.abilitySourceLocation}:null;
+    return [{...item,...reviewItem({game:{id:item.gameId,name:item.gameName},role,ability,mechanic,current:mechanic,proposed:item.proposed??null})}];
+  });
+}
+
 export function mechanicsReviewKey(item={}){
   const scope=[item.gameId??item.game_id??'',item.roleId??item.role_id??'',item.abilityId??item.ability_id??''].map(value=>String(value??'')),code=String(item.code||'');
   return JSON.stringify([...scope,code?['source-warning',code]:['mechanic',String(item.id??item.review_id??'')]]);
