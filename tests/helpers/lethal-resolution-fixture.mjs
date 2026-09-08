@@ -2,7 +2,7 @@ import {statusResolutionFixture} from './status-resolution-fixture.mjs';
 import {resolveNightDeterministically} from '../../js/night-engine.js';
 import {buildResolutionDraft,finalResolutionPayload} from '../../js/resolution-editor.js';
 
-export function lethalResolutionFixture(){
+export function lethalResolutionFixture({grantId=null}={}){
   const {document}=statusResolutionFixture();
   document.game.name='Rollback generated lethal attempt audit';
   document.data.roles=[
@@ -16,7 +16,9 @@ export function lethalResolutionFixture(){
     {id:'audit-bulletproof',name:'Bulletproof / Passive Immunity',activePassive:'PASSIVE',enabled:true}
   ];
   const actions=[{id:'audit-lethal-action',sourceType:'PLAYER',sourcePlayerId:'audit-actor',abilityId:'audit-kill',targetIds:['audit-target'],targetType:'PLAYER',status:'QUEUED'}];
-  const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions});
+  const grants=grantId?[{id:grantId,player_id:'audit-actor',ability_id:'audit-kill',uses_remaining:1,version:1,status:'ACTIVE'}]:[];
+  if(grantId)Object.assign(actions[0],{playerAbilityGrantId:grantId,grantVersion:1});
+  const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions,grants});
   const ruling=finalResolutionPayload(buildResolutionDraft({proposal,actions,players:document.data.players}));
   return {document,actions,proposal,ruling};
 }

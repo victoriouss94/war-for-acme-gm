@@ -61,6 +61,11 @@ foreach access_kind in array array['nonmember','viewer'] loop
     begin
       execute statement;
     exception when insufficient_privilege then denied:=true;
+      when sqlstate 'P0002' then
+        -- The legacy wrapper now reads with invoker RLS: unauthorized callers cannot
+        -- distinguish a hidden session from a nonexistent session.
+        if statement like 'select public.finalize_resolution_with_grants(%' then denied:=true;
+        else raise exception 'Unexpected % missing-row error for %: %',access_kind,split_part(statement,'(',1),sqlerrm; end if;
       when others then raise exception 'Unexpected % error for %: [%] %',access_kind,split_part(statement,'(',1),sqlstate,sqlerrm;
     end;
     if not denied then raise exception '% mutation allowed: %',access_kind,split_part(statement,'(',1); end if;
