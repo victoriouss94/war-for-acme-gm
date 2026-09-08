@@ -39,7 +39,7 @@ The result has exactly35 original action rows, three generated effects, and zero
 
 Five large-night tests and seven visit tests pass, including pending blocked KILLS during INTEL, guaranteed visitation, completed Protect followed by Capture, and failed target defense remaining a real visit. All488 tests pass, zero skipped, with the supplied Transformers DOCX; syntax/static build/diff checks pass. Engine1.2.1/frontend12.2.24. No database migration or Edge change is required.
 
-The original large-fixture check was application-function integration, not a browser/approval roundtrip. Its generated-attack survivor omission is repaired below. Full large-fixture persistence, approval/advance, browser rendering, later-stage Intel dependency handling and the broader audit remain incomplete.
+The original large-fixture check was application-function integration, not a browser/approval roundtrip. Its generated-attack survivor omission is repaired below. The subsequent large-cloud test is documented at the end; native browser approval, later-stage Intel dependency handling and the broader audit remain incomplete.
 
 ## Generated lethal attempt projection — frontend 12.2.25 / engine 1.2.2
 
@@ -51,4 +51,18 @@ Eight focused tests pass, including seven exact survivor IDs, generated lineage,
 
 An isolated two-player fixture exercised authenticated public create/start/queue/start-resolution/save/approve/readback/advance calls inside BEGIN/ROLLBACK. Both proposal and finalized ruling retained the exact ledger, no death occurred before approval, the Counterattack target survived Bulletproof and the original target died. The actual returned final_resolution was passed back through buildTrackerResolutionReview and correctly displayed the surviving attacker. The first fixture lacked passive encyclopedia entries and was correctly rejected by existing approval validation; adding those entries allowed approval without a warning override.
 
-Fixture e8279aff-d373-4c9f-acc6-59bdc0b83edf was verified absent after rollback. Live Transformers remains Night 1/version 192 with 44 alive. No database migration, Edge deployment, paid AI request or live-game mutation was needed. This verifies authenticated database functions and application projection, not native browser approval interaction or the full 40-player cloud workflow.
+Fixture e8279aff-d373-4c9f-acc6-59bdc0b83edf was verified absent after rollback. Live Transformers remains Night 1/version 192 with 44 alive. No database migration, Edge deployment, paid AI request or live-game mutation was needed. This verified authenticated database functions and application projection, not native browser approval interaction. The large-cloud continuation follows.
+
+## Large cloud workflow and historical review — frontend 12.2.26
+
+The same 40-player/35-action interaction matrix now traverses real public create-game, start-Night-0, grant, queue, start-resolution, save-proposal, approve and advance calls using authenticated privileges. A rollback setup returned the actual normalized queued actions and immutable session snapshot. The existing JavaScript engine resolved that returned input with the fixed test seed, rather than the original hand-authored action array. A second isolated transaction recreated the setup, remapped fixture game/grant/session IDs, saved that engine output, approved without overrides and advanced to Day 1. No application or database validation was disabled.
+
+The two-step rollback fixture is a database-function/application integration test, not a browser or fresh-JWT HTTP test. SQL asserts all35 original actions, no preapproval death, exact8 deaths, cleared conversion role and Den faction, two correct Marks, no active healed Poison, exact stolen/additional uses, preserved lethal ledger and successful Day1 advancement. The actual returned cloud final ruling and post-advance roster are rechecked by scripts/verify-complex-cloud-result.mjs: 40→32 alive, 8 deaths, 7 attack survivors, shield mode retained and three correct player-specific grants (p32 original2, p31 stolen1, p32 additional2). Normalized cloud resolution has zero AI calls, three generated effects and no unresolved actions.
+
+This exposed a genuine post-approval display defect: tracker review overlaid the already-updated live roster onto the pre-resolution snapshot. Thus a saved result showed32→32 and zero deaths/conversions after approval, and later live deaths could erase historical survivors. Three targeted tests initially failed. The existing review now uses the session roster and baseline fields when available, retaining original players and excluding later additions. Legacy sessions without a snapshot still fall back to the live roster.
+
+The real renderer also used live status/role/faction data for historical comparison. A targeted runtime renderer test reproduced duplicated applied status and missing historical role labels. The renderer now passes snapshot statuses, roles and factions, falling back only when absent; the comparison is labeled Before this resolution. This is a display correction, not a rewrite of stored rulings or live game state.
+
+Six new tests pass (four historical review/renderer tests and two cloud-fixture/actual-app-input-adapter tests). All502 tests pass with zero skips and the actual Transformers DOCX. Syntax/static-build/diff checks pass. Engine remains1.2.2; no migration or Edge change.
+
+Rollback fixture IDs ecb6ecfe-a1ea-4a66-a43c-ad9f08575943,7008e024-af18-43b8-b151-ae6efec91633,f255bbb9-c81e-4b2b-848b-2294e3496f08 were verified absent. Live Transformers remains Night1/version192/44 alive. Browser modal approval remains unverified, as do remaining account/Storage HTTP, review parity, mode rename, AI budget and broader audit items.
