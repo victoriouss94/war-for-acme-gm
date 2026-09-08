@@ -111,7 +111,8 @@ function reviewItem({game={},role=null,ability=null,mechanic=null,code='',messag
 }
 
 export function mechanicsReviewKey(item={}){
-  return JSON.stringify([item.gameId??item.game_id??'',item.roleId??item.role_id??'',item.abilityId??item.ability_id??'',item.id??item.review_id??''].map(value=>String(value??'')));
+  const scope=[item.gameId??item.game_id??'',item.roleId??item.role_id??'',item.abilityId??item.ability_id??''].map(value=>String(value??'')),code=String(item.code||'');
+  return JSON.stringify([...scope,code?['source-warning',code]:['mechanic',String(item.id??item.review_id??'')]]);
 }
 
 export function mechanicsReviewQueue({game={},roles=[],abilities=[]}={}){
@@ -119,6 +120,7 @@ export function mechanicsReviewQueue({game={},roles=[],abilities=[]}={}){
   for(const role of roles){const understanding=normalizeRoleUnderstanding(role);for(const mechanic of understanding.mechanics)if(mechanic.requiresReview)reviews.push(reviewItem({game,role,ability:abilityById.get(mechanic.sourceAbilityId),mechanic,current:mechanic,proposed:null}));
     const source=text(role.sourceText,12000),owned=[role.activeAbilityId,role.passiveAbilityId,...(role.tags||[])].filter(Boolean);if(source.length>300&&owned.length<=1&&/\b(if|when|unless|only|except|all|entire|until|after|before)\b/i.test(source)&&!understanding.mechanics.length)reviews.push(reviewItem({game,role,code:'SOURCE_STRUCTURE_MISSING',message:'The source contains conditional or scoped language but no structured mechanical statements.',current:understanding,proposed:null}));
     if(role.passiveAbilityId&&source.length>120&&!/\b(passive|automatically|whenever|when targeted|cannot be|immune|first time|upon death|after death)\b/i.test(source)&&!understanding.passives.length)reviews.push(reviewItem({game,role,ability:abilityById.get(role.passiveAbilityId),code:'POSSIBLY_INVENTED_PASSIVE',message:'A stored passive is not supported by the preserved role source text. Preserve it until a GM reviews its origin.',current:understanding,proposed:null}));
+    if(/\b(all|entire)\b.*\b(faction|den)\b/i.test(source)&&!understanding.mechanics.length)reviews.push(reviewItem({game,role,code:'FACTION_SCOPE_NOT_STRUCTURED',message:'The source appears faction-wide but no structured faction/global mechanic exists.',current:understanding,proposed:null}));
   }
   for(const ability of abilities){const understanding=normalizeAbilityUnderstanding(ability);for(const mechanic of understanding.mechanics)if(mechanic.requiresReview)reviews.push(reviewItem({game,ability,mechanic,current:mechanic,proposed:null}));}
   return [...new Map(reviews.map(item=>[mechanicsReviewKey(item),item])).values()];

@@ -1,4 +1,4 @@
-import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=12.0.1';
+import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=12.2.29';
 import {classifyAbility,globalAbilityDefinition as encyclopediaAbilityDefinition} from './global-abilities.js?v=12.0.1';
 
 export const MAX_DOCX_BYTES=10*1024*1024;
