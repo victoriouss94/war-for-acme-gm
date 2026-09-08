@@ -21,7 +21,15 @@ The formatter includes restrictions and safely encodes multiline scalar text. Th
 
 ## Limits / remaining work
 
-This is application-function plus actual database coverage, not browser-rendered end-to-end editing. Renaming a mode is still interpreted as removing/adding a mode, not an identity-preserving rename. Cross-game role template copying still needs separate mapping coverage. Existing damaged definitions are not reconstructed automatically. Broader audit work remains incomplete.
+This is application-function plus actual database coverage, not browser-rendered end-to-end editing. Renaming a mode is still interpreted as removing/adding a mode, not an identity-preserving rename. Existing damaged definitions are not reconstructed automatically. Broader audit work remains incomplete.
+
+## Follow-up: cross-game role templates
+
+Seven of eight initial actual-handler regressions failed: the template loader dropped Basic/Standard type, slot count, modes, starting mode and policy, silently omitted missing destination abilities, and accepted ambiguous name matches. A Basic template could not be added without manually correcting its type. This was a distinct path from game duplication.
+
+The existing loader now retains a game-scoped pending template, remaps its required abilities through the destination encyclopedia, and uses the existing mode-copy and editor-preservation functions. It retains role type, slots, mode mechanics and multiple passives, preserves intentional pre-save edits, and refuses missing/ambiguous mappings with an actionable message. The pending template is cleared on cancel, game reset and existing-role edit. Its destination is checked again before save. A UI-only authorization guard prevents read-only users from loading editable template state; existing database authorization is unchanged.
+
+Eleven tests execute actual template loading, form validation, normalization and Add Role handlers. An authenticated rollback cloud test persisted both Standard and Basic outputs through the existing create/save functions and reread exact role JSON. Both synthetic games were verified absent. All 441 JavaScript tests pass, zero skipped, with the actual Transformers DOCX; syntax and static build checks pass. No database migration, Edge Function change, paid AI call or live game mutation was needed.
 
 ## Follow-up: duplicated game mode references
 
