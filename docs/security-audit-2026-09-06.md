@@ -60,6 +60,20 @@ Migration20260906040446_scope_status_subject_access_to_membership requires curre
 
 tests/status-visibility-rollback.sql reproduced both defects and passed after repair: GM/viewer visibility, private history denial, direct-write validation and history, creator attribution, invalid player/source rejection, viewer write denial, removed-member read denial, successful GM resolution, preserved historical subject, and rejection of a new removed-subject assignment. Test games were verified absent afterward. The validator remains private, postgres-only, with an empty search path. The 46 advisor keys are unchanged.
 
+## Live Edge Function boundary checks (September 8)
+
+scripts/audit-edge-auth.mjs passed 15 actual HTTP checks across gm-copilot,
+gm-document-import and gm-knowledge-ingest. Each rejects missing bearer tokens,
+malformed tokens, and publishable API keys used as user tokens with401. Allowed
+browser preflights return200 with matching CORS headers; foreign-origin
+preflights return403. No real user credentials, game changes, uploads or AI calls
+were used. The script requires explicit GM_AUDIT_EDGE_CHECKS=1 opt-in.
+
+All three deployed functions have verify_jwt enabled. These negative tests
+therefore establish the gateway boundary, not authenticated per-game isolation,
+cost reservation, expired real-token behavior, or successful GM requests. That
+distinction follows the current Supabase [authorization header guidance](https://supabase.com/docs/guides/functions/auth-headers).
+
 ## Remaining security limitations
 
 The legacy policies were a real anonymous-access exposure. There is no evidence in this audit establishing whether anyone exploited it. Excess maintenance grants are defense-in-depth hardening; this audit did not demonstrate a browser REST route that could invoke TRUNCATE.
