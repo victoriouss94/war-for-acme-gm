@@ -2,7 +2,7 @@ import {lethalResolutionFixture} from './lethal-resolution-fixture.mjs';
 import {resolveNightDeterministically} from '../../js/night-engine.js';
 import {buildResolutionDraft,finalResolutionPayload} from '../../js/resolution-editor.js';
 
-export function passiveIdentityFixture({swapRoles=false,passiveAliases=false}={}){
+export function passiveIdentityFixture({swapRoles=false,passiveAliases=false,passiveStandardIds=false}={}){
   const {document,actions}=lethalResolutionFixture();
   document.game.name='Rollback passive source identity audit';
   document.data.roles[0].roleWidePassiveAbilityIds=['audit-bulletproof'];
@@ -23,9 +23,11 @@ export function passiveIdentityFixture({swapRoles=false,passiveAliases=false}={}
     document.data.abilities.find(ability=>ability.id==='audit-counterattack').name='retaliate';
     document.data.abilities.find(ability=>ability.id==='audit-bulletproof').name='passive immunity';
   }
+  const expectedStandardIds=passiveStandardIds?[{id:'audit-counterattack',name:'Revenge Circuit',standardAbilityId:'counterattack'},{id:'audit-bulletproof',name:'Aegis Plating',standardAbilityId:'bulletproof'}]:[];
+  for(const mapping of expectedStandardIds)Object.assign(document.data.abilities.find(ability=>ability.id===mapping.id),mapping);
   const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions});
   const ruling=finalResolutionPayload(buildResolutionDraft({proposal,actions,players:document.data.players}));
-  return {document,actions,proposal,ruling,expectedAlive:swapRoles?['audit-actor','audit-target','audit-swapper']:['audit-actor'],expectedPassives:swapRoles?[
+  return {document,actions,proposal,ruling,expectedStandardIds,expectedAlive:swapRoles?['audit-actor','audit-target','audit-swapper']:['audit-actor'],expectedPassives:swapRoles?[
     {playerId:'audit-target',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-target']}
   ]:[
     {playerId:'audit-actor',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-actor']},

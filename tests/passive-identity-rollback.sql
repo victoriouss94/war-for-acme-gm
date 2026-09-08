@@ -18,6 +18,12 @@ begin
   end loop;
   select version into ver from public.game_documents where game_id=gid;
   session_row:=public.start_resolution_session(gid,ver);
+  for expected in select value from jsonb_array_elements(coalesce(fixture->'expectedStandardIds','[]'::jsonb)) loop
+    if not exists(select 1 from jsonb_array_elements(session_row.pre_resolution_state->'abilities') a
+      where a->>'id'=expected->>'id' and a->>'name'=expected->>'name'
+        and a->>'standardAbilityId'=expected->>'standardAbilityId')
+      then raise exception 'Renamed standard passive mapping missing from cloud snapshot: %',expected; end if;
+  end loop;
   session_row:=public.save_deterministic_resolution(session_row.id,session_row.lock_version,fixture->'proposal');
   if (select document#>>'{data,players,1,alive}' from public.game_documents where game_id=gid)<>'true' then raise exception 'Player died before approval'; end if;
   approved:=public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'ruling','Verify exact passive sources',false,'GAME_SPECIFIC','{}',approval_key,false,false);
