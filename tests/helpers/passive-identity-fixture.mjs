@@ -2,7 +2,7 @@ import {lethalResolutionFixture} from './lethal-resolution-fixture.mjs';
 import {resolveNightDeterministically} from '../../js/night-engine.js';
 import {buildResolutionDraft,finalResolutionPayload} from '../../js/resolution-editor.js';
 
-export function passiveIdentityFixture({swapRoles=false}={}){
+export function passiveIdentityFixture({swapRoles=false,passiveAliases=false}={}){
   const {document,actions}=lethalResolutionFixture();
   document.game.name='Rollback passive source identity audit';
   document.data.roles[0].roleWidePassiveAbilityIds=['audit-bulletproof'];
@@ -18,6 +18,10 @@ export function passiveIdentityFixture({swapRoles=false}={}){
     document.data.roles.push({id:'audit-swap-role',name:'Audit swap role',roleType:'STANDARD',factionId:'audit-town',tags:['Role Swap'],enabled:true});
     document.data.abilities.push({id:'audit-role-swap',name:'Role Swap',phase:'Night',enabled:true,targeting:{type:'MULTIPLE_PLAYERS',minTargets:2,maxTargets:2}});
     actions.unshift({id:'audit-swap-action',sourceType:'PLAYER',sourcePlayerId:'audit-swapper',abilityId:'audit-role-swap',targetIds:['audit-actor','audit-target'],targetType:'MULTIPLE_PLAYERS',status:'QUEUED'});
+  }
+  if(passiveAliases){
+    document.data.abilities.find(ability=>ability.id==='audit-counterattack').name='retaliate';
+    document.data.abilities.find(ability=>ability.id==='audit-bulletproof').name='passive immunity';
   }
   const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions});
   const ruling=finalResolutionPayload(buildResolutionDraft({proposal,actions,players:document.data.players}));

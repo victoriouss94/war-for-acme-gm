@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState} from './role-modes.js?v=12.2.28';
 
-export const NIGHT_ENGINE_VERSION='1.2.4';
+export const NIGHT_ENGINE_VERSION='1.2.5';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -76,10 +76,17 @@ function passiveIdentity(player,ctx,name){
   return {ability_id:ability?.id||'',ability_name:ability?.name||name,role_id:ctx.resolutionRoleContexts?.get(player.id)||player.roleId,role_version:Number(role.version)||1};
 }
 
+function passiveMechanicKey(name){
+  const normalized=key(name),standard=globalAbilityDefinition(name);
+  // Use only exact names/aliases already declared by the encyclopedia. A prose
+  // mention (including a negation or condition) is not an executable passive.
+  return standard?.activePassive==='PASSIVE'&&[standard.name,...standard.aliases].some(alias=>key(alias)===normalized)?key(standard.name):normalized;
+}
+
 function mechanicNames(player,ctx){
   const {role,mode,accessibleModes,explicit}=passiveContext(player,ctx);
   const passiveNames=owner=>linkedPassiveIds(owner).map(id=>ctx.snapshot.abilities.find(ability=>ability.id===id)?.name).filter(Boolean);
-  return unique([...passiveNames(role),...passiveNames(mode),...accessibleModes.flatMap(passiveNames),...(array(player.immunities)),...(array(role.immunities)),...(array(mode.immunities)),...accessibleModes.flatMap(item=>[...array(item.immunities),...array(item.protections),...array(item.passives),...array(item.passiveAbilityNames)]),role.passiveAbilityName,mode.passiveAbilityName,...array(role.passives).map(item=>item.name||item),...array(mode.passives).map(item=>item.name||item),...explicit.map(item=>item.abilityName||item.ability_name||item.name)]).map(key);
+  return unique([...passiveNames(role),...passiveNames(mode),...accessibleModes.flatMap(passiveNames),...(array(player.immunities)),...(array(role.immunities)),...(array(mode.immunities)),...accessibleModes.flatMap(item=>[...array(item.immunities),...array(item.protections),...array(item.passives),...array(item.passiveAbilityNames)]),role.passiveAbilityName,mode.passiveAbilityName,...array(role.passives).map(item=>item.name||item),...array(mode.passives).map(item=>item.name||item),...explicit.map(item=>item.abilityName||item.ability_name||item.name)]).map(passiveMechanicKey);
 }
 
 function authorityFor(action){return action.sourceGameRule?'CURRENT_GAME_RULE':action.roleRule||action.modeRule||action.classificationSource==='CURRENT_GAME_ROLE_TEXT'?'ROLE_TEXT':action.precedentId?'CURRENT_GAME_PRECEDENT':action.behavior.standard?'GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA':'AI_ADJUDICATION_REQUIRED'}
