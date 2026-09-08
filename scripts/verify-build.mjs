@@ -13,10 +13,10 @@ for(const module of ['document-import','copilot','knowledge','statuses','resolut
 if(!app.includes("from './mechanics.js?v=12.2.23'"))throw new Error('app.js does not load scoped mechanic review identities');
 if(!app.includes("from './phase-controller.js?v=12.2.14'"))throw new Error('app.js does not load timed status review support');
 if(!app.includes("from './player-abilities.js?v=12.2.11'"))throw new Error('app.js does not load the dead-player ability fix');
-if(!app.includes("from './resolution-editor.js?v=12.2.14'"))throw new Error('app.js does not load the versioned resolution editor');
+if(!app.includes("from './resolution-editor.js?v=12.2.25'"))throw new Error('app.js does not load the versioned resolution editor');
 if(!app.includes("from './global-abilities.js?v=12.0.1'"))throw new Error('app.js does not load the versioned global resolution module');
 if(!app.includes("from './role-modes.js?v=12.2.17'"))throw new Error('app.js does not load the role editor and copied mode preservation fixes');
 const release=JSON.parse(await readFile('package.json','utf8')).version;
 if(!app.includes(`from './night-engine.js?v=${release}'`))throw new Error('app.js does not load the current deterministic night engine');
-if(!app.includes("from './resolution-review.js?v=12.2.24'"))throw new Error('app.js does not load the tracker-style resolution review module');
+if(!app.includes("from './resolution-review.js?v=12.2.25'"))throw new Error('app.js does not load the tracker-style resolution review module');
 console.log('Static build verified:',files.join(', '));

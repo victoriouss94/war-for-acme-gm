@@ -39,4 +39,16 @@ The result has exactly35 original action rows, three generated effects, and zero
 
 Five large-night tests and seven visit tests pass, including pending blocked KILLS during INTEL, guaranteed visitation, completed Protect followed by Capture, and failed target defense remaining a real visit. All488 tests pass, zero skipped, with the supplied Transformers DOCX; syntax/static build/diff checks pass. Engine1.2.1/frontend12.2.24. No database migration or Edge change is required.
 
-This is application-function integration, not a browser/approval roundtrip. The tracker still omits p25 from attacked-but-survived when only a generated Counterattack attacked them: engine lists7 survivors, tracker6. A general structured lethal-attempt projection needs follow-up; do not hardcode this passive or character. Full large-fixture persistence, approval/advance, browser rendering, later-stage Intel dependency handling and the broader audit remain incomplete.
+The original large-fixture check was application-function integration, not a browser/approval roundtrip. Its generated-attack survivor omission is repaired below. Full large-fixture persistence, approval/advance, browser rendering, later-stage Intel dependency handling and the broader audit remain incomplete.
+
+## Generated lethal attempt projection — frontend 12.2.25 / engine 1.2.2
+
+The engine listed seven attack survivors but the tracker listed six: it inferred attacks only from submitted KILLS rows and omitted p25, who survived a generated Counterattack. The existing engine now emits an ID-based lethal_attempts ledger from actual KILL_ATTEMPTED events. Entries retain exact target, actor, child/parent/root action IDs, generation flag and kill/protection tiers. This also describes secondary targets without relying on display names.
+
+The editor preserves that ledger through final payload creation. The tracker uses it when present and excludes attempts rooted in blocked, cancelled, ineligible or pending actions. An explicit empty ledger is authoritative. Legacy saved rulings without the field retain their existing inference fallback; they must be recalculated to obtain complete generated-attack coverage. No live historical ruling was rewritten.
+
+Eight focused tests pass, including seven exact survivor IDs, generated lineage, cancellation/recalculation, payload roundtrip, explicit empty data, duplicate player names, legacy fallback and an actual engine-generated cloud fixture. Full suite: 496 passed, zero skipped, using the supplied Transformers DOCX.
+
+An isolated two-player fixture exercised authenticated public create/start/queue/start-resolution/save/approve/readback/advance calls inside BEGIN/ROLLBACK. Both proposal and finalized ruling retained the exact ledger, no death occurred before approval, the Counterattack target survived Bulletproof and the original target died. The actual returned final_resolution was passed back through buildTrackerResolutionReview and correctly displayed the surviving attacker. The first fixture lacked passive encyclopedia entries and was correctly rejected by existing approval validation; adding those entries allowed approval without a warning override.
+
+Fixture e8279aff-d373-4c9f-acc6-59bdc0b83edf was verified absent after rollback. Live Transformers remains Night 1/version 192 with 44 alive. No database migration, Edge deployment, paid AI request or live-game mutation was needed. This verifies authenticated database functions and application projection, not native browser approval interaction or the full 40-player cloud workflow.
