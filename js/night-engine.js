@@ -1,6 +1,6 @@
 import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,classifyAndOrderActions,createGeneratedEffect,globalAbilityDefinition,normalizeResolutionAction,transformAction} from './global-abilities.js?v=12.0.1';
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
-import {normalizePlayerModeState} from './role-modes.js?v=12.2.27';
+import {normalizePlayerModeState} from './role-modes.js?v=12.2.28';
 
 export const NIGHT_ENGINE_VERSION='1.2.3';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);

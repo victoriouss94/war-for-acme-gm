@@ -564,6 +564,7 @@
         <div id="selectedRoleAbilities" class="selected-role-abilities" aria-live="polite"></div>
         <label>Configurations / modes / forms / states<textarea id="roleModeAssignments" rows="9" maxlength="24000" placeholder="[Configuration Name]&#10;description: When this configuration applies&#10;active: Ability One, Ability Two&#10;passive: Passive Ability&#10;immunities: Death Immunity&#10;protections: Super Protect&#10;restrictions: Cannot target self&#10;investigation appearance: Alternate identity&#10;switch type: PLAYER_SELECTED&#10;switch cooldown: 1 cycle&#10;special rules: Shared uses persist across configurations"></textarea></label>
         <p class="form-notice">Use any names from the source document. Abilities not placed in a configuration remain role-wide. Configuration names are context, never selectable abilities.</p>
+        <p class="form-notice">To rename a configuration, change its [heading] and keep its generated edit reference line. For a new configuration, omit the edit reference.</p>
         <label class="check"><input id="roleModeChoiceBeforeAction" type="checkbox"> Allow the player’s configuration to switch before a queued action</label>
         <div class="grid2 compact-grid"><label>Ability uses<input id="roleAbilityUses" type="number" min="0" step="1"></label><label>Cooldowns<input id="roleCooldowns" maxlength="300"></label></div>
         <label>Immunities<input id="roleImmunities" maxlength="500" placeholder="Comma separated"></label>
@@ -731,6 +732,6 @@
 <script src="js/supabase-config.js?v=12.0.1"></script>
 <script src="js/cloud.js?v=12.2.20"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=12.2.27"></script>
+<script type="module" src="js/app.js?v=12.2.28"></script>
 </body>
 </html>
