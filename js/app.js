@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.20';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.20';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.21';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.17';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -545,7 +545,9 @@ function beginRoleEdit(roleId){
 }
 function duplicateRole(roleId){
   if(!canEditRoles())return;const source=roleById(roleId);if(!source)return;let name=source.name+' Copy',number=2;while(state.roles.some(role=>normalized(role.name)===normalized(name)))name=source.name+' Copy '+number++;
-  const timestamp=now(),copy=normalizeRole({...source,id:id(),gameId:currentGame().id,name,tags:[...source.tags],version:1,createdAt:timestamp,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null},currentGame().id);state.roles.push(copy);save('Role duplicated: '+name+'.','ROLE',copy.id);
+  const timestamp=now(),newRoleId=id(),sourceModel=normalizeRoleModes(source,state.abilities),abilityIds=new Map(state.abilities.map(ability=>[ability.id,ability.id])),model=copyRoleModeReferences(source,state.abilities,abilityIds,newRoleId),modeIds=new Map(sourceModel.modes.map((mode,index)=>[mode.id,model.modes[index].id]));
+  const mapped=remapSetupReferences(source,{roles:new Map([[source.id,newRoleId]]),modes:modeIds});
+  const copy=normalizeRole({...mapped,...model,id:newRoleId,gameId:currentGame().id,name,tags:[...source.tags],version:1,createdAt:timestamp,updatedAt:timestamp,updatedBy:GMCloud.user()?.id||null},currentGame().id);state.roles.push(copy);save('Role duplicated: '+name+'.','ROLE',copy.id);
 }
 async function browseRoleTemplates(){try{availableRoleTemplates=(await GMCloud.roleTemplates()).filter(template=>template.sourceGameId!==currentGame().id);const select=$('roleTemplateSelect');select.innerHTML='';availableRoleTemplates.sort((a,b)=>a.sourceGameName.localeCompare(b.sourceGameName)||a.role.name.localeCompare(b.role.name)).forEach(template=>select.append(option(template.key,template.sourceGameName+' — '+template.role.name)));select.hidden=!availableRoleTemplates.length;$('addRoleTemplateBtn').hidden=!availableRoleTemplates.length;if(!availableRoleTemplates.length)alert('No roles are available in your other shared games.')}catch(error){alert(error.message)}}
 function addSelectedRoleTemplate(){

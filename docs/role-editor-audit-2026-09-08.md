@@ -62,3 +62,9 @@ Ten new tests exercise actual template loading/form/save functions, missing and 
 All 458 JavaScript tests pass, zero skipped, with the supplied Transformers DOCX. Syntax/static build/diff checks pass. Live Transformers remains Night 1, document version 192. No migration, Edge deployment, live game mutation or paid provider request was needed.
 
 This does not reconstruct previously damaged roles, validate arbitrary custom fields or unknown source IDs, implement identity-preserving mode renames, or establish browser-rendered end-to-end coverage. The full audit remains incomplete.
+
+## Follow-up: same-game Duplicate Role (12.2.21)
+
+An actual-handler regression reproduced nested sourceRoleId still pointing to the original role, with reused mode IDs. The existing duplicate handler now assigns a fresh role and mode namespace, remaps supported self-role/mode references, and retains references to the same game's abilities, factions and other roles. It reuses the existing copy and typed-reference helpers. Original role and player assignments/current mode state are untouched.
+
+Four actual-handler tests cover ownership and mode-link closure, unchanged external dependencies and source evidence, input/player immutability, and read-only denial. The first ownership test failed before the repair. All 462 tests now pass with zero skips and the supplied Transformers DOCX; syntax/static build/diff checks pass. This follow-up has application-function coverage, not a separate browser or cloud duplicate-handler roundtrip. Existing normal save authorization and database structure are unchanged.
