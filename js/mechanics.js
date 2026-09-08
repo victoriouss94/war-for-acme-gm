@@ -2,6 +2,29 @@ import {classifyAbility} from './global-abilities.js?v=12.0.1';
 
 export const MECHANIC_SCHEMA_VERSION=2;
 
+// Only typed local entity references are remapped. Source evidence and global standard IDs are not.
+const SETUP_REFERENCE_FIELDS=Object.freeze({
+  roleid:'roles',sourceroleid:'roles',targetroleid:'roles',roleids:'roles',sourceroleids:'roles',targetroleids:'roles',targetrolerestrictions:'roles',
+  abilityid:'abilities',sourceabilityid:'abilities',targetabilityid:'abilities',activeabilityid:'abilities',passiveabilityid:'abilities',baseabilityid:'abilities',effectiveabilityid:'abilities',
+  abilityids:'abilities',sourceabilityids:'abilities',targetabilityids:'abilities',activeabilityids:'abilities',passiveabilityids:'abilities',rolewideabilityids:'abilities',rolewidepassiveabilityids:'abilities',
+  factionid:'factions',sourcefactionid:'factions',targetfactionid:'factions',currentfactionid:'factions',factionids:'factions',sourcefactionids:'factions',targetfactionids:'factions',targetfactionrestrictions:'factions',
+  modeid:'modes',currentmodeid:'modes',startingmodeid:'modes',previousmodeid:'modes',lockedmodeid:'modes',modeids:'modes',targetmodeids:'modes',modeaccessids:'modes'
+});
+export function remapSetupReferences(value,references={}){
+  const translate=(mapping,value)=>{if(mapping?.has(value)&&mapping.get(value)===null)throw new Error('Ambiguous copied mode reference. Review the source role configurations before duplicating.');return mapping?.get(value)??value};
+  const visit=(item,field='')=>{
+    const normalizedField=field.replace(/_/g,'').toLowerCase(),mapping=references[SETUP_REFERENCE_FIELDS[normalizedField]];
+    if(typeof item==='string')return translate(mapping,item);
+    if(Array.isArray(item))return item.map(entry=>visit(entry,field));
+    if(item&&typeof item==='object'){
+      const keyMapping=normalizedField==='abilityuses'?references.abilities:normalizedField==='modecooldowns'?references.modes:null;
+      return Object.fromEntries(Object.entries(item).map(([name,entry])=>[translate(keyMapping,name),visit(entry,name)]));
+    }
+    return item;
+  };
+  return visit(value);
+}
+
 export const MECHANIC_TYPES=Object.freeze([
   'ACTIVE_ABILITY','PASSIVE','IMMUNITY','CONDITIONAL_IMMUNITY','TRIGGER','COUNTERATTACK','REFLECTION','REDIRECT','BLOCK','FACTION_BLOCK','STATUS_EFFECT','FACTION_EFFECT','GLOBAL_EFFECT','KILL_EFFECT','PROTECTION_EFFECT','CONVERSION_EFFECT','INVESTIGATION_EFFECT','SUPPORT_EFFECT','TARGET_RESTRICTION','EFFECT_ELIGIBILITY','PHASE_RESTRICTION','DURATION','USE_LIMIT','COOLDOWN','ABILITY_GRANT','ABILITY_MODIFIER','ADDITIONAL_USE','KILL_TIER_MODIFIER','PROTECTION_TIER_MODIFIER','DEATH_TRIGGER','REVIVAL','EXTRA_LIFE','FACTION_RULE','ROLE_RELATIONSHIP','DEPENDENCY','WIN_CONDITION','TRANSFORMATION','ESCALATION','ROLE_PROPERTY','FACTION_PROPERTY','CUSTOM_MECHANIC'
 ]);

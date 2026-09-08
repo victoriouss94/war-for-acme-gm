@@ -38,3 +38,15 @@ The actual cloneSetup function created new ability IDs but retained old IDs in m
 The existing mode module now maps copied mode active/passive IDs, primary context ability IDs, role-wide lists, starting mode IDs, switch-target mode IDs and ability-keyed counters to the fresh setup. Source text and unrelated mechanics remain intact; source game/player progress is not mutated.
 
 Three actual cloneSetup VM tests cover reference closure, retained mechanics and source immutability. A rollback-only authenticated public.create_game test persisted its generated payload and verified that every copied mode/wide ability reference belongs to the copied encyclopedia and that the starting mode exists. Its synthetic game was verified absent afterward. The resulting suite has 430 passing tests, zero skips. No database migration or Edge deployment is required.
+
+## Follow-up: nested cloned mechanic references
+
+The next audit went beyond mode lists: actual copied faction actions disappeared because their nested sourceFactionIds still identified the original faction. Copied hard role restrictions rejected the intended copied role. Nested mechanic ownership and rule mode references also retained source IDs. Three initial integration regressions failed.
+
+The existing clone workflow now allocates all destination role, ability, faction and mode IDs before copying. A typed-reference helper in the existing mechanics module updates supported scalar/list aliases and ability/mode-keyed counters throughout the setup. It deliberately preserves ordinary text, source-document provenance and global standard IDs. It does not replace arbitrary strings.
+
+Legacy duplicate mode IDs are resolved within their owning role. An ambiguous cross-role mode reference stops the copy before the cloud call and produces an error instead of silently choosing another role. Both cases have explicit regression coverage.
+
+Seven new tests include actual cloneSetup followed by real effectiveFactionAbilities and validateActionTargets. A rollback-only authenticated create/read test retained exact copied entity JSON and closed the nested references. The database-reread payload was then fed back to the real availability/targeting functions: its faction action was available and the intended copied role/faction target was accepted. The fixture was verified absent afterward.
+
+All 448 JavaScript tests pass, zero skipped, with the supplied Transformers DOCX. Syntax/static build/diff checks pass. No database migration, Edge deployment, live game change or paid provider request was needed. This covers supported typed references in whole-game duplication; single-role templates, arbitrary custom reference fields, identity-preserving mode renames and browser-rendered end-to-end checks still need further coverage.

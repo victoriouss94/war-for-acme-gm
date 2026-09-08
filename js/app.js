@@ -8,9 +8,9 @@ import {buildTrackerResolutionReview,trackerActionBadges} from './resolution-rev
 import {ABILITY_DATA_STATUSES,ROLE_TYPES,normalizeRoleSetup,normalizedPlayerName,parsePlayerFile,parsePlayerText,previewPlayerImport,rosterAnalysis} from './player-setup.js?v=12.0.1';
 import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,normalizeAbilityGrant,naturalNumber,validateActionTargets} from './player-abilities.js?v=12.2.11';
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
-import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.0.1';
+import {remapSetupReferences,mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.19';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.18';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.19';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.17';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -395,15 +395,26 @@ async function submitGameForm(){
 }
 async function cloneSetup(sourceGameId){
   const sourceMeta=gameIndex.games.find(game=>game.id===sourceGameId);if(!sourceMeta)return;
-  const source=loadGameData(sourceGameId),gameId=id(),createdAt=now(),factionIds=new Map();
-  const factions=source.factions.map(faction=>{const newId=id();factionIds.set(faction.id,newId);return {...faction,id:newId,gameId}});
-  const abilityIds=new Map(),abilities=source.abilities.map(ability=>{const newId=id();abilityIds.set(ability.id,newId);return {...ability,id:newId,gameId,revisions:[]}});
-  const roles=source.roles.map(role=>{const roleId=id();return {...role,...copyRoleModeReferences(role,source.abilities,abilityIds,roleId),id:roleId,gameId,factionId:factionIds.get(role.factionId)||role.factionId,activeAbilityId:abilityIds.get(role.activeAbilityId)||'',passiveAbilityId:abilityIds.get(role.passiveAbilityId)||'',tags:[...role.tags],version:1}});
+  try{
+  const source=loadGameData(sourceGameId),gameId=id(),createdAt=now();
+  const factionIds=new Map(source.factions.map(faction=>[faction.id,id()])),abilityIds=new Map(source.abilities.map(ability=>[ability.id,id()])),roleIds=new Map(source.roles.map(role=>[role.id,id()])),modeIds=new Map(),modeModels=new Map(),roleModeIds=new Map();
+  for(const role of source.roles){
+    const model=copyRoleModeReferences(role,source.abilities,abilityIds,roleIds.get(role.id));
+    const localModes=new Map(normalizeRoleModes(role,source.abilities).modes.map((mode,index)=>[mode.id,model.modes[index].id]));
+    for(const [oldId,newId] of localModes)modeIds.set(oldId,modeIds.has(oldId)&&modeIds.get(oldId)!==newId?null:newId);
+    roleModeIds.set(role.id,localModes);
+    modeModels.set(role.id,model);
+  }
+  const references={factions:factionIds,abilities:abilityIds,roles:roleIds,modes:modeIds};
+  const factions=source.factions.map(faction=>({...remapSetupReferences(faction,references),id:factionIds.get(faction.id),gameId}));
+  const abilities=source.abilities.map(ability=>({...remapSetupReferences(ability,references),id:abilityIds.get(ability.id),gameId,revisions:[]}));
+  const roles=source.roles.map(role=>({...remapSetupReferences({...role,...modeModels.get(role.id)},{...references,modes:new Map([...modeIds,...roleModeIds.get(role.id)])}),id:roleIds.get(role.id),gameId,factionId:factionIds.get(role.factionId)||role.factionId,activeAbilityId:abilityIds.get(role.activeAbilityId)||'',passiveAbilityId:abilityIds.get(role.passiveAbilityId)||'',tags:[...role.tags],version:1}));
   const name=sourceMeta.name+' Copy';
   const game=normalizeMeta({id:gameId,name,theme:sourceMeta.theme,description:sourceMeta.description,status:'SETUP',startingDay:sourceMeta.startingDay,currentDay:sourceMeta.startingDay,currentPhase:'Day',createdAt,updatedAt:createdAt});
-  const rules=source.rules.map((rule,index)=>normalizeRule({...rule,id:id(),gameId,sortOrder:index,version:1},gameId,index));
-  const data={...baseGameData(gameId),settings:{...source.settings,gameName:name,labels:{...source.settings.labels}},factions,roles,abilities,rules,players:[],actions:[],history:[{id:id(),gameId,type:'DUPLICATE',message:'Fresh setup duplicated from '+sourceMeta.name+'.',day:game.currentDay,phase:'Day',timestamp:createdAt}],lastSavedAt:createdAt};
-  try{const created=await GMCloud.createGame({game,data});game.memberRole='owner';game.shareCode=created[0]?.share_code||'';game.lastSavedAt=createdAt;localStorage.setItem(gameDataKey(gameId),JSON.stringify(data));gameIndex.games.push(game);saveIndex();renderGames()}catch(error){alert('Could not duplicate game: '+error.message)}
+  const rules=source.rules.map((rule,index)=>normalizeRule({...remapSetupReferences(rule,references),id:id(),gameId,sortOrder:index,version:1},gameId,index));
+  const data={...baseGameData(gameId),settings:{...remapSetupReferences(source.settings,references),gameName:name,labels:{...source.settings.labels}},factions,roles,abilities,rules,players:[],actions:[],history:[{id:id(),gameId,type:'DUPLICATE',message:'Fresh setup duplicated from '+sourceMeta.name+'.',day:game.currentDay,phase:'Day',timestamp:createdAt}],lastSavedAt:createdAt};
+  const created=await GMCloud.createGame({game,data});game.memberRole='owner';game.shareCode=created[0]?.share_code||'';game.lastSavedAt=createdAt;localStorage.setItem(gameDataKey(gameId),JSON.stringify(data));gameIndex.games.push(game);saveIndex();renderGames()
+  }catch(error){alert('Could not duplicate game: '+error.message)}
 }
 function recordStoredGameEvent(game,message,type){
   const data=loadGameData(game.id),timestamp=now();
