@@ -6,14 +6,15 @@ files.push('supabase/migrations/20260905173123_stop_active_postgrest_retry_storm
 files.push('supabase/migrations/20260905180000_complete_postgrest_retry_storm_containment.sql');
 files.push('supabase/migrations/20260905181500_preserve_proposal_conflict_expiry.sql');
 await Promise.all(files.map(file=>access(file)));
+await access('.nojekyll'); // GitHub Pages otherwise drops _shared ES modules.
 const html=await readFile('index.html','utf8');
 for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/app.js'])if(!html.includes(file))throw new Error(`index.html does not load ${file}`);
 const app=await readFile('js/app.js','utf8');
 if(!app.includes("from './document-import.js?v=12.2.30'"))throw new Error('app.js does not load consistent source review warnings');
 for(const module of ['knowledge','statuses','resolution','player-setup'])if(!app.includes(`from './${module}.js?v=12.0.1'`))throw new Error(`app.js does not load the versioned js/${module}.js`);
-if(!app.includes("from './copilot.js?v=12.2.32'"))throw new Error('app.js does not load deterministic Copilot resolution routing');
+if(!app.includes("from './copilot.js?v=12.2.33'"))throw new Error('app.js does not load deterministic Copilot resolution routing');
 const copilot=await readFile('js/copilot.js','utf8');
-if(!copilot.includes("from '../supabase/functions/_shared/master-gm.js?v=12.2.32'"))throw new Error('Copilot does not load the shared server intent classifier');
+if(!copilot.includes("from '../supabase/functions/_shared/master-gm.js?v=12.2.33'"))throw new Error('Copilot does not load the shared server intent classifier');
 if(!app.includes("from './mechanics.js?v=12.2.30'"))throw new Error('app.js does not load scoped mechanic review identities');
 if(!app.includes("from './phase-controller.js?v=12.2.14'"))throw new Error('app.js does not load timed status review support');
 if(!app.includes("from './player-abilities.js?v=12.2.30'"))throw new Error('app.js does not load role-scoped player ability availability');

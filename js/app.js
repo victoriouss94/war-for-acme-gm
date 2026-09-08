@@ -1,5 +1,5 @@
 import {analyzeDocumentBlocks,compareGameImport,importSummary,matchImportAbilities,normalizeAiDocumentImport,normalizeImportName,parseDocxFile,prepareDocumentBlocksForAi,validateGameImport} from './document-import.js?v=12.2.30';
-import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=12.2.32';
+import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,normalizeCopilotResponse,validateCopilotChanges} from './copilot.js?v=12.2.33';
 import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=12.0.1';
 import {PLAYER_STATUS_TYPES,groupPlayerStatuses,normalizePlayerStatus,playerMatchesStatusFilter,statusLabel,statusMutationPayload,statusTypeDefinition} from './statuses.js?v=12.0.1';
 import {manualResolutionPayload,normalizeAiDraft,normalizeResolution,precedentVisibility,validateManualResolution} from './resolution.js?v=12.0.1';
@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.30';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.32';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.33';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.28';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
