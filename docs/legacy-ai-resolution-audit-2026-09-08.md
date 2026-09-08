@@ -21,7 +21,13 @@ Nine new tests cover the three browser-handler routing cases, an unchanged ordin
 
 Full suite: **559 passed, zero failed, zero skipped**, including the supplied Transformers DOCX. JavaScript syntax checks and static deployment build pass. Cache-version checks include the shared classifier's browser import. These app-handler tests run the actual extracted functions with a synthetic UI context; they are not native browser click tests.
 
-Frontend **12.2.32**, existing engine **1.2.4**, gm-copilot **v25**. Deployed Edge source and all five dependencies were read back and matched the tested files; JWT verification remains enabled. All 15 live HTTP negative-auth/CORS checks across the three existing Edge Functions pass. No database migration was needed.
+Frontend **12.2.33**, existing engine **1.2.4**, gm-copilot **v25**. Deployed Edge source and all five dependencies were read back and matched the tested files; JWT verification remains enabled. All 15 live HTTP negative-auth/CORS checks across the three existing Edge Functions pass. No database migration was needed.
+
+### Deployment defect caught and corrected
+
+The initial 12.2.32 frontend publication introduced a missing-module error: GitHub Pages' default Jekyll processing omitted the underscore-prefixed `_shared` directory. Local module tests passed, but the required classifier returned HTTP 404 in the live check, preventing the app module from loading. The deployment was not considered complete.
+
+The 12.2.33 correction adds `.nojekyll` for this static ES-module site and updates cache URLs. The build now requires that marker. The corrected exact-SHA Pages deployment completed successfully, and the new read-only `scripts/verify-pages.mjs` traversed all **21 same-origin script/module assets**, including the previously missing classifier: every response was HTTP 200 with JavaScript content type. The one external CDN origin is explicitly reported as not checked; this is not a browser startup claim. Full 559-test suite and static build also pass after this correction.
 
 ## Remaining limits
 
