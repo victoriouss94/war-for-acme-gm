@@ -21,4 +21,12 @@ The formatter includes restrictions and safely encodes multiline scalar text. Th
 
 ## Limits / remaining work
 
-This is application-function plus actual database coverage, not browser-rendered end-to-end editing. Renaming a mode is still interpreted as removing/adding a mode, not an identity-preserving rename. Cross-game role template copying and game duplication need separate mapping audits. Existing damaged definitions are not reconstructed automatically. Broader audit work remains incomplete.
+This is application-function plus actual database coverage, not browser-rendered end-to-end editing. Renaming a mode is still interpreted as removing/adding a mode, not an identity-preserving rename. Cross-game role template copying still needs separate mapping coverage. Existing damaged definitions are not reconstructed automatically. Broader audit work remains incomplete.
+
+## Follow-up: duplicated game mode references
+
+The actual cloneSetup function created new ability IDs but retained old IDs in mode ability lists and role-wide passives. A synthetic reproduction found four orphan references. No real game was duplicated for reproduction.
+
+The existing mode module now maps copied mode active/passive IDs, primary context ability IDs, role-wide lists, starting mode IDs, switch-target mode IDs and ability-keyed counters to the fresh setup. Source text and unrelated mechanics remain intact; source game/player progress is not mutated.
+
+Three actual cloneSetup VM tests cover reference closure, retained mechanics and source immutability. A rollback-only authenticated public.create_game test persisted its generated payload and verified that every copied mode/wide ability reference belongs to the copied encyclopedia and that the starting mode exists. Its synthetic game was verified absent afterward. The resulting suite has 430 passing tests, zero skips. No database migration or Edge deployment is required.

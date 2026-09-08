@@ -10,8 +10,8 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.0.1';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.16';
-import {effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.16';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.17';
+import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.17';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
 const GAME_INDEX_KEY='gm_command_center_games_v4';
@@ -398,7 +398,7 @@ async function cloneSetup(sourceGameId){
   const source=loadGameData(sourceGameId),gameId=id(),createdAt=now(),factionIds=new Map();
   const factions=source.factions.map(faction=>{const newId=id();factionIds.set(faction.id,newId);return {...faction,id:newId,gameId}});
   const abilityIds=new Map(),abilities=source.abilities.map(ability=>{const newId=id();abilityIds.set(ability.id,newId);return {...ability,id:newId,gameId,revisions:[]}});
-  const roles=source.roles.map(role=>({...role,id:id(),gameId,factionId:factionIds.get(role.factionId)||role.factionId,activeAbilityId:abilityIds.get(role.activeAbilityId)||'',passiveAbilityId:abilityIds.get(role.passiveAbilityId)||'',tags:[...role.tags],version:1}));
+  const roles=source.roles.map(role=>{const roleId=id();return {...role,...copyRoleModeReferences(role,source.abilities,abilityIds,roleId),id:roleId,gameId,factionId:factionIds.get(role.factionId)||role.factionId,activeAbilityId:abilityIds.get(role.activeAbilityId)||'',passiveAbilityId:abilityIds.get(role.passiveAbilityId)||'',tags:[...role.tags],version:1}});
   const name=sourceMeta.name+' Copy';
   const game=normalizeMeta({id:gameId,name,theme:sourceMeta.theme,description:sourceMeta.description,status:'SETUP',startingDay:sourceMeta.startingDay,currentDay:sourceMeta.startingDay,currentPhase:'Day',createdAt,updatedAt:createdAt});
   const rules=source.rules.map((rule,index)=>normalizeRule({...rule,id:id(),gameId,sortOrder:index,version:1},gameId,index));

@@ -37,6 +37,23 @@ export function normalizeRoleModes(role={},abilities=[]){
   return {modes,roleWideAbilityIds,roleWidePassiveAbilityIds,roleWideImmunities:unique(role.roleWideImmunities??role.role_wide_immunities??role.immunities),roleWideRestrictions:unique(role.roleWideRestrictions??role.role_wide_restrictions??role.restrictions),modeSelectionPolicy:policy,startingModeId:modes.some(mode=>mode.id===requestedStart)?requestedStart:modes[0]?.id||''};
 }
 
+export function copyRoleModeReferences(role,sourceAbilities,abilityIds,newRoleId){
+  const model=normalizeRoleModes(role,sourceAbilities);
+  const modeIds=new Map(model.modes.map((mode,index)=>[mode.id,`${newRoleId}:mode:${index+1}`]));
+  const remapAbilities=values=>values.map(value=>abilityIds.get(String(value))).filter(Boolean);
+  const remapCounters=value=>Object.fromEntries(Object.entries(value).map(([name,count])=>[abilityIds.get(name)||name,count]));
+  return {...model,
+    modes:model.modes.map(mode=>({...mode,id:modeIds.get(mode.id),
+      abilityIds:remapAbilities(mode.abilityIds),activeAbilityIds:remapAbilities(mode.abilityIds),
+      passiveAbilityIds:remapAbilities(mode.passiveAbilityIds),
+      sourceAbilityId:abilityIds.get(mode.sourceAbilityId)||'',
+      abilityUses:remapCounters(mode.abilityUses),resourcePools:remapCounters(mode.resourcePools),
+      switchRules:{...mode.switchRules,targetModeIds:mode.switchRules.targetModeIds.map(id=>modeIds.get(id)).filter(Boolean)}})),
+    startingModeId:modeIds.get(model.startingModeId)||'',
+    roleWideAbilityIds:remapAbilities(model.roleWideAbilityIds),
+    roleWidePassiveAbilityIds:remapAbilities(model.roleWidePassiveAbilityIds)};
+}
+
 function metadataModeIds(value={}){return unique([...(value.modeIds||value.mode_ids||[]),...(value.modeAccessIds||value.mode_access_ids||[])]);}
 function accessExpired(entry,game={},at=new Date()){if(entry.expiresAt&&new Date(entry.expiresAt)<=at)return true;const cycle=Number(game.currentDay??game.currentCycle??0);if(entry.expiresCycle!=null&&cycle>Number(entry.expiresCycle))return true;if(entry.expiresCycle!=null&&cycle===Number(entry.expiresCycle)&&entry.expiresPhase&&String(game.currentPhase||'').toUpperCase()===String(entry.expiresPhase).toUpperCase()&&entry.expireOnPhaseStart!==false)return true;return false;}
 
