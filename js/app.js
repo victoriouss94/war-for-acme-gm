@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.20';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.21';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.22';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.17';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -1249,7 +1249,22 @@ function abilityTemplate(ability){return standardAbilities().find(item=>normaliz
 function snapshotAbility(ability){return {name:ability.name,category:ability.category,definition:ability.definition,phase:ability.phase,mechanics:[...ability.mechanics],savedAt:now()}}
 function clearAbilityForm(){editingAbilityId=null;$('abilityFormTitle').textContent='Add Ability';$('abilityEditNotice').hidden=true;$('addAbilityBtn').textContent='Add Ability';$('cancelAbilityEditBtn').hidden=true;$('abilityName').value='';$('abilityDefinition').value='';$('abilityMechanics').value='';$('abilityCategory').value='Investigation';$('abilityPhase').value='Night'}
 function beginAbilityEdit(abilityId){const ability=state.abilities.find(item=>item.id===abilityId);if(!ability)return;editingAbilityId=ability.id;$('abilityFormTitle').textContent='Edit '+ability.name;$('abilityEditNotice').hidden=false;$('addAbilityBtn').textContent='Save Changes';$('cancelAbilityEditBtn').hidden=false;$('abilityName').value=ability.name;$('abilityCategory').value=ability.category;$('abilityDefinition').value=ability.definition;$('abilityPhase').value=ability.phase||'Any';$('abilityMechanics').value=ability.mechanics.join(', ')}
-function duplicateAbility(abilityId){const source=state.abilities.find(item=>item.id===abilityId);if(!source)return;let name=source.name+' Copy',number=2;while(state.abilities.some(ability=>normalized(ability.name)===normalized(name)))name=source.name+' Copy '+number++;const {defaultName,...copy}=source;state.abilities.push({...copy,id:id(),gameId:currentGame().id,name,builtIn:false,revisions:[]});save('Ability duplicated: '+name+'.','ABILITY')}
+function duplicateAbility(abilityId){
+  if(!canEditGame())return;const source=state.abilities.find(item=>item.id===abilityId);if(!source)return;
+  let name=source.name+' Copy',number=2;while(state.abilities.some(ability=>normalized(ability.name)===normalized(name)))name=source.name+' Copy '+number++;
+  const newAbilityId=id(),{defaultName,...copy}=remapSetupReferences(source,{abilities:new Map([[source.id,newAbilityId]])}),mechanicIds=new Map();
+  // Review IDs belong to this copy; sharing them hides one of the two unresolved definitions.
+  const rekeyMechanics=entries=>entries.map((mechanic,index)=>{
+    if(!mechanic||typeof mechanic!=='object'||Array.isArray(mechanic))return mechanic;
+    const oldId=mechanic.id??mechanic.mechanicId??mechanic.mechanic_id??('index:'+index);
+    if(!mechanicIds.has(oldId))mechanicIds.set(oldId,newAbilityId+':mechanic:'+(mechanicIds.size+1));
+    const next={...mechanic,id:mechanicIds.get(oldId)};if('mechanicId' in next)next.mechanicId=next.id;if('mechanic_id' in next)next.mechanic_id=next.id;
+    if((next.sourceAbilityId??next.source_ability_id)===newAbilityId){if('sourceAbilityName' in next)next.sourceAbilityName=name;if('source_ability_name' in next)next.source_ability_name=name}return next;
+  });
+  for(const field of ['mechanicalStatements','mechanical_statements'])if(Array.isArray(copy[field]))copy[field]=rekeyMechanics(copy[field]);
+  for(const field of ['understanding','mechanicUnderstanding','mechanic_understanding'])if(Array.isArray(copy[field]?.mechanics))copy[field].mechanics=rekeyMechanics(copy[field].mechanics);
+  state.abilities.push({...copy,id:newAbilityId,gameId:currentGame().id,name,builtIn:false,revisions:[]});save('Ability duplicated: '+name+'.','ABILITY');
+}
 function resetBuiltInAbility(abilityId){const ability=state.abilities.find(item=>item.id===abilityId),template=ability&&abilityTemplate(ability);if(!template||!confirm('Restore '+ability.name+' to its global default definition?'))return;ability.revisions.push(snapshotAbility(ability));Object.assign(ability,{category:template.category,definition:template.definition,phase:template.phase,mechanics:[...template.mechanics],resolutionCategory:template.resolutionCategory,resolutionPriority:template.resolutionPriority,resolutionTiming:template.resolutionTiming,activePassive:template.activePassive,standardAbilityId:template.standardAbilityId,targeting:{...template.targeting},understanding:normalizeAbilityUnderstanding(template)});save('Built-in ability reset to global default: '+ability.name+'.','ABILITY')}
 function renderEncyclopedia(){
   const search=normalized($('abilitySearch').value),category=$('abilityCategoryFilter').value,categories=[...new Set(state.abilities.map(ability=>ability.category))].sort(),filter=$('abilityCategoryFilter'),current=filter.value;filter.innerHTML='';filter.append(option('ALL','All categories'));categories.forEach(item=>filter.append(option(item,item)));if([...filter.options].some(item=>item.value===current))filter.value=current;
