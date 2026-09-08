@@ -22,10 +22,22 @@ The JavaScript suite passed all 384 tests with no skips, including the supplied 
 
 The security advisor still reports 46 underlying findings in three grouped categories: 44 authenticated SECURITY DEFINER notices, one leaked-password protection warning and one intentional no-policy legacy-table informational notice. A grouped count of three is not evidence that 43 findings were resolved. See [Supabase's function-execution advisory](https://supabase.com/docs/guides/database/database-advisors?lint=0029_authenticated_security_definer_function_executable).
 
+## Follow-up: provider failure accounting repaired
+
+The shared Responses helper now reports each received response's usage to a request-local accumulator before parsing, refusal handling or repair can throw. All three copilot generation/repair call sites attach that observer. Both copilot failure paths use accumulated input/cached/output counts and the latest received response ID instead of zeroing them. This also preserves known usage when subsequent semantic validation or persistence fails. Success accounting and the number of provider requests are unchanged.
+
+This follows the documented [Responses API usage fields](https://developers.openai.com/api/reference/typescript/resources/responses/methods/create); it does not infer charges for a response that was never received. The optional observer does not add a provider call or database write.
+
+tests/ai-provider-accounting.test.mjs executes the actual TypeScript helper and copilot handlers with mocked HTTP and Supabase boundaries (Node 24 type stripping, not static type checking). Eighteen tests cover success, invalid JSON, truncation, refusal, successful/invalid/network/quota-denied repair, zero known usage on initial transport failure, cached-token clamping, request isolation, adjudication success/failure, rejection before provider invocation, semantic draft failure and failed draft persistence. The three call-site observer assertion is static; the adjudication and draft handler tests execute actual handler code. No real JWT or paid provider call is used.
+
+Full suite: 402 passed, zero failed/skipped, including the supplied Transformers DOCX. Static build and whitespace checks passed. Production gm-copilot v22 is ACTIVE with verify_jwt=true; all six deployed files were read back and matched the tested source. Fifteen post-deployment live negative-auth/CORS checks passed. These are gateway checks, not authenticated HTTP end-to-end accounting. The import and knowledge-ingest functions were not redeployed. Frontend remains 12.2.14.
+
 ## Confirmed open spending gaps
 
 1. Deployed gm-document-import v10 and gm-knowledge-ingest v2 do not reserve/complete persisted AI usage. Their in-memory rate counters do not implement the existing per-game monthly budget. Initial imports have no existing game, whereas the ledger requires a game ID; an account-scoped import budget needs deliberate design.
-2. The shared provider helper can discard usage when parsing or repair fails; the copilot failure path can consequently record zero. This repair preserves known costs but cannot recover unreported charges.
+2. Copilot parsing/repair/downstream-failure loss of received Responses usage is repaired above. Requests whose response was never received still have unknown usage; database accounting write failures are not durably retried. Neither this repair nor the ledger migration reconstructs historical missing charges.
 3. Existing reservations hold zero estimated cost. The monthly check is against already recorded usage, not a hard reservation of maximum in-flight spend, so concurrent requests can overshoot.
 
-Provider-response accounting, known-game import integration and concurrency controls need separate implementation and mocked-provider regressions. Do not describe this change as a complete spending cap or coverage of every AI feature.
+4. Copilot document-search embeddings run before the Responses budget reservation and their usage is not included in it. Import/ingestion embeddings also require their own accounting. Existing hard-coded estimated pricing has not been audited against current provider pricing.
+
+Known-game import integration, embedding coverage, durable accounting writes and concurrency controls need separate implementation and mocked-provider regressions. Do not describe this change as a complete spending cap or coverage of every AI feature.
