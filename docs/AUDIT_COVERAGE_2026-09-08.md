@@ -4,7 +4,7 @@
 
 **INCOMPLETE.** This is the current evidence index, not a final certification. It supersedes older reports' open-work lists where a later linked report records the completed test or repair. Earlier reports deliberately retain their original test counts and observations.
 
-Baseline for this index: frontend **12.2.31**, canonical engine **1.2.4**, gm-copilot **v24**, source baseline **cebf5a5** plus the [passive-source repair](passive-source-audit-2026-09-08.md). The latest completed JavaScript run contains **550 passing tests, zero failures and zero skips**, including the actual supplied Transformers DOCX. Lint/typecheck scripts are JavaScript syntax checks, not full static type analysis; the build script validates the static deployment, not a bundled application.
+Baseline for this index: frontend **12.2.32**, canonical engine **1.2.4**, gm-copilot **v25**, source baseline **d0f1f0c** plus the [legacy AI route repair](legacy-ai-resolution-audit-2026-09-08.md). The latest completed JavaScript run contains **559 passing tests, zero failures and zero skips**, including the actual supplied Transformers DOCX. Lint/typecheck scripts are JavaScript syntax checks, not full static type analysis; the build script validates the static deployment, not a bundled application.
 
 Evidence levels are distinct:
 
@@ -47,8 +47,8 @@ See the [architecture inventory](TECHNICAL_AUDIT_2026-09-05.md), [complex cloud 
 | 18 | Atomic approval | Existing canonical approval, replay protection, stale rejection, finite grants and six legacy approve/modify/reject cases pass. [Legacy bridge](legacy-resolution-audit-2026-09-08.md). | Native approval click path and simultaneous independent transactions still partial. |
 | 19 | GM editing | Real UI result editing/recalculation observed earlier; runtime corrections and original proposal revision retention tested. [History](simulation-history-audit-2026-09-06.md). | Complete browser matrix for every editable consequence remains open. |
 | 20 | Dependency recalculation | Multiple corrections persist; changing lethal attack removes death and dependent Counterattack; random choice stays fixed. | Arbitrary custom/on-death/late-intel dependency graph not certified. |
-| 21 | Zero-AI known nights | Existing engine has no provider request; known acceptance and large cloud-normalized fixture report zero AI adjudications. | Full browser network recording not completed. |
-| 22 | Isolated AI fallback | Actual handler mocked-provider tests and compact interaction tests; invalid/no response leaves review required. | Paid-provider authenticated E2E and legacy whole-night caller inventory partial. |
+| 21 | Zero-AI known nights | Existing engine uses zero AI for known fixtures. Chat resolution synonyms/explicit task now route to it; retired server whole-night requests stop before paid work. [Route audit](legacy-ai-resolution-audit-2026-09-08.md). | Full native browser network recording not completed; language classification remains heuristic. |
+| 22 | Isolated AI fallback | Actual handler mocked-provider tests and compact interaction tests; invalid/no response leaves review required. Whole-night branch now rejected. | Paid-provider authenticated E2E remains partial. |
 | 23 | Deterministic text | Engine/editor/review tests generate consequences, player names and morning output without provider calls. | Every unknown custom mechanic remains a review case. |
 | 24 | Player/action/result display | Actual renderer tests and observed earlier UI; readable names and historical snapshot labels repaired. | Current full native UI smoke run unavailable. |
 | 25 | Consequence column | Protection, reflected mark, survival/death and intel consequences asserted rather than only action restatement. | Custom free-form outputs not universally verified. |
@@ -76,11 +76,11 @@ See the [architecture inventory](TECHNICAL_AUDIT_2026-09-05.md), [complex cloud 
 | 47 | Rule priority | Existing authority metadata, game-specific mappings and current-role rules inspected/tested. | Executable arbitrary game overrides and strict full priority matrix remain open. |
 | 48 | Learning | Scoped retrieval, compatibility checks, global-vs-role isolation and controlled promotion have source/runtime tests. | Exhaustive actual retrieval/application against contrasting games remains open; not model training. |
 | 49 | Import cost | Stored structured snapshot drives normal resolver; real DOCX extraction and bounded preparation tested. Copilot now reserves before paid search. [Budget gate](ai-search-budget-audit-2026-09-08.md). | Initial import/ingestion/embedding accounting and hard in-flight spending cap remain open. |
-| 50 | Checks | Latest suite 550/550, actual DOCX, syntax checks, static build and diff checks pass. | Script called typecheck is syntax only; no false TypeScript guarantee. |
+| 50 | Checks | Latest suite 559/559, actual DOCX, syntax checks, static build and diff checks pass. | Script called typecheck is syntax only; no false TypeScript guarantee. |
 | 51 | Actual workflow | Browser setup/queue/edit/recalculate partially observed; fresh-account HTTP and large public cloud approve/advance exact-state chain separately pass. | One uninterrupted current browser workflow still incomplete. |
 | 52 | Complex night | 40 players, 35 original actions, three generated effects; exact eight deaths/seven survivors and zero AI, approved and advanced in rollback cloud workflow. | Not a live game mutation or browser load test. |
 | 53 | No game hardcoding | Generic mechanic classification drives synthetic unrelated player/role IDs; real Transformers is also an import fixture. | Continue checking new changes; character examples are not executable rules. |
-| 54 | Dead/legacy code | Public legacy finalize endpoints now bridge to canonical atomic approval; internal delegates retained to avoid recursion. | Legacy AI resolution callers and all dead-code inventory remain open. |
+| 54 | Dead/legacy code | Public legacy finalize endpoints bridge to canonical approval. Whole-night AI chat bypass reproduced and deprecated at the server boundary; existing shared classifier reused. [Inventory/limits](legacy-ai-resolution-audit-2026-09-08.md). | Retired branches/validators retained; exhaustive endpoint/dead-code removal inventory remains open. |
 | 55 | Do not hide failures | Unknown actions/past-stage effects require review; invalid source metadata is explicit; exhausted usage-write retries report incomplete accounting. | No durable accounting guarantee; isolated adjudication notice is retained in its record but not a dedicated native-screen warning. |
 | 56 | Final health | Scoped verified results recorded here, with concrete missing checks. | Not complete; do not mark all systems working. |
 | 57 | Continue beyond first issue | Multiple independent editor, engine, database, security, history and AI repairs deployed and regression-tested. | Continue remaining prioritized gaps. |
@@ -92,7 +92,7 @@ See the [architecture inventory](TECHNICAL_AUDIT_2026-09-05.md), [complex cloud 
 1. Restore browser-testing capability, then verify current login/session startup, two-GM realtime behavior, approval and phase advancement end-to-end. The latest browser-control attempt exited before providing tab state; this is an environment failure, not evidence of a new application login defect. Do not bypass it using hidden sessions or recovered credentials.
 2. Finish AI accounting durability, import/ingestion/embedding coverage and concurrent budget behavior. Existing recorded costs are estimates, not a hard provider spending cap. No unapproved quota/model/price policy has been invented.
 3. Trace/test custom passive rewards, on-death and late-intel causal recalculation; unknown mechanics must stay reviewable rather than appear successful.
-4. Complete actual rule/precedent priority integration and legacy AI caller inventory, then close the final health/report requirements.
+4. Complete actual rule/precedent priority integration and the remaining retired endpoint/dead-code inventory, then close the final health/report requirements. The identified whole-night AI caller bypass is now repaired.
 
 ## Safety and latest cleanup
 

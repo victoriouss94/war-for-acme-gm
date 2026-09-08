@@ -173,6 +173,10 @@ Deno.serve(async(req:Request)=>{
     }catch(error){const failure=error as OpenAIServiceError,measured=usageCost(providerUsage.usage,price),accounting=await completeUsageRecord(service,{target_request_id:requestId,target_provider_response_id:providerUsage.responseId,target_input_tokens:measured.input,target_cached_input_tokens:measured.cached,target_output_tokens:measured.output,target_estimated_cost_usd:measured.cost,target_latency_ms:Date.now()-started,target_status:'FAILED',target_error_code:failure.code||'AI_ADJUDICATION_FAILED'});return json({error:(failure.message||'The isolated adjudication failed.')+(!accounting.recorded?' '+accounting.warning:''),code:failure.code||'AI_ADJUDICATION_FAILED',accounting},failure.status||502,origin)}
   }
   const requestId=crypto.randomUUID(),runId=crypto.randomUUID(),started=Date.now(),resolvedIntent=inferMasterIntent(message,task);
+  // Retired whole-night AI entry point: old clients must use the canonical
+  // snapshot -> deterministic simulation -> GM review workflow. Keep this
+  // before conversation/session writes, budget reservations and provider calls.
+  if(resolvedIntent==='resolve_actions')return json({error:'Whole-night AI resolution has been retired. Open Action Queue and use Resolve Night, then review and approve the deterministic result. AI is available only for isolated unknown interactions.',code:'DETERMINISTIC_RESOLUTION_REQUIRED'},409,origin);
   let activeConversationId=conversationId;
   if(!/^[0-9a-f-]{36}$/i.test(activeConversationId)){const ensured=await client.rpc('ensure_ai_conversation',{target_game_id:gameId});activeConversationId=String(ensured.data||'')}
   const conversationResult=/^[0-9a-f-]{36}$/i.test(activeConversationId)?await client.from('ai_conversations').select('context').eq('id',activeConversationId).maybeSingle():{data:null};

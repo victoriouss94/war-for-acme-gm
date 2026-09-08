@@ -92,13 +92,13 @@ const copilotJs=stripTypeScriptTypes(copilotSource
 async function handlerFixture(t,body,options={}){
   const calls=mocks(t,[body],{SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-public',SUPABASE_SERVICE_ROLE_KEY:'synthetic-service'});
   const gameId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222';
-  const rpcCalls=[],rows={
+  const rpcCalls=[],userRpcCalls=[],rows={
     game_members:{member_role:options.memberRole??'gm'},
     game_documents:{document:{},version:1},
     resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:[{id:'action-1'}],pre_resolution_state:{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
-    rpc:async(name)=>{if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:null}},
+    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:null}},
     from:table=>{
       const query={maybeSingle:async()=>({data:rows[table]??null}),single:async()=>({data:rows[table]??null}),then:resolve=>resolve({data:rows[table]??[]})};
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
@@ -113,7 +113,7 @@ async function handlerFixture(t,body,options={}){
   let handler;globalThis.Deno.serve=callback=>{handler=callback};
   await import(dataModule(copilotJs+'\n// fixture '+crypto.randomUUID()));
   const response=await handler(new Request('https://synthetic.invalid/gm-copilot',{method:'POST',headers:{Authorization:'Bearer synthetic-session','Content-Type':'application/json',Origin:'https://victoriouss94.github.io'},body:JSON.stringify({gameId,resolutionSessionId:sessionId,task:options.task??'adjudicate_interaction',message:options.message,interaction:{question:'Synthetic?',interaction_id:'interaction-1',action_id:'action-1'}})}));
-  return {response,rpcCalls,calls,logs};
+  return {response,rpcCalls,userRpcCalls,calls,logs};
 }
 test('actual adjudication handler records reported usage when parsing fails',async t=>{
   const {response,rpcCalls}=await handlerFixture(t,payload('{'));
@@ -156,6 +156,23 @@ test('actual main handler retains usage when semantic draft validation fails',as
   assert.equal(completed.target_output_tokens,20);
   assert.equal(rpcCalls.filter(call=>call.name==='create_ai_draft_internal').length,0);
 });
+for(const [message,task] of [['process all actions','auto'],['analyze tonight','assistant'],['please do it','resolve_actions']]){
+  test('legacy whole-night request '+message+' stops before paid requests or service writes',async t=>{
+    const {response,calls,rpcCalls,userRpcCalls}=await handlerFixture(t,payload(),{task,message});
+    assert.deepEqual(calls.attemptedUrls,[]);
+    assert.equal(response.status,409);assert.equal((await response.json()).code,'DETERMINISTIC_RESOLUTION_REQUIRED');
+    assert.deepEqual(rpcCalls,[]);
+    assert.deepEqual(userRpcCalls,[]);
+  });
+}
+
+for(const [options,status] of [[{invalidUser:true},401],[{memberRole:'viewer'},403]]){
+  test('retired resolution route retains authorization denial '+status,async t=>{
+    const {response,calls,rpcCalls}=await handlerFixture(t,payload(),{...options,task:'resolve_actions',message:'Resolve queued actions'});
+    assert.equal(response.status,status);assert.deepEqual(calls.attemptedUrls,[]);assert.deepEqual(rpcCalls,[]);
+  });
+}
+
 test('every copilot generation and repair call uses the request-local observer',()=>{
   const calls=copilotSource.match(/await structuredResponse\(\{[^]*?\}\);/g);
   assert.equal(calls.length,3);for(const call of calls)assert.match(call,/onUsage:providerUsage.observe/);

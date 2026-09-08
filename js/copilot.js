@@ -1,5 +1,6 @@
 import {parseStatusProposalValue,statusLabel} from './statuses.js?v=12.0.1';
 import {normalizeAiDraft,normalizeResolution} from './resolution.js?v=12.0.1';
+import {inferMasterIntent} from '../supabase/functions/_shared/master-gm.js?v=12.2.32';
 
 export const COPILOT_MAX_MESSAGE_LENGTH=6000;
 export const COPILOT_TASKS=new Set(['auto','assistant','roster_setup','phase_control','resolve_actions','explain_role','plan_session','create_role','create_ability','create_faction','create_rule','create_status','document_import','edit_content','analyze_balance','search_history','search_precedents','balance_role']);
@@ -18,7 +19,9 @@ export function normalizeCopilotRequest(input={}){
     content:cleanText(item?.content,2000)
   })).filter(item=>item.content);
   const conversationId=cleanText(input.conversationId,100);
-  return {message,task,depth,history,conversationId};
+  // Reuse the server's intent classification so synonyms and explicit task
+  // selection cannot bypass the existing deterministic night workflow.
+  return {message,task:inferMasterIntent(message,task)==='resolve_actions'?'resolve_actions':task,depth,history,conversationId};
 }
 
 export function normalizeCopilotResponse(input={}){
