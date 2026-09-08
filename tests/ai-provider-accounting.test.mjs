@@ -18,7 +18,13 @@ const payload=(output_text='{"answer":"ok"}',id='response-1',tokens=usage(100,20
 
 function mocks(t,responses,environment={}){
   const calls=[];
+  calls.attemptedUrls=[];
   t.mock.method(globalThis,'fetch',async(url,options)=>{
+    calls.attemptedUrls.push(url);
+    if(url==='https://api.openai.com/v1/embeddings'){
+      assert.equal(options.headers.Authorization,'Bearer synthetic-test-key');
+      return Response.json({data:[{index:0,embedding:Array(1536).fill(0)}],usage:{prompt_tokens:10,total_tokens:10}});
+    }
     assert.equal(url,'https://api.openai.com/v1/responses');
     assert.equal(options.headers.Authorization,'Bearer synthetic-test-key');
     calls.push(JSON.parse(options.body));
@@ -92,13 +98,13 @@ async function handlerFixture(t,body,options={}){
     resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:[{id:'action-1'}],pre_resolution_state:{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
-    rpc:async()=>({data:null}),
+    rpc:async(name)=>{if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:null}},
     from:table=>{
       const query={maybeSingle:async()=>({data:rows[table]??null}),single:async()=>({data:rows[table]??null}),then:resolve=>resolve({data:rows[table]??[]})};
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
       return query;
     }};
-  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
+  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
   const previous=globalThis.__auditCreateClient;
   globalThis.__auditCreateClient=(_url,key)=>key==='synthetic-service'?serviceClient:userClient;
   t.after(()=>{if(previous===undefined)delete globalThis.__auditCreateClient;else globalThis.__auditCreateClient=previous});
@@ -153,4 +159,25 @@ test('every copilot generation and repair call uses the request-local observer',
   assert.equal(calls.length,3);for(const call of calls)assert.match(call,/onUsage:providerUsage.observe/);
   assert.equal((copilotSource.match(/measured=usageCost\(providerUsage.usage,price\)/g)||[]).length,2);
   assert.doesNotMatch(copilotSource,/target_status:'FAILED'[^]*target_input_tokens:0/);
+});
+
+for(const [code,status] of [['AI_MONTHLY_LIMIT_REACHED',402],['AI_RATE_LIMIT_REACHED',429],['Synthetic accounting outage',503]]){
+  test('document search performs no paid request when reservation denies '+code,async t=>{
+    const {response,calls,rpcCalls}=await handlerFixture(t,payload(),{task:'explain_content',message:'Explain the official document rules',denyBudget:true,budgetError:code});
+    assert.equal(response.status,status);assert.deepEqual(calls.attemptedUrls,[]);
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,0);
+  });
+}
+test('reserved document search still retrieves and answers when budget is available',async t=>{
+  const {response,calls,rpcCalls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{task:'explain_content',message:'Explain the official document rules'});
+  assert.equal(response.status,200);assert.deepEqual(calls.attemptedUrls,['https://api.openai.com/v1/embeddings','https://api.openai.com/v1/responses']);
+  assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'COMPLETED');
+});
+test('context preparation failure closes its reservation with a visible error',async t=>{
+  const {response,calls,rpcCalls}=await handlerFixture(t,payload(),{task:'explain_content',message:'Explain the official document rules',failContext:true});
+  assert.equal(response.status,502);assert.match((await response.json()).error,/context lookup failed/);
+  assert.equal(calls.length,0);assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
 });
