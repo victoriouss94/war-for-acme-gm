@@ -44,6 +44,8 @@ Verification: tests/ai-usage-intents-rollback.sql passed all 23 supported labels
 
 ## Remaining spending coverage
 
+An additional actual database test, tests/ai-draft-persistence-rollback.sql, passed reservation-to-draft persistence for ROLE, ABILITY, FACTION, RULE, STATUS and DOCUMENT_IMPORT. Request/author attribution and audit rows are retained; drafts stay DRAFT and the game document/version stays identical. Nonmembers cannot create drafts, viewers cannot read them, collaborating GMs can read them, and browser callers cannot invoke internal creation or directly approve drafts. The synthetic fixture was verified absent after rollback. This is database integration with test claims, not a paid-provider or authenticated HTTP round trip, and it does not exercise draft approval/application.
+
 1. Deployed gm-document-import v10 and gm-knowledge-ingest v2 do not reserve/complete persisted AI usage. Their in-memory rate counters do not implement the existing per-game monthly budget. Initial imports have no existing game, whereas the ledger requires a game ID; an account-scoped import budget needs deliberate design.
 2. Copilot parsing/repair/downstream-failure loss of received Responses usage is repaired above. Requests whose response was never received still have unknown usage; database accounting write failures are not durably retried. Neither this repair nor the ledger migration reconstructs historical missing charges.
 3. Existing reservations hold zero estimated cost. The monthly check is against already recorded usage, not a hard reservation of maximum in-flight spend, so concurrent requests can overshoot.
