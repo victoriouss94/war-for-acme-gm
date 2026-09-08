@@ -32,7 +32,17 @@ tests/ai-provider-accounting.test.mjs executes the actual TypeScript helper and 
 
 Full suite: 402 passed, zero failed/skipped, including the supplied Transformers DOCX. Static build and whitespace checks passed. Production gm-copilot v22 is ACTIVE with verify_jwt=true; all six deployed files were read back and matched the tested source. Fifteen post-deployment live negative-auth/CORS checks passed. These are gateway checks, not authenticated HTTP end-to-end accounting. The import and knowledge-ingest functions were not redeployed. Frontend remains 12.2.14.
 
-## Confirmed open spending gaps
+## Follow-up: current assistant intent compatibility repaired
+
+Production reservation tests reproduced INVALID_AI_USAGE_REQUEST for 14 of the 20 current Master GM feature labels. The internal reservation function still used its original nine-label allowlist even though the assistant had grown. Examples included explaining roles (normalized to explain_content), faction/rule/status drafts, phase/roster assistance, ability inventory/grants and queued-action assistance. Deterministic early-return paths were not affected; requests reaching this reservation check were rejected before their main Responses call.
+
+Migration 20260908130229_align_ai_usage_with_master_gm_intents aligns reservation validation with all 20 current intents and three existing legacy/ingestion labels. The table constraint also gains the five current labels missing from it. Historical auto/create_game rows remain valid without permitting new reservations for those retired/unresolved labels. Unknown/empty/null labels and invalid model names remain rejected.
+
+The change touches only the existing feature constraint and reservation validation predicate. A before/after function comparison confirmed that the rest of the function body, ACL, SECURITY DEFINER setting and empty search path are identical. Budget limits, service-only execution, membership validation, game locking and rate limits were not weakened. All 405 JavaScript tests passed with zero skips; static build and whitespace checks passed. All four generated audit games were verified absent after rollback. Security advisors still report the same three categories with 46 underlying findings.
+
+Verification: tests/ai-usage-intents-rollback.sql passed all 23 supported labels, record attribution, invalid-label/model rejection, no phantom rows, nonmember denial and browser execution denial against production in a rolled-back synthetic game. The prior usage-accounting regression also passed after this migration. tests/ai-intent-contract.test.mjs adds three source-contract tests comparing the actual current task router/schema against the SQL allowlists so future drift fails the suite. No paid provider call, live game edit, frontend change or Edge deployment was needed for this follow-up.
+
+## Remaining spending coverage
 
 1. Deployed gm-document-import v10 and gm-knowledge-ingest v2 do not reserve/complete persisted AI usage. Their in-memory rate counters do not implement the existing per-game monthly budget. Initial imports have no existing game, whereas the ledger requires a game ID; an account-scoped import budget needs deliberate design.
 2. Copilot parsing/repair/downstream-failure loss of received Responses usage is repaired above. Requests whose response was never received still have unknown usage; database accounting write failures are not durably retried. Neither this repair nor the ledger migration reconstructs historical missing charges.
