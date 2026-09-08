@@ -24,6 +24,42 @@ Migration `20260906030803_protect_registered_document_sources_from_cleanup` repl
 
 Supabase-guided review preserved the distinction between Storage policies and managed Storage data: [access control](https://supabase.com/docs/guides/storage/security/access-control), [read-only Storage schema guidance](https://supabase.com/docs/guides/storage/schema/design). Security advisors remain unchanged at 45 warnings and one informational notice.
 
+## Profile identity permissions
+
+The username-account migration granted column-only updates but left a default
+table-wide UPDATE grant in place. Under real authenticated-role claims, an account
+could change its own stored username, normalized username and legacy-account flag
+directly. A rollback test demonstrated all three writes. This could desynchronize
+the displayed/account-password-check username from its Auth identity; the test did
+not demonstrate access to another account or an authentication-token bypass.
+
+Migration `20260906035942_restrict_profile_identity_updates` removes client table
+and column defaults, then restores SELECT and updates of `display_name` and
+`last_login_at` only. Existing RLS and server privileges are unchanged. The existing
+validated identity-completion function retains its postgres-owned write path.
+
+`tests/profile-permissions-rollback.sql` verifies self reads and permitted edits,
+six protected-column denials, no direct insert/delete, cross-account update denial,
+valid identity completion, mismatched identity rejection, anonymous denials, and
+unchanged server grants. All test edits rolled back; the tested profile's complete
+row fingerprint was unchanged. No password, Auth identity, account or game was
+created, deleted or changed persistently. Security advisors remain at the same
+46 keys. This does not establish fresh signup or login performance.
+
+The direct-write inventory found only profiles and player statuses with public
+write policies. Status writes are intentionally invoker/RLS-controlled with
+private validation/history triggers; these must not be revoked merely because
+the application calls an RPC. There are no public-schema views or tables lacking
+RLS, but those inventory facts are not proof that each policy is correct.
+
+## Removed-member status access and maintenance
+
+A removed member could still read their OWNER_VISIBLE status, while the player-state RPC correctly denied access. The retained subject reference also caused later GM resolution to fail with STATUS_OWNER_NOT_GAME_MEMBER.
+
+Migration20260906040446_scope_status_subject_access_to_membership requires current membership for subject-specific reads. It validates subject membership when assigning or changing the subject, allowing GMs to maintain unchanged historical references afterward. No status row is rewritten by this migration.
+
+tests/status-visibility-rollback.sql reproduced both defects and passed after repair: GM/viewer visibility, private history denial, direct-write validation and history, creator attribution, invalid player/source rejection, viewer write denial, removed-member read denial, successful GM resolution, preserved historical subject, and rejection of a new removed-subject assignment. Test games were verified absent afterward. The validator remains private, postgres-only, with an empty search path. The 46 advisor keys are unchanged.
+
 ## Remaining security limitations
 
 The legacy policies were a real anonymous-access exposure. There is no evidence in this audit establishing whether anyone exploited it. Excess maintenance grants are defense-in-depth hardening; this audit did not demonstrate a browser REST route that could invoke TRUNCATE.
