@@ -1,0 +1,101 @@
+# GM Command Center — current 59-section audit coverage
+
+## Status
+
+**INCOMPLETE.** This is the current evidence index, not a final certification. It supersedes older reports' open-work lists where a later linked report records the completed test or repair. Earlier reports deliberately retain their original test counts and observations.
+
+Baseline for this index: frontend **12.2.30**, canonical engine **1.2.3**, gm-copilot **v24**, source baseline **869cea7** plus the [usage-write repair](ai-accounting-write-audit-2026-09-08.md). The latest completed JavaScript run contains **545 passing tests, zero failures and zero skips**, including the actual supplied Transformers DOCX. Lint/typecheck scripts are JavaScript syntax checks, not full static type analysis; the build script validates the static deployment, not a bundled application.
+
+Evidence levels are distinct:
+
+- **Runtime**: actual JavaScript modules/handlers executed, including some real app form/render functions; external services may be mocked.
+- **Database**: existing public RPCs executed under authenticated privileges in isolated rollback fixtures; not fresh JWTs or browser clicks.
+- **HTTP**: real freshly authenticated Auth/Data/Storage requests, or explicitly identified negative Edge authorization requests.
+- **Browser**: observed UI interactions; partial coverage does not establish the full approval/advance or concurrent-GM workflow.
+
+“Verified” below means the specific claim in that row, not every possible configuration. “Partial” explicitly retains missing behavior or test coverage. No live game was restarted to obtain these results.
+
+## Systems and canonical path
+
+The app remains static HTML/CSS with vanilla ES modules. js/app.js owns screens and handlers; js/cloud.js bridges Supabase Auth, versioned game documents, Storage, Realtime and RPCs. Existing role/mode, ability/grant, phase/queue, import, knowledge and learning modules remain in use.
+
+The ordinary path is: existing phase/session RPC → immutable snapshot and submitted actions → **js/night-engine.js::resolveNightDeterministically** → optional isolated unknown-interaction adjudication → saved proposal → GM review/edit/recalculate → **approve_and_apply_resolution** → existing phase advancement. Known-mechanic tests use zero AI calls. No second deterministic engine was created.
+
+See the [architecture inventory](TECHNICAL_AUDIT_2026-09-05.md), [complex cloud night](complex-night-audit-2026-09-08.md) and [legacy approval consolidation](legacy-resolution-audit-2026-09-08.md).
+
+## Coverage against every requested section
+
+| # | Requested area | Current status and concrete evidence | Remaining boundary |
+| --- | --- | --- | --- |
+| 1 | Understand project | Verified architecture/runtime map above and original inventory. | Maps do not certify behavior. |
+| 2 | Account/workflow trace | Real fresh signup, immediate session, login, own profile, isolation, logout and revoked refresh tested. [HTTP report](fresh-account-http-audit-2026-09-08.md). | Browser persistence/startup and reconnect still partial. |
+| 3 | Game creation/import | Actual DOCX extraction/analysis; editable import tests; authenticated create/save/load and registered Word-source HTTP flow pass. | One uninterrupted browser upload → AI interpretation → editing flow not certified; paid ingestion not exercised. |
+| 4 | Role parsing | Runtime table/flat roster, active/passive/mode linkage and invalid-input tests; source-warning and derived-review parity repaired. [Source](source-review-audit-2026-09-08.md), [derived review](derived-review-audit-2026-09-08.md). | Arbitrary prose is not guaranteed understood; custom/uncertain rules remain reviewable. |
+| 5 | Existing role data | Reimport comparison retains review rather than overwriting; editor/template/clone reference-preservation tests and authenticated saves pass. | No blanket live reanalysis or claim that every historic role is correct. |
+| 6 | Multimode roles | Editor roundtrip, stable rename, active/default modes, temporary access and reassignment tested through public cloud workflows. [Editor](role-editor-audit-2026-09-08.md), [rename](mode-rename-audit-2026-09-08.md), [runtime](mode-runtime-audit-2026-09-08.md). | Every custom automatic transformation and investigation appearance not certified. |
+| 7 | Queue | 35 original actions traversed real queue/session normalization into the existing engine; role/mode/grant validation and target identity tested. | Concurrent native form submission remains untested. |
+| 8 | Action statuses | Queue → session → resolved-action lifecycle exercised in large cloud fixture; statuses/normalized IDs tested. | Not an exhaustive audit of every retired caller. |
+| 9 | Phase controller | Night 0 → approved result → Day 1 verified in public RPC workflows; duration/boundary regressions pass. [Timing](status-timing-audit-2026-09-06.md). | Hanging/custom scheduled effects and full browser phase flow partial. |
+| 10 | Existing engine | Canonical engine traced from real app adapter; exact cloud input resolves through it. | No replacement engine. |
+| 11 | Global order | Exact ten executable stages asserted and exercised; Heal/DOC timing tested. | Generated effects whose stage has already passed require GM review. |
+| 12 | Standard encyclopedia | Standard classification/tags and broad interaction suite pass; 40-player fixture includes most required mechanics. | Every custom pool, Map/Gravedigger variation and optional rule not independently certified. |
+| 13 | Important interactions | Large fixture verifies block/guarantee/protect, swaps, redirects/guard, reflected mark, kill tiers, poison/heal, conversion, Save, immunity, Counterattack, mode defense, control and grants. [Exact results](complex-night-audit-2026-09-08.md). | Broader combinations/custom overrides remain partial. |
+| 14 | Guarantee | Runtime and complex cloud input show execution restored by Guarantee but Protect still prevents PIK. Disabled provider regression passes. | No rule changed to guarantee effect success. |
+| 15 | Passives | Reflection, Death Immunity, Bulletproof, Counterattack, linked role/mode passives and generated Mark kill execute automatically. | General custom event dispatch, all listed events and passive reward causality still open. |
+| 16 | Generated effects | Parent/root/child lineage, one submitted row, generated kills and survivor ledger tested and retained through approval. | Earlier-stage generated effects explicitly require review; no generic timing invention. |
+| 17 | Snapshot | Deep-copy/no mutation tests and actual cloud snapshot workflow pass; mode/grant/current-role filtering repaired. | Custom fields not represented in schema are not invented. |
+| 18 | Atomic approval | Existing canonical approval, replay protection, stale rejection, finite grants and six legacy approve/modify/reject cases pass. [Legacy bridge](legacy-resolution-audit-2026-09-08.md). | Native approval click path and simultaneous independent transactions still partial. |
+| 19 | GM editing | Real UI result editing/recalculation observed earlier; runtime corrections and original proposal revision retention tested. [History](simulation-history-audit-2026-09-06.md). | Complete browser matrix for every editable consequence remains open. |
+| 20 | Dependency recalculation | Multiple corrections persist; changing lethal attack removes death and dependent Counterattack; random choice stays fixed. | Arbitrary custom/on-death/late-intel dependency graph not certified. |
+| 21 | Zero-AI known nights | Existing engine has no provider request; known acceptance and large cloud-normalized fixture report zero AI adjudications. | Full browser network recording not completed. |
+| 22 | Isolated AI fallback | Actual handler mocked-provider tests and compact interaction tests; invalid/no response leaves review required. | Paid-provider authenticated E2E and legacy whole-night caller inventory partial. |
+| 23 | Deterministic text | Engine/editor/review tests generate consequences, player names and morning output without provider calls. | Every unknown custom mechanic remains a review case. |
+| 24 | Player/action/result display | Actual renderer tests and observed earlier UI; readable names and historical snapshot labels repaired. | Current full native UI smoke run unavailable. |
+| 25 | Consequence column | Protection, reflected mark, survival/death and intel consequences asserted rather than only action restatement. | Custom free-form outputs not universally verified. |
+| 26 | Summary sections | Editor/tracker derive deaths, attack survivors, statuses, intel and morning from stored resolution; current/history regression tests pass. | General custom effects still partial. |
+| 27 | Deaths | Exact eight deaths and sources in complex result; cloud approval/live roster and historical review tested. | No live Transformers deaths were changed. |
+| 28 | Attacked but survived | Exact seven survivors including generated Counterattack; blocked/ineligible/cancelled non-attempts excluded. | Legacy saved results without lethal ledger use documented fallback. |
+| 29 | Status display | Status-only review, actual approval, healed poison and historical comparison tests pass. | Live-game external effects are informational; bot does not enforce chat silence. |
+| 30 | Intel | Watch/Track invalid visitors fixed; Ask/swap and 0-visitor cases tested. | Late-stage information dependency and every special intel rule remain open. |
+| 31 | Morning | Complex approved result consistently reports 40 → 32, eight deaths and seven survivors. | No AI arithmetic or fabricated roll. |
+| 32 | One result source | Actual saved final result feeds editor/tracker; snapshot/live merge defect repaired. | Legacy payload fallback retained, not retroactively rewritten. |
+| 33 | Tracker | Actual finalized cloud result plus post-advance roster verifies life, role removal, faction, mode, marks and grant counts. | Current browser tracker interaction and all later-event combinations partial. |
+| 34 | Multiple GMs | Membership/invite HTTP, stale save rejection, RPC idempotency and runtime scoped sync-coordinator tests pass. | True two-browser realtime propagation and concurrent approvals remain open. |
+| 35 | Invitations | Lifecycle rollback matrix and real HTTP generate/redeem/remove GM flows pass. | Simultaneous redemption race not certified. |
+| 36 | Database | Qualified-column/precedence repairs; actual public create/queue/save/approve/advance/security fixtures pass. | Whole schema performance/concurrency certification incomplete. |
+| 37 | Isolation | Viewer/nonmember mutation denials, two-game review parity, new-account HTTP isolation and Storage member removal tested. | Not a proof covering every possible exposed endpoint. |
+| 38 | Security | Legacy unrestricted table access, table-maintenance grants, profile columns, removed-member status exposure and source cleanup repaired. [Security](security-audit-2026-09-06.md), [Storage HTTP](storage-http-audit-2026-09-08.md). | Intentional callable-definer notices and disabled leaked-password protection remain; not a clean security certificate. |
+| 39 | API errors | Auth/retry classification, invalid AI responses, draft failures and bounded usage-write retries with explicit recording warnings tested. [Accounting writes](ai-accounting-write-audit-2026-09-08.md). | Durable reconciliation and other run/trace/conversation persistence errors remain open. |
+| 40 | Diagnostics | Actual engine diagnostics assert canonical stages, action/generated counts, unresolved cases and used AI adjudications. | No claim of complete production telemetry/alerts. |
+| 41 | Frontend | Validation, async stale-state guards, readable result/history, active-screen rendering and cache-version checks pass. | Browser-control runtime unavailable on latest attempt; current startup/approval UX not certified. |
+| 42 | Performance | Retry storms/redundant rendering/bootstrap checks and runtime coalesced realtime updates pass; API login observed at 171 ms. | Not load testing or browser latency guarantee; database index findings not blindly suppressed. |
+| 43 | Random mechanics | Fixed seed, persisted Control roll, JSON replay and unrelated GM correction preserve choice. | Rule-driven changed-pool reroll semantics partial. |
+| 44 | Ability uses | Blocked actions consume none; Steal and Additional Uses exact cloud grants, approved use/replay and temporary boundaries tested. | Unlimited/recurring custom transfers and all reward triggers partial. |
+| 45 | Durations | Future status timers, grant phase boundaries, Heal/Poison approval and advancement regressions pass. | Every arbitrary cooldown/custom delayed passive not certified. |
+| 46 | Conversion | Conversion before kill changes faction/removes role and old immunity; queue/mode reassignment guards and tracker tested. | Custom room/chat access or replacement-role rules not invented. |
+| 47 | Rule priority | Existing authority metadata, game-specific mappings and current-role rules inspected/tested. | Executable arbitrary game overrides and strict full priority matrix remain open. |
+| 48 | Learning | Scoped retrieval, compatibility checks, global-vs-role isolation and controlled promotion have source/runtime tests. | Exhaustive actual retrieval/application against contrasting games remains open; not model training. |
+| 49 | Import cost | Stored structured snapshot drives normal resolver; real DOCX extraction and bounded preparation tested. Copilot now reserves before paid search. [Budget gate](ai-search-budget-audit-2026-09-08.md). | Initial import/ingestion/embedding accounting and hard in-flight spending cap remain open. |
+| 50 | Checks | Latest suite 545/545, actual DOCX, syntax checks, static build and diff checks pass. | Script called typecheck is syntax only; no false TypeScript guarantee. |
+| 51 | Actual workflow | Browser setup/queue/edit/recalculate partially observed; fresh-account HTTP and large public cloud approve/advance exact-state chain separately pass. | One uninterrupted current browser workflow still incomplete. |
+| 52 | Complex night | 40 players, 35 original actions, three generated effects; exact eight deaths/seven survivors and zero AI, approved and advanced in rollback cloud workflow. | Not a live game mutation or browser load test. |
+| 53 | No game hardcoding | Generic mechanic classification drives synthetic unrelated player/role IDs; real Transformers is also an import fixture. | Continue checking new changes; character examples are not executable rules. |
+| 54 | Dead/legacy code | Public legacy finalize endpoints now bridge to canonical atomic approval; internal delegates retained to avoid recursion. | Legacy AI resolution callers and all dead-code inventory remain open. |
+| 55 | Do not hide failures | Unknown actions/past-stage effects require review; invalid source metadata is explicit; exhausted usage-write retries report incomplete accounting. | No durable accounting guarantee; isolated adjudication notice is retained in its record but not a dedicated native-screen warning. |
+| 56 | Final health | Scoped verified results recorded here, with concrete missing checks. | Not complete; do not mark all systems working. |
+| 57 | Continue beyond first issue | Multiple independent editor, engine, database, security, history and AI repairs deployed and regression-tested. | Continue remaining prioritized gaps. |
+| 58 | Final report | Architecture, defects, releases, exact outcomes and coverage now indexed. | Final completion report deferred until remaining scope is resolved or explicitly bounded. |
+| 59 | Repair existing systems | Existing engine/RPC/editor/importer extended; no replacement resolver. Atomic revision history is an audit table, not a second game state. | Preserve this constraint in subsequent work. |
+
+## Highest-priority remaining work
+
+1. Restore browser-testing capability, then verify current login/session startup, two-GM realtime behavior, approval and phase advancement end-to-end. The latest browser-control attempt exited before providing tab state; this is an environment failure, not evidence of a new application login defect. Do not bypass it using hidden sessions or recovered credentials.
+2. Finish AI accounting durability, import/ingestion/embedding coverage and concurrent budget behavior. Existing recorded costs are estimates, not a hard provider spending cap. No unapproved quota/model/price policy has been invented.
+3. Trace/test custom passive rewards, on-death and late-intel causal recalculation; unknown mechanics must stay reviewable rather than appear successful.
+4. Complete actual rule/precedent priority integration and legacy AI caller inventory, then close the final health/report requirements.
+
+## Safety and latest cleanup
+
+The live Transformers game is unchanged at Night 1, version 192, with 47 players and 44 alive. Four temporary Storage-test identities, all their sessions/profiles/games/source objects and registrations were verified removed. Prior fresh-account QA cleanup is separately documented. No paid AI calls were used in these audit tests.
+
+This index explicitly preserves remaining defects and evidence gaps. A passing unit suite or successful deployment is not proof that the full requested audit is finished.

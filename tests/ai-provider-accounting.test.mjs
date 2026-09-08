@@ -104,14 +104,16 @@ async function handlerFixture(t,body,options={}){
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
       return query;
     }};
-  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
+  const accountingErrors=[...(options.accountingErrors||[])],logs=[];
+  t.mock.method(console,'error',(...args)=>logs.push(args));
+  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});if(name==='complete_ai_usage_internal'&&accountingErrors.length){const error=accountingErrors.shift();if(error instanceof Error)throw error;return {data:null,error,status:503}}return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
   const previous=globalThis.__auditCreateClient;
   globalThis.__auditCreateClient=(_url,key)=>key==='synthetic-service'?serviceClient:userClient;
   t.after(()=>{if(previous===undefined)delete globalThis.__auditCreateClient;else globalThis.__auditCreateClient=previous});
   let handler;globalThis.Deno.serve=callback=>{handler=callback};
   await import(dataModule(copilotJs+'\n// fixture '+crypto.randomUUID()));
   const response=await handler(new Request('https://synthetic.invalid/gm-copilot',{method:'POST',headers:{Authorization:'Bearer synthetic-session','Content-Type':'application/json',Origin:'https://victoriouss94.github.io'},body:JSON.stringify({gameId,resolutionSessionId:sessionId,task:options.task??'adjudicate_interaction',message:options.message,interaction:{question:'Synthetic?',interaction_id:'interaction-1',action_id:'action-1'}})}));
-  return {response,rpcCalls,calls};
+  return {response,rpcCalls,calls,logs};
 }
 test('actual adjudication handler records reported usage when parsing fails',async t=>{
   const {response,rpcCalls}=await handlerFixture(t,payload('{'));
@@ -180,4 +182,49 @@ test('context preparation failure closes its reservation with a visible error',a
   assert.equal(response.status,502);assert.match((await response.json()).error,/context lookup failed/);
   assert.equal(calls.length,0);assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
   assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
+});
+
+for(const task of ['adjudicate_interaction','explain_content']){
+  test(task+' retries only a transient accounting write with identical usage and request ID',async t=>{
+    const result=task==='adjudicate_interaction'?{action_id:'action-1',interaction_id:'interaction-1'}:{answer:'Synthetic answer',sources:[]};
+    const {response,rpcCalls,calls}=await handlerFixture(t,payload(JSON.stringify(result)),{task,message:'Explain this rule',accountingErrors:[{code:'08006',message:'Synthetic connection failure'},new TypeError('Synthetic fetch failed')]});
+    assert.equal(response.status,200);
+    const completion=rpcCalls.filter(call=>call.name==='complete_ai_usage_internal');
+    assert.equal(completion.length,3);assert.deepEqual(completion[1].args,completion[0].args);assert.deepEqual(completion[2].args,completion[0].args);
+    assert.equal(calls.length,1,'accounting retries must not repeat the paid request');
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+    const body=await response.json();assert.equal(body.accounting.recorded,true);assert.equal(body.accounting.attempts,3);
+  });
+}
+
+test('exhausted accounting retries preserve the useful result and expose incomplete recording',async t=>{
+  const {response,rpcCalls,calls,logs}=await handlerFixture(t,payload('{"answer":"Keep this answer","sources":[]}'),{task:'explain_content',message:'Explain this rule',accountingErrors:Array(3).fill({code:'08006',message:'Synthetic outage'})});
+  assert.equal(response.status,200);const body=await response.json();assert.equal(body.result.answer,'Keep this answer');
+  assert.equal(body.accounting.recorded,false);assert.equal(body.accounting.attempts,3);assert.equal(body.accounting.code,'AI_USAGE_RECORD_FAILED');
+  assert.ok(body.result.warnings.some(item=>/usage could not be saved/i.test(item)));
+  assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,3);
+  assert.equal(logs.length,1);assert.equal(logs[0][1].requestId,body.accounting.requestId);assert.equal(logs[0][1].inputTokens,100);
+  assert.doesNotMatch(JSON.stringify(logs),/synthetic-test-key|Keep this answer/);
+});
+
+test('a failed provider response keeps its original error if usage persistence also fails',async t=>{
+  const {response,rpcCalls,calls}=await handlerFixture(t,payload('{'),{accountingErrors:Array(3).fill(new TypeError('Synthetic fetch failed'))});
+  assert.equal(response.status,502);const body=await response.json();assert.equal(body.code,'AI_RESPONSE_INVALID_JSON');
+  assert.equal(body.accounting.recorded,false);assert.match(body.error,/usage could not be saved/i);
+  assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,3);
+  assert.ok(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').every(call=>call.args.target_status==='FAILED'&&call.args.target_input_tokens===100));
+});
+
+test('nontransient accounting rejection is visible without repeated writes',async t=>{
+  const {response,rpcCalls,calls}=await handlerFixture(t,payload('{"action_id":"action-1","interaction_id":"interaction-1"}'),{accountingErrors:[{code:'42501',message:'Synthetic permission denial'}]});
+  assert.equal(response.status,200);const body=await response.json();assert.equal(body.accounting.recorded,false);assert.equal(body.accounting.attempts,1);
+  assert.match(body.adjudication.accounting_warning,/usage could not be saved/i);
+  assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,1);assert.equal(calls.length,1);
+});
+
+test('main-handler validation failure retries its usage record without changing the original failure',async t=>{
+  const {response,rpcCalls,calls}=await handlerFixture(t,payload('{"answer":"Missing draft","sources":[]}'),{task:'create_faction',message:'Create a faction',accountingErrors:[{code:'PGRST003',message:'Synthetic pool timeout'}]});
+  assert.equal(response.status,502);const body=await response.json();assert.equal(body.code,'INVALID_AI_RESPONSE');assert.equal(body.accounting.recorded,true);
+  const writes=rpcCalls.filter(call=>call.name==='complete_ai_usage_internal');assert.equal(writes.length,2);assert.deepEqual(writes[1].args,writes[0].args);assert.equal(writes[0].args.target_status,'FAILED');
+  assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='create_ai_draft_internal').length,0);
 });

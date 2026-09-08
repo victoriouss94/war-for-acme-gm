@@ -41,7 +41,8 @@ test('unknown mechanics use a compact isolated structured AI fallback',()=>{
 test('isolated fallback reserves usage and uses a strict response schema',()=>{
   const branch=edge.slice(edge.indexOf("if(task==='adjudicate_interaction'){"),edge.indexOf("const requestId=crypto.randomUUID(),runId"));
   assert.match(branch,/reserve_ai_usage_internal/);
-  assert.match(branch,/complete_ai_usage_internal/);
+  assert.match(branch,/completeUsageRecord\(service,/);
+  assert.match(edge,/async function completeUsageRecord[\s\S]*?service\.rpc\('complete_ai_usage_internal',values\)/);
   assert.match(branch,/target_feature:'resolve_actions'/);
   const literal=edge.match(/const interactionSchema:any=(.*);/)[1];
   const schema=Function('return ('+literal+')')();

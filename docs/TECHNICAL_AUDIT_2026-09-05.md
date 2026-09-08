@@ -1,5 +1,7 @@
 # GM Command Center technical audit — 2026-09-05
 
+For the current evidence and remaining work, read the [59-section coverage index](AUDIT_COVERAGE_2026-09-08.md). This historical report preserves earlier observations and counts; its older open-work lists are not the current checklist.
+
 ## Status and scope
 
 ### Latest verified repair pass — v12.2.5
