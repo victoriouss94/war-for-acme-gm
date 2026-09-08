@@ -10,15 +10,15 @@ const SETUP_REFERENCE_FIELDS=Object.freeze({
   factionid:'factions',sourcefactionid:'factions',targetfactionid:'factions',currentfactionid:'factions',factionids:'factions',sourcefactionids:'factions',targetfactionids:'factions',targetfactionrestrictions:'factions',
   modeid:'modes',currentmodeid:'modes',startingmodeid:'modes',previousmodeid:'modes',lockedmodeid:'modes',modeids:'modes',targetmodeids:'modes',modeaccessids:'modes'
 });
-export function remapSetupReferences(value,references={}){
-  const translate=(mapping,value)=>{if(mapping?.has(value)&&mapping.get(value)===null)throw new Error('Ambiguous copied mode reference. Review the source role configurations before duplicating.');return mapping?.get(value)??value};
+export function remapSetupReferences(value,references={}, {onUnmapped=null}={}){
+  const translate=(mapping,value,group)=>{if(mapping?.has(value)&&mapping.get(value)===null)throw new Error('Ambiguous copied mode reference. Review the source role configurations before duplicating.');if(group&&value&&!mapping?.has(value))onUnmapped?.(group,value);return mapping?.get(value)??value};
   const visit=(item,field='')=>{
     const normalizedField=field.replace(/_/g,'').toLowerCase(),mapping=references[SETUP_REFERENCE_FIELDS[normalizedField]];
-    if(typeof item==='string')return translate(mapping,item);
+    if(typeof item==='string')return translate(mapping,item,SETUP_REFERENCE_FIELDS[normalizedField]);
     if(Array.isArray(item))return item.map(entry=>visit(entry,field));
     if(item&&typeof item==='object'){
-      const keyMapping=normalizedField==='abilityuses'?references.abilities:normalizedField==='modecooldowns'?references.modes:null;
-      return Object.fromEntries(Object.entries(item).map(([name,entry])=>[translate(keyMapping,name),visit(entry,name)]));
+      const keyGroup=['abilityuses','resourcepools'].includes(normalizedField)?'abilities':normalizedField==='modecooldowns'?'modes':null,keyMapping=references[keyGroup];
+      return Object.fromEntries(Object.entries(item).map(([name,entry])=>[translate(keyMapping,name,keyGroup),visit(entry,name)]));
     }
     return item;
   };

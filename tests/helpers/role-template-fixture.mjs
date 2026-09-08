@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import * as modes from '../../js/role-modes.js';
 import {normalizeRoleSetup,ROLE_TYPES,ABILITY_DATA_STATUSES} from '../../js/player-setup.js';
-import {normalizeRoleUnderstanding} from '../../js/mechanics.js';
+import {normalizeRoleUnderstanding,remapSetupReferences} from '../../js/mechanics.js';
 import {source,abilities} from './role-editor-fixture.mjs';
 const app=readFileSync(new URL('../../js/app.js',import.meta.url),'utf8');
 export function templateFixture({basic=false,missing=false,ambiguous=false,authorized=true}={}){
@@ -12,7 +12,7 @@ export function templateFixture({basic=false,missing=false,ambiguous=false,autho
   const destination=abilities.filter(a=>!missing||a.id!=='guard').map(a=>({...a,id:'dest-'+a.id}));
   if(ambiguous)destination.push({...destination[0],id:'ambiguous-ask'});
   const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,{value:'',checked:false,hidden:false,focus(){},classList:{toggle(){}},closest(){return {classList:{toggle(){}}}}});return elements.get(id)};
-  const game={id:'destination-game'},calls=[],context={...modes,normalizeRoleSetup,normalizeRoleUnderstanding,ROLE_TYPES,ABILITY_DATA_STATUSES,
+  const game={id:'destination-game'},calls=[],context={...modes,normalizeRoleSetup,normalizeRoleUnderstanding,remapSetupReferences,ROLE_TYPES,ABILITY_DATA_STATUSES,
     state:{roles:[],abilities:destination,factions:[{id:'destination-faction',name:'Village',class:'VILLAGER'}]},editingRoleId:null,editingRoleVersion:null,selectedRoleAbilityIds:new Set(),roleTemplateDraft:null,
     currentGame:()=>game,availableRoleTemplates:[template],$:get,canEditRoles:()=>authorized,id:()=> 'new-template-role',now:()=> '2026-09-08T14:07:00Z',normalized:v=>String(v??'').trim().toLowerCase(),
     roleById:id=>context.state.roles.find(role=>role.id===id),factionById:id=>context.state.factions.find(faction=>faction.id===id),

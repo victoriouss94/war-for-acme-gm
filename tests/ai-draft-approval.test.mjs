@@ -73,7 +73,7 @@ test('cloud bridge exposes the atomic RPC and release loads its new cache key',a
   const cloud=await readFile(new URL('../js/cloud.js',import.meta.url),'utf8'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');
   assert.match(cloud,/approveAndAddAiDraft\(draftId,version,entity\).*rpc\('approve_and_add_ai_draft',\{target_draft_id:draftId,expected_game_version:version,target_entity:entity\}\)/);
   assert.match(cloud,/window.GMCloud.approveAndAddAiDraft=approveAndAddAiDraft/);
-  assert.match(html,/js\/cloud\.js\?v=12\.2\.15/);
+  assert.match(html,/js\/cloud\.js\?v=12\.2\.20/);
 });
 test('stale cross-game or already-reviewed draft cannot be approved',async()=>{
   for(const changes of [{game_id:'other-game'},{status:'APPROVED'}]){

@@ -10,7 +10,7 @@ const html=await readFile('index.html','utf8');
 for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/app.js'])if(!html.includes(file))throw new Error(`index.html does not load ${file}`);
 const app=await readFile('js/app.js','utf8');
 for(const module of ['document-import','copilot','knowledge','statuses','resolution','player-setup'])if(!app.includes(`from './${module}.js?v=12.0.1'`))throw new Error(`app.js does not load the versioned js/${module}.js`);
-if(!app.includes("from './mechanics.js?v=12.2.19'"))throw new Error('app.js does not load copied setup reference preservation');
+if(!app.includes("from './mechanics.js?v=12.2.20'"))throw new Error('app.js does not load copied setup reference preservation');
 if(!app.includes("from './phase-controller.js?v=12.2.14'"))throw new Error('app.js does not load timed status review support');
 if(!app.includes("from './player-abilities.js?v=12.2.11'"))throw new Error('app.js does not load the dead-player ability fix');
 if(!app.includes("from './resolution-editor.js?v=12.2.14'"))throw new Error('app.js does not load the versioned resolution editor');

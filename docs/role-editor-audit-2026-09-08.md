@@ -50,3 +50,15 @@ Legacy duplicate mode IDs are resolved within their owning role. An ambiguous cr
 Seven new tests include actual cloneSetup followed by real effectiveFactionAbilities and validateActionTargets. A rollback-only authenticated create/read test retained exact copied entity JSON and closed the nested references. The database-reread payload was then fed back to the real availability/targeting functions: its faction action was available and the intended copied role/faction target was accepted. The fixture was verified absent afterward.
 
 All 448 JavaScript tests pass, zero skipped, with the supplied Transformers DOCX. Syntax/static build/diff checks pass. No database migration, Edge deployment, live game change or paid provider request was needed. This covers supported typed references in whole-game duplication; single-role templates, arbitrary custom reference fields, identity-preserving mode renames and browser-rendered end-to-end checks still need further coverage.
+
+## Follow-up: nested single-role template references (12.2.20)
+
+Five of six initial actual-handler tests failed: nested role/ability ownership retained source IDs, and missing or ambiguous dependencies were accepted. The existing template loader now reuses the typed-reference mapper for nested self-role, related-role, ability, faction and mode references. Source-role inventory comes from the same existing RLS-protected document query; no additional privilege or endpoint was introduced.
+
+Known referenced dependencies must have an unambiguous destination match. Failure leaves the current editor unchanged. Dependency-only abilities are mapped without granting them to the role. The source is remapped once, so overlapping source/destination IDs cannot be translated twice. Source text, document provenance, global standard IDs and unrelated named resource pools remain intact.
+
+Ten new tests exercise actual template loading/form/save functions, missing and ambiguous dependencies, counter mappings, source immutability, overlapping IDs, unreferenced catalog items and the actual cloud loader. A rollback-only authenticated create/save/read test retained exact role JSON. Feeding that reread document into the real review and targeting functions displayed Ask and accepted the intended destination role/faction while rejecting an unrelated target. The synthetic game was verified absent afterward.
+
+All 458 JavaScript tests pass, zero skipped, with the supplied Transformers DOCX. Syntax/static build/diff checks pass. Live Transformers remains Night 1, document version 192. No migration, Edge deployment, live game mutation or paid provider request was needed.
+
+This does not reconstruct previously damaged roles, validate arbitrary custom fields or unknown source IDs, implement identity-preserving mode renames, or establish browser-rendered end-to-end coverage. The full audit remains incomplete.

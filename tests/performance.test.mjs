@@ -67,7 +67,7 @@ test('login treats profile metadata and timestamps as non-blocking and loads the
 
 test('the public entry point cache-busts current app and style assets',async()=>{
   assert.match(html,/css\/main\.css\?v=12\.2\.0/);
-  assert.match(html,/js\/cloud\.js\?v=12\.2\.15/);
+  assert.match(html,/js\/cloud\.js\?v=12\.2\.20/);
   const release=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8')).version;
   assert.ok(html.includes(`js/app.js?v=${release}`));
 });

@@ -8,9 +8,9 @@ import {buildTrackerResolutionReview,trackerActionBadges} from './resolution-rev
 import {ABILITY_DATA_STATUSES,ROLE_TYPES,normalizeRoleSetup,normalizedPlayerName,parsePlayerFile,parsePlayerText,previewPlayerImport,rosterAnalysis} from './player-setup.js?v=12.0.1';
 import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,normalizeAbilityGrant,naturalNumber,validateActionTargets} from './player-abilities.js?v=12.2.11';
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
-import {remapSetupReferences,mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.19';
+import {remapSetupReferences,mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.20';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.0.1';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.19';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.20';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.17';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -567,8 +567,18 @@ function addSelectedRoleTemplate(){
     abilityIds.set(sourceId,matches[0].id);
   }
   if(issues.length){showRoleError(issues.join('; ')+'. Add or disambiguate the destination Encyclopedia abilities, then load this template again.');return}
+  for(const ability of template.abilities){const matches=state.abilities.filter(item=>normalized(item.name)===normalized(ability.name));if(matches.length===1)abilityIds.set(ability.id,matches[0].id)}
   const roleId=id(),model=basic?{modes:[],roleWideAbilityIds:[],roleWidePassiveAbilityIds:[],startingModeId:'',modeSelectionPolicy:'CURRENT_ONLY'}:copyRoleModeReferences(source,template.abilities,abilityIds,roleId);
-  const selectedIds=new Set(abilityIds.values()),draft={...source,...model,id:roleId,gameId,factionId:destinationFaction?.id||'',activeAbilityId:abilityIds.get(source.activeAbilityId)||'',passiveAbilityId:abilityIds.get(source.passiveAbilityId)||'',tags:state.abilities.filter(ability=>selectedIds.has(ability.id)).map(ability=>ability.name),version:1};
+  const selectedIds=new Set([...requiredIds].map(sourceId=>abilityIds.get(sourceId)).filter(Boolean));
+  const catalogs={roles:new Map([...(template.roles||[]),source].map(role=>[role.id,role])),abilities:new Map(template.abilities.map(ability=>[ability.id,ability])),factions:new Map(template.factions.map(faction=>[faction.id,faction])),modes:new Map(sourceModel.modes.map(mode=>[mode.id,mode]))};
+  const roleIds=new Map([[source.id,roleId]]),factionIds=new Map(),modeIds=new Map(sourceModel.modes.map((mode,index)=>[mode.id,model.modes[index]?.id]).filter(([,newId])=>newId));
+  for(const [sourceId,role] of catalogs.roles){if(sourceId===source.id)continue;const matches=state.roles.filter(item=>normalized(item.name)===normalized(role.name));if(matches.length===1)roleIds.set(sourceId,matches[0].id)}
+  for(const [sourceId,faction] of catalogs.factions){const matches=state.factions.filter(item=>normalized(item.name)===normalized(faction.name));if(matches.length===1)factionIds.set(sourceId,matches[0].id)}
+  if(sourceFaction&&destinationFaction)factionIds.set(sourceFaction.id,destinationFaction.id);
+  // Remap the source only once: destination IDs may also be valid IDs in the source game.
+  const mappedSource=remapSetupReferences(source,{roles:roleIds,abilities:abilityIds,factions:factionIds,modes:modeIds},{onUnmapped:(group,value)=>{const dependency=catalogs[group]?.get(value);if(dependency)issues.push('Missing or ambiguous destination '+group+' dependency: '+dependency.name)}});
+  if(issues.length){showRoleError([...new Set(issues)].join('; ')+'. Add or disambiguate these dependencies before copying this role.');return}
+  const draft={...mappedSource,...model,id:roleId,gameId,factionId:destinationFaction?.id||'',activeAbilityId:abilityIds.get(source.activeAbilityId)||'',passiveAbilityId:abilityIds.get(source.passiveAbilityId)||'',tags:state.abilities.filter(ability=>selectedIds.has(ability.id)).map(ability=>ability.name),version:1};
   clearRoleForm();roleTemplateDraft=draft;
   $('roleFormTitle').textContent='Add '+source.name+' from '+template.sourceGameName;
   for(const [elementId,value] of Object.entries({roleName:draft.name,roleFaction:draft.factionId,roleType:draft.roleType,roleSlotCount:draft.slotCount,roleAlignment:draft.alignment,roleDescription:draft.description,roleActiveAbility:draft.activeAbilityId,rolePassiveAbility:draft.passiveAbilityId,roleAbilityUses:draft.abilityUses??'',roleCooldowns:draft.cooldowns,roleImmunities:draft.immunities.join(', '),roleRestrictions:draft.restrictions.join(', '),roleWinCondition:draft.winCondition,roleNotes:draft.notes,roleGmNotes:draft.gmNotes,roleLabels:draft.labels.join(', '),roleModeAssignments:formatRoleModeAssignments(draft,state.abilities)}))$(elementId).value=value;
