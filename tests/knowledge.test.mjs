@@ -60,7 +60,7 @@ test('Phase 1 UI and Edge Functions wire retrieval, global order, citations, and
   for(const id of ['knowledgeFile','uploadKnowledgeBtn','knowledgeDocumentList','officialAbilityList','activateOfficialDatasetBtn','abilityReconciliationReport','officialAbilityEditor','roleModifierPanel'])assert.match(html,new RegExp(`id="${id}"`));
   for(const pattern of [/uploadKnowledgeDocument/,/activateAbilityDataset/,/createStandardAbilityVersion/,/saveRoleAbilityModifier/,/startNewAiConversation/])assert.match(cloud,pattern);
   for(const pattern of [/match_game_knowledge/,/source_catalog/,/requires_gm_decision/,/BLOCKS, GUARANTEE, CONTROL, SWAPS, REDIRECTS, STATUS EFFECTS, INTEL, CONVERTS, KILLS, DOC/,/Never resolve actions merely in submission order/,/record_master_gm_exchange_internal/])assert.match(copilot,pattern);
-  for(const pattern of [/input_file/,/application\/pdf/,/createEmbeddings/,/complete_knowledge_ingestion/,/fail_knowledge_ingestion/])assert.match(ingest,pattern);
+  for(const pattern of [/input_file/,/application\/pdf/,/createEmbeddings/,/claim_knowledge_ingestion_internal/,/complete_claimed_knowledge_ingestion_internal/,/fail_claimed_knowledge_ingestion_internal/])assert.match(ingest,pattern);
   assert.match(cloud,/official_document_versions!official_document_versions_document_id_fkey/);
   assert.match(app,/async function bootstrapOpenGameAfterLogin\(gameId\)/);
   assert.match(app,/await refreshOpenGame\(\);[\s\S]*await subscribeToOpenGame\(\)/);

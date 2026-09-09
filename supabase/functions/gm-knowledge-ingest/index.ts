@@ -16,6 +16,14 @@ Deno.serve(async(req:Request)=>{
   if(versionResult.error||!version)return json({error:'The document version could not be loaded.','code':'DOCUMENT_NOT_FOUND'},404,origin);
   const gameId=version.official_documents.game_id,membership=await client.from('game_members').select('member_role').eq('game_id',gameId).eq('user_id',user.id).maybeSingle();if(!membership.data||!['owner','gm'].includes(membership.data.member_role))return json({error:'Only an owner or authorized GM can index documents.','code':'GM_ACCESS_REQUIRED'},403,origin);
   if(version.status!=='PROCESSING'||!['ACTIVE','APPROVED','DRAFT'].includes(version.requested_status))return json({error:'This document version is not waiting to be indexed.','code':'INVALID_DOCUMENT_STATUS'},409,origin);
+  // Claim once in the database, before downloads or paid work. Never retry an
+  // ambiguous claim or expire it automatically: either can duplicate spending.
+  const claimId=crypto.randomUUID();
+  try{
+    const claimed=await createServiceClient().rpc('claim_knowledge_ingestion_internal',{target_version_id:versionId,actor_user_id:user.id,target_claim_id:claimId});
+    if(claimed.error||typeof claimed.data!=='boolean')return json({error:'Exclusive document processing could not be confirmed. Refresh the library before retrying.','code':'INGESTION_CLAIM_UNAVAILABLE'},503,origin);
+    if(!claimed.data)return json({error:'Indexing has already started for this document version. Refresh the library to check its status. If processing was interrupted, upload a new version rather than resubmitting this one.','code':'INGESTION_ALREADY_STARTED'},409,origin);
+  }catch{return json({error:'Exclusive document processing could not be confirmed. Refresh the library before retrying.','code':'INGESTION_CLAIM_UNAVAILABLE'},503,origin)}
   try{
     const downloaded=await client.storage.from('game-knowledge-documents').download(version.storage_path);if(downloaded.error||!downloaded.data)throw new OpenAIServiceError('The uploaded document could not be downloaded.',404,'DOCUMENT_DOWNLOAD_FAILED');
     const bytes=new Uint8Array(await downloaded.data.arrayBuffer()),fileData=`data:${version.content_type};base64,${bytesToBase64(bytes)}`,model=modelForDepth(depth);
@@ -23,11 +31,11 @@ Deno.serve(async(req:Request)=>{
     const ai=await structuredResponse({model,userId:user.id,instructions,input:[{role:'user',content:[{type:'input_text',text:`Index ${version.official_documents.title} as ${version.official_documents.document_type}.`},{type:'input_file',filename:version.source_file_name,file_data:fileData,detail:version.content_type==='application/pdf'?'high':undefined}]}],schema:responseSchema,schemaName:'official_document_ingestion',maxOutputTokens:30000,effort:depth==='deep'?'high':'medium',verbosity:'medium'});
     const chunks=list(ai.result?.chunks,80).map((chunk:any)=>({heading:textValue(chunk.heading,300),source_locator:textValue(chunk.source_locator,300),content:textValue(chunk.content,12000)})).filter((chunk:any)=>chunk.content);if(!chunks.length)throw new OpenAIServiceError('The document did not contain readable reference text.',422,'EMPTY_DOCUMENT');
     const embedded=await createEmbeddings(chunks.map((chunk:any)=>chunk.content));const completedChunks=chunks.map((chunk:any,index:number)=>({...chunk,token_estimate:Math.ceil(chunk.content.length/4),embedding:embedded.vectors[index]}));
-    const completed=await createServiceClient().rpc('complete_knowledge_ingestion_internal',{target_version_id:versionId,target_extracted_text:chunks.map((chunk:any)=>chunk.content).join('\n\n'),target_summary:textValue(ai.result.summary,4000),target_chunks:completedChunks,actor_user_id:user.id});if(completed.error)throw new OpenAIServiceError('The indexed document could not be saved.',500,'DOCUMENT_SAVE_FAILED');
+    const completed=await createServiceClient().rpc('complete_claimed_knowledge_ingestion_internal',{target_version_id:versionId,target_extracted_text:chunks.map((chunk:any)=>chunk.content).join('\n\n'),target_summary:textValue(ai.result.summary,4000),target_chunks:completedChunks,actor_user_id:user.id,target_claim_id:claimId});if(completed.error)throw new OpenAIServiceError('The indexed document could not be saved.',500,'DOCUMENT_SAVE_FAILED');
     return json({documentVersionId:versionId,status:version.requested_status,chunks:chunks.length,summary:textValue(ai.result.summary,4000),warnings:list(ai.result.warnings,100),model,embeddingModel:embedded.model},200,origin);
   }catch(error){
     const failure=error as OpenAIServiceError;let recordingWarning='';
-    try{const recorded=await createServiceClient().rpc('fail_knowledge_ingestion_internal',{target_version_id:versionId,target_error:textValue(failure.message,2000),actor_user_id:user.id});if(recorded.error)recordingWarning=' The failure status could not be saved. Refresh the document library before retrying.'}
+    try{const recorded=await createServiceClient().rpc('fail_claimed_knowledge_ingestion_internal',{target_version_id:versionId,target_error:textValue(failure.message,2000),actor_user_id:user.id,target_claim_id:claimId});if(recorded.error)recordingWarning=' The failure status could not be saved. Refresh the document library before retrying.'}
     catch{recordingWarning=' The failure status could not be saved. Refresh the document library before retrying.'}
     return json({error:(failure.message||'The document could not be indexed.')+recordingWarning,code:failure.code||'DOCUMENT_INGESTION_FAILED'},failure.status||502,origin);
   }
