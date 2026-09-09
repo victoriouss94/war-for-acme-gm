@@ -81,7 +81,14 @@ export function canTransitionMode({player={},role={},abilities=[],toModeId,game=
 
 export function applyModeTransition({player={},role={},abilities=[],toModeId,reason='',source='GM_TRIGGERED',temporary=false,game={},at=new Date()}={}){const check=canTransitionMode({player,role,abilities,toModeId,game,at});if(!check.allowed)throw new Error(check.reason);const previous=check.context.currentModeId,target=check.target,switchRules=target.switchRules,next={...player,currentModeId:target.id,startingModeId:check.context.startingModeId,previousModeId:previous,modeChangedAt:at.toISOString(),modeChangeReason:clean(reason,1000),modeChangeSource:source,modeCooldowns:{...check.context.modeCooldowns}};if(switchRules.cooldownCycles)next.modeCooldowns[target.id]={untilCycle:Number(game.currentDay??game.currentCycle??0)+switchRules.cooldownCycles,reason:'Configuration switch cooldown'};if((switchRules.oneWay||switchRules.permanent)&&!temporary){next.modeLocked=true;next.lockedModeId=target.id}return {player:next,event:{previousModeId:previous,newModeId:target.id,previousModeName:check.context.modes.find(mode=>mode.id===previous)?.name||'',newModeName:target.name,changedAt:at.toISOString(),reason:clean(reason,1000),source,temporary,modeLocked:Boolean(next.modeLocked)}};}
 
-export function resolveModeAwareIntel({targetPlayer={},targetRole={},abilities=[],intelType='roleCheck'}={}){const mechanics=effectiveModeMechanics({player:targetPlayer,role:targetRole,abilities}),appearance=mechanics.investigationAppearance;if(appearance.invisible)return {visible:false,result:'No result',modeId:mechanics.context.currentModeId};const property={basicAsk:'basicAsk',advancedAsk:'advancedAsk',roleCheck:'roleCheck',factionCheck:'factionAppearance'}[intelType]||intelType,result=appearance[property]||appearance.roleAppearance||appearance.factionAppearance||targetRole.name||'';return {visible:true,result,modeId:mechanics.context.currentModeId,modeName:mechanics.currentMode?.name||''};}
+export function resolveModeAwareIntel({targetPlayer={},targetRole={},abilities=[],intelType='roleCheck',fallbackResult=''}={}){
+  const mechanics=effectiveModeMechanics({player:targetPlayer,role:targetRole,abilities}),appearance=mechanics.investigationAppearance;
+  if(appearance.invisible)return {visible:false,result:'No result',modeId:mechanics.context.currentModeId};
+  // A role disguise must not become a faction answer, or vice versa.
+  const factionIntel=['basicAsk','factionCheck'].includes(intelType),property={basicAsk:'basicAsk',advancedAsk:'advancedAsk',roleCheck:'roleCheck',factionCheck:'factionAppearance'}[intelType]||intelType;
+  const result=appearance[property]||(factionIntel?appearance.factionAppearance:appearance.roleAppearance)||fallbackResult||(factionIntel?'':targetRole.name||'');
+  return {visible:true,result,modeId:mechanics.context.currentModeId,modeName:mechanics.currentMode?.name||''};
+}
 
 // Apply only fields changed in the text editor; non-displayed imported mechanics stay intact.
 function mergeModeEditorChanges(original,before,after){
