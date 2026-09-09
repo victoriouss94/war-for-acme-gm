@@ -10,18 +10,26 @@ await access('.nojekyll'); // GitHub Pages otherwise drops _shared ES modules.
 const html=await readFile('index.html','utf8');
 for(const file of ['css/main.css','vendor/mammoth.browser.min.js','js/supabase-config.js','js/cloud.js','js/app.js'])if(!html.includes(file))throw new Error(`index.html does not load ${file}`);
 const app=await readFile('js/app.js','utf8');
-if(!app.includes("from './document-import.js?v=12.2.30'"))throw new Error('app.js does not load consistent source review warnings');
+if(!app.includes("from './document-import.js?v=12.2.37'"))throw new Error('app.js does not load consistent source review warnings');
 for(const module of ['knowledge','statuses','resolution','player-setup'])if(!app.includes(`from './${module}.js?v=12.0.1'`))throw new Error(`app.js does not load the versioned js/${module}.js`);
 if(!app.includes("from './copilot.js?v=12.2.33'"))throw new Error('app.js does not load deterministic Copilot resolution routing');
 const copilot=await readFile('js/copilot.js','utf8');
 if(!copilot.includes("from '../supabase/functions/_shared/master-gm.js?v=12.2.33'"))throw new Error('Copilot does not load the shared server intent classifier');
-if(!app.includes("from './mechanics.js?v=12.2.30'"))throw new Error('app.js does not load scoped mechanic review identities');
+if(!app.includes("from './mechanics.js?v=12.2.37'"))throw new Error('app.js does not load scoped mechanic review identities');
 if(!app.includes("from './phase-controller.js?v=12.2.14'"))throw new Error('app.js does not load timed status review support');
-if(!app.includes("from './player-abilities.js?v=12.2.30'"))throw new Error('app.js does not load role-scoped player ability availability');
-if(!app.includes("from './resolution-editor.js?v=12.2.25'"))throw new Error('app.js does not load the versioned resolution editor');
-if(!app.includes("from './global-abilities.js?v=12.0.1'"))throw new Error('app.js does not load the versioned global resolution module');
+if(!app.includes("from './player-abilities.js?v=12.2.37'"))throw new Error('app.js does not load role-scoped player ability availability');
+if(!app.includes("from './resolution-editor.js?v=12.2.37'"))throw new Error('app.js does not load the versioned resolution editor');
+if(!app.includes("from './global-abilities.js?v=12.2.37'"))throw new Error('app.js does not load the versioned global resolution module');
 if(!app.includes("from './role-modes.js?v=12.2.28'"))throw new Error('app.js does not load role-scoped mode runtime');
 const release=JSON.parse(await readFile('package.json','utf8')).version;
+if(!html.includes(`js/app.js?v=${release}`))throw new Error('index.html does not load the current app release');
 if(!app.includes(`from './night-engine.js?v=${release}'`))throw new Error('app.js does not load the current deterministic night engine');
 if(!app.includes("from './resolution-review.js?v=12.2.26'"))throw new Error('app.js does not load the tracker-style resolution review module');
+const classifierModules=new Set(['global-abilities','mechanics','document-import','player-abilities','resolution-editor']);
+for(const parent of ['app','night-engine',...classifierModules]){
+  const source=await readFile(`js/${parent}.js`,'utf8');
+  for(const match of source.matchAll(/from\s+['"]\.\/([a-z-]+)\.js\?v=([^'"]+)['"]/g)){
+    if(classifierModules.has(match[1])&&match[2]!=='12.2.37')throw new Error(`${parent} imports stale standard-ID classifier consumer ${match[1]}`);
+  }
+}
 console.log('Static build verified:',files.join(', '));

@@ -2,7 +2,7 @@ import {lethalResolutionFixture} from './lethal-resolution-fixture.mjs';
 import {resolveNightDeterministically} from '../../js/night-engine.js';
 import {buildResolutionDraft,finalResolutionPayload} from '../../js/resolution-editor.js';
 
-export function passiveIdentityFixture({swapRoles=false,passiveAliases=false,passiveStandardIds=false}={}){
+export function passiveIdentityFixture({swapRoles=false,passiveAliases=false,passiveStandardIds=false,activeStandardId=false}={}){
   const {document,actions}=lethalResolutionFixture();
   document.game.name='Rollback passive source identity audit';
   document.data.roles[0].roleWidePassiveAbilityIds=['audit-bulletproof'];
@@ -24,10 +24,16 @@ export function passiveIdentityFixture({swapRoles=false,passiveAliases=false,pas
     document.data.abilities.find(ability=>ability.id==='audit-bulletproof').name='passive immunity';
   }
   const expectedStandardIds=passiveStandardIds?[{id:'audit-counterattack',name:'Revenge Circuit',standardAbilityId:'counterattack'},{id:'audit-bulletproof',name:'Aegis Plating',standardAbilityId:'bulletproof'}]:[];
+  if(activeStandardId){
+    expectedStandardIds.push({id:'audit-kill',name:'Ion Lance',standardAbilityId:'personal_instant_kill'});
+    document.data.roles[0].tags=['Ion Lance'];
+    document.data.abilities.find(ability=>ability.id==='audit-kill').definition='A focused beam of energy.';
+  }
   for(const mapping of expectedStandardIds)Object.assign(document.data.abilities.find(ability=>ability.id===mapping.id),mapping);
   const proposal=resolveNightDeterministically({...document.data,gameId:'__AUDIT_GAME_UUID__',round:0,phase:'Night',actions});
   const ruling=finalResolutionPayload(buildResolutionDraft({proposal,actions,players:document.data.players}));
-  return {document,actions,proposal,ruling,expectedStandardIds,expectedAlive:swapRoles?['audit-actor','audit-target','audit-swapper']:['audit-actor'],expectedPassives:swapRoles?[
+  const expectedActiveAction=activeStandardId?{id:'audit-lethal-action',abilityId:'audit-kill',name:'Ion Lance',standardizedType:'Personal Instant Kill',category:'KILLS'}:null;
+  return {document,actions,proposal,ruling,expectedStandardIds,expectedActiveAction,expectedAlive:swapRoles?['audit-actor','audit-target','audit-swapper']:['audit-actor'],expectedPassives:swapRoles?[
     {playerId:'audit-target',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-target']}
   ]:[
     {playerId:'audit-actor',abilityId:'audit-bulletproof',roleId:'audit-attacker',roleVersion:4,targetIds:['audit-actor']},

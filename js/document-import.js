@@ -1,5 +1,5 @@
-import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=12.2.30';
-import {classifyAbility,globalAbilityDefinition as encyclopediaAbilityDefinition} from './global-abilities.js?v=12.0.1';
+import {mechanicsReviewQueue,normalizeAbilityUnderstanding,normalizeMechanicList,normalizeRoleUnderstanding} from './mechanics.js?v=12.2.37';
+import {classifyAbility,globalAbilityDefinition as encyclopediaAbilityDefinition} from './global-abilities.js?v=12.2.37';
 
 export const MAX_DOCX_BYTES=10*1024*1024;
 export const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';

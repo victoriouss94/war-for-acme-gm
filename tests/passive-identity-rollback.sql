@@ -22,12 +22,20 @@ begin
     if not exists(select 1 from jsonb_array_elements(session_row.pre_resolution_state->'abilities') a
       where a->>'id'=expected->>'id' and a->>'name'=expected->>'name'
         and a->>'standardAbilityId'=expected->>'standardAbilityId')
-      then raise exception 'Renamed standard passive mapping missing from cloud snapshot: %',expected; end if;
+      then raise exception 'Renamed standard ability mapping missing from cloud snapshot: %',expected; end if;
   end loop;
   session_row:=public.save_deterministic_resolution(session_row.id,session_row.lock_version,fixture->'proposal');
   if (select document#>>'{data,players,1,alive}' from public.game_documents where game_id=gid)<>'true' then raise exception 'Player died before approval'; end if;
   approved:=public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'ruling','Verify exact passive sources',false,'GAME_SPECIFIC','{}',approval_key,false,false);
   if approved.status<>'FINALIZED' then raise exception 'Passive identity fixture was not finalized'; end if;
+  if fixture->'expectedActiveAction' is not null and fixture->'expectedActiveAction'<>'null'::jsonb then
+    expected:=fixture->'expectedActiveAction';
+    if not exists(select 1 from jsonb_array_elements(approved.final_resolution->'action_results') a
+      where a->>'action_id'=expected->>'id' and a->>'ability_id'=expected->>'abilityId'
+        and a->>'ability_name'=expected->>'name' and a->>'standardized_ability_type'=expected->>'standardizedType'
+        and a->>'resolution_category'=expected->>'category')
+      then raise exception 'Renamed active ability lost its mapped mechanic or local identity'; end if;
+  end if;
   analytics:=public.get_resolution_usage_analytics(gid,'{"passive":true}');
   if jsonb_array_length(approved.final_resolution->'passive_results')<>jsonb_array_length(fixture->'expectedPassives')
     or jsonb_array_length(analytics->'rows')<>jsonb_array_length(fixture->'expectedPassives') then raise exception 'Wrong number of passive results or analytics rows'; end if;

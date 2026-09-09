@@ -115,9 +115,14 @@ export const GLOBAL_ABILITY_DEFINITIONS=Object.freeze(entries.map(([name,categor
 })));
 
 const byName=new Map(GLOBAL_ABILITY_DEFINITIONS.flatMap(ability=>[[key(ability.name),ability],...ability.aliases.map(alias=>[key(alias),ability])]));
+const byStandardId=new Map(GLOBAL_ABILITY_DEFINITIONS.map(ability=>[ability.abilityId,ability]));
 
 export function globalAbilityDefinition(value){
   if(!value)return null;
+  // The stored standard identity survives a display-name change. Only exact
+  // catalog IDs qualify; local IDs and partial/conditional strings do not.
+  const explicit=typeof value==='object'?byStandardId.get(clean(value.standardAbilityId??value.standard_ability_id,120)):null;
+  if(explicit)return explicit;
   const direct=byName.get(key(typeof value==='string'?value:value.display_name||value.name||value.ability_id||value.standardAbilityId));
   if(direct)return direct;
   const source=key(typeof value==='string'?value:[value.name,value.definition,value.description,value.originalText].filter(Boolean).join(' '));

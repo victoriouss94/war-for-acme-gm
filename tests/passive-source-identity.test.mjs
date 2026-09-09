@@ -57,9 +57,10 @@ test('temporary Role Swap attributes a triggered passive to the effective role',
 });
 
 test('cloud approval fixtures retain exact expected passive sources and life outcomes',()=>{
-  for(const swapRoles of [false,true])for(const variant of [{},{passiveAliases:true},{passiveStandardIds:true}]){
+  for(const swapRoles of [false,true])for(const variant of [{},{passiveAliases:true},{passiveStandardIds:true},{activeStandardId:true}]){
     const fixture=passiveIdentityFixture({swapRoles,...variant});assert.equal(fixture.proposal.engine_status,'RESOLVED');
     assert.deepEqual(fixture.ruling.passive_results.map(p=>({playerId:p.player_id,abilityId:p.ability_id,roleId:p.role_id,roleVersion:p.role_version,targetIds:p.target_ids})).sort((a,b)=>a.playerId.localeCompare(b.playerId)),fixture.expectedPassives);
     assert.deepEqual(fixture.proposal.player_outcomes.filter(p=>p.alive_after_resolution).map(p=>p.player_id),fixture.expectedAlive);
+    if(fixture.expectedActiveAction){const actual=fixture.ruling.action_results.find(a=>a.action_id==='audit-lethal-action');assert.equal(actual.ability_name,'Ion Lance');assert.equal(actual.ability_id,'audit-kill');assert.equal(actual.standardized_ability_type,'Personal Instant Kill');}
   }
 });
