@@ -24,7 +24,7 @@ if(!app.includes("from './role-modes.js?v=12.2.38'"))throw new Error('app.js doe
 const release=JSON.parse(await readFile('package.json','utf8')).version;
 if(!html.includes(`js/app.js?v=${release}`))throw new Error('index.html does not load the current app release');
 if(!app.includes(`from './night-engine.js?v=${release}'`))throw new Error('app.js does not load the current deterministic night engine');
-if(!app.includes("from './resolution-review.js?v=12.2.26'"))throw new Error('app.js does not load the tracker-style resolution review module');
+if(!app.includes("from './resolution-review.js?v=12.2.40'"))throw new Error('app.js does not load the tracker-style resolution review module');
 const classifierModules=new Set(['global-abilities','mechanics','document-import','player-abilities','resolution-editor']);
 for(const parent of ['app','night-engine','player-abilities']){
   const source=await readFile(`js/${parent}.js`,'utf8');
