@@ -67,7 +67,10 @@ export async function createEmbeddings(inputs:string[]){
   try{response=await fetch('https://api.openai.com/v1/embeddings',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:embeddingModel(),input:inputs,encoding_format:'float'})})}
   catch{throw new OpenAIServiceError('The AI embedding service could not be reached.',502,'OPENAI_UNAVAILABLE')}
   const payload=await response.json().catch(()=>({}));if(!response.ok)throw apiError(payload,response.status);
-  const vectors=list(payload?.data,inputs.length).sort((a:any,b:any)=>a.index-b.index).map((item:any)=>item.embedding);
-  if(vectors.length!==inputs.length||vectors.some((vector:any)=>!Array.isArray(vector)||vector.length!==1536))throw new OpenAIServiceError('The AI returned invalid document embeddings.',502,'INVALID_EMBEDDING_RESPONSE');
+  const rows=payload?.data;
+  // Each input must have exactly one finite vector at its own index. Truncating
+  // extra rows or accepting duplicate indexes can attach a passage to the wrong vector.
+  if(!Array.isArray(rows)||rows.length!==inputs.length||rows.some((item:any)=>!Number.isInteger(item?.index)||item.index<0||item.index>=inputs.length||!Array.isArray(item.embedding)||item.embedding.length!==1536||!item.embedding.every(Number.isFinite))||new Set(rows.map((item:any)=>item.index)).size!==inputs.length)throw new OpenAIServiceError('The AI returned invalid document embeddings.',502,'INVALID_EMBEDDING_RESPONSE');
+  const vectors=[...rows].sort((a:any,b:any)=>a.index-b.index).map((item:any)=>item.embedding);
   return {vectors,model:embeddingModel(),usage:payload?.usage||null};
 }
