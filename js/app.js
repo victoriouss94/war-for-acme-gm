@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.45';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.2.37';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.46';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.47';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.38';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';

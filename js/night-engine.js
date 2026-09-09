@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.14';
+export const NIGHT_ENGINE_VERSION='1.2.15';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -74,14 +74,28 @@ const linkedPassiveIds=owner=>unique([...array(owner.roleWidePassiveAbilityIds),
 function passiveIdentity(player,ctx,name){
   const {role,mode,accessibleModes,explicit}=passiveContext(player,ctx),definition=globalAbilityDefinition(name);
   const linked=unique([...[role,mode,...accessibleModes].flatMap(linkedPassiveIds),...explicit.map(item=>item.abilityId??item.ability_id??item.sourceAbilityId??item.source_ability_id).filter(Boolean)]).map(id=>ctx.snapshot.abilities.find(item=>item.id===id)).filter(Boolean);
-  const exact=item=>key(item.name)===key(name),compatible=item=>definition&&passiveMechanicKey(item)===passiveMechanicKey(name);
+  const exact=item=>!passiveRequiresReview(item)&&key(item.name)===key(name),compatible=item=>!passiveRequiresReview(item)&&definition&&passiveMechanicKey(item)===passiveMechanicKey(name);
   // Resolve source ownership when the passive triggers, before conversion or
   // later role changes can discard its original role/mode context.
   const ability=linked.find(exact)||linked.find(compatible)||ctx.snapshot.abilities.find(exact)||ctx.snapshot.abilities.find(compatible);
   return {ability_id:ability?.id||'',ability_name:ability?.name||name,role_id:ctx.resolutionRoleContexts?.get(player.id)||player.roleId,role_version:Number(role.version)||1};
 }
 
+function passiveRequiresReview(value){
+  if(!value||typeof value!=='object')return false;
+  const custom=value.understanding?.customIdentity??value.understanding?.custom_identity??value.customIdentity??value.custom_identity;
+  const behavior=value.engineBehavior??value.engine_behavior??value.understanding?.engineBehavior??value.understanding?.engine_behavior;
+  // Passive triggers have fixed implementations, not an executable custom-primitive adapter.
+  return custom===true||behavior?.effect==='CUSTOM'||behavior?.requiresExplicitRule===true;
+}
+
+function resolvePassiveReference(value,ctx){
+  const id=text(value?.abilityId??value?.ability_id??value?.sourceAbilityId??value?.source_ability_id,120),reference=id&&ctx.snapshot.abilities.find(item=>item.id===id);
+  return reference?{...reference,...value}:value;
+}
+
 function passiveMechanicKey(value){
+  if(passiveRequiresReview(value))return `unimplemented_passive_${key(value.name??value.abilityName??value.ability_name??value.id)}`;
   const name=value&&typeof value==='object'?value.name??value.abilityName??value.ability_name:value;
   const standardId=text(value?.standardAbilityId??value?.standard_ability_id,120),mapped=globalAbilityDefinition(standardId);
   // Linked catalog entries retain their explicit mechanic when the GM renames them.
@@ -95,7 +109,10 @@ function passiveMechanicKey(value){
 function mechanicNames(player,ctx){
   const {role,mode,accessibleModes,explicit}=passiveContext(player,ctx);
   const passiveAbilities=owner=>linkedPassiveIds(owner).map(id=>ctx.snapshot.abilities.find(ability=>ability.id===id)).filter(Boolean);
-  return unique([...passiveAbilities(role),...passiveAbilities(mode),...accessibleModes.flatMap(passiveAbilities),...(array(player.immunities)),...(array(role.immunities)),...(array(mode.immunities)),...accessibleModes.flatMap(item=>[...array(item.immunities),...array(item.protections),...array(item.passives),...array(item.passiveAbilityNames)]),role.passiveAbilityName,mode.passiveAbilityName,...array(role.passives),...array(mode.passives),...explicit].map(passiveMechanicKey));
+  const linked=[...passiveAbilities(role),...passiveAbilities(mode),...accessibleModes.flatMap(passiveAbilities),...explicit.map(value=>resolvePassiveReference(value,ctx))];
+  const values=[...linked,...array(player.immunities),...array(role.immunities),...array(mode.immunities),...accessibleModes.flatMap(item=>[...array(item.immunities),...array(item.protections),...array(item.passives),...array(item.passiveAbilityNames)]),role.passiveAbilityName,mode.passiveAbilityName,...array(role.passives),...array(mode.passives)];
+  // A denormalized name must not strip conditions from the linked owned record.
+  return unique(values.map(value=>typeof value==='string'?(linked.find(item=>key(item.name)===key(value))||value):resolvePassiveReference(value,ctx)).map(passiveMechanicKey));
 }
 
 function passiveReviewQuestions(ctx){
@@ -104,10 +121,10 @@ function passiveReviewQuestions(ctx){
     if(!player.alive)continue;
     const {role,mode,accessibleModes,explicit}=passiveContext(player,ctx),owners=[role,mode,...accessibleModes],seen=new Set(),implemented=mechanicNames(player,ctx);
     const linked=owners.flatMap(linkedPassiveIds).map(id=>ctx.snapshot.abilities.find(ability=>ability.id===id)||{name:'Missing linked passive',id});
-    const declared=[...linked,...owners.flatMap(owner=>[owner.passiveAbilityName,...array(owner.passiveAbilityNames),...array(owner.passives)]),...explicit];
+    const declared=[...linked,...owners.flatMap(owner=>[owner.passiveAbilityName,...array(owner.passiveAbilityNames),...array(owner.passives),...array(owner.immunities).filter(passiveRequiresReview),...array(owner.protections).filter(passiveRequiresReview)]),...array(player.immunities).filter(passiveRequiresReview),...explicit];
     for(const value of declared){
-      const referenceId=text(value?.abilityId??value?.ability_id,120),reference=referenceId&&ctx.snapshot.abilities.find(ability=>ability.id===referenceId);
-      const name=text(typeof value==='string'?value:value?.name??value?.abilityName??value?.ability_name??reference?.name??(referenceId?'Missing linked passive':value&&Object.keys(value).length?'Unnamed custom passive':''),200),mechanic=passiveMechanicKey(value);
+      const referenceId=text(value?.abilityId??value?.ability_id??value?.sourceAbilityId??value?.source_ability_id,120),reference=referenceId&&ctx.snapshot.abilities.find(ability=>ability.id===referenceId);
+      const name=text(typeof value==='string'?value:value?.name??value?.abilityName??value?.ability_name??reference?.name??(referenceId?'Missing linked passive':value&&Object.keys(value).length?'Unnamed custom passive':''),200),mechanic=passiveMechanicKey(resolvePassiveReference(value,ctx));
       if(!name||(supported.has(mechanic)&&implemented.includes(mechanic))||seen.has(key(name)))continue;
       seen.add(key(name));
       questions.push(`${player.name||'Unnamed player'} — ${name}: this passive's trigger, conditions and effects are not supported by the deterministic engine. Review its source rule and record the GM ruling before approval.`);
