@@ -263,7 +263,7 @@
   async function saveRoleAbilityModifier(gameId,roleId,abilityId,modifierText){return unwrap(await required().rpc('save_role_ability_modifier',{target_game_id:gameId,target_role_id:roleId,target_ability_id:abilityId,target_modifier_text:modifierText}))}
   async function startNewAiConversation(gameId){return unwrap(await required().rpc('start_new_ai_conversation',{target_game_id:gameId}))}
   async function resolutionContext(gameId){
-    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings,proposals,runs,toolCalls,globalRules,effectiveRuleset,assignmentPreviews,assignmentHistory,mechanicsReviews,abilityUsage,usageAnalytics]=await Promise.all([
+    const [sessions,precedents,drafts,interactions,summary,usage,limit,patterns,concepts,mappings,proposals,runs,toolCalls,globalRules,effectiveRuleset,assignmentPreviews,assignmentHistory,mechanicsReviews,abilityUsage,usageAnalytics,usageMonth]=await Promise.all([
       required().from('resolution_sessions').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
       required().from('gm_precedents').select('*').order('updated_at',{ascending:false}).limit(500),
       required().from('ai_drafts').select('*').eq('game_id',gameId).order('created_at',{ascending:false}).limit(100),
@@ -283,10 +283,11 @@
       required().from('role_assignment_history').select('*').eq('game_id',gameId).order('assigned_at',{ascending:false}).limit(500),
       required().rpc('get_mechanics_review_queue',{target_game_id:null}),
       required().rpc('get_ability_usage_statistics',{target_game_id:gameId}),
-      required().rpc('get_resolution_usage_analytics',{target_game_id:gameId,target_filters:{}})
+      required().rpc('get_resolution_usage_analytics',{target_game_id:gameId,target_filters:{}}),
+      Promise.resolve(required().rpc('get_ai_usage_month_summary',{target_game_id:gameId})).catch(()=>({error:true}))
     ]);
     for(const result of [sessions,precedents,drafts,interactions,summary,patterns,concepts,mappings,proposals,runs,toolCalls,globalRules,effectiveRuleset,assignmentPreviews,assignmentHistory])if(result.error)throw result.error;
-    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[],proposals:proposals.data||[],runs:runs.data||[],toolCalls:toolCalls.data||[],globalRules:globalRules.data||[],mechanicsReviews:mechanicsReviews.error?[]:mechanicsReviews.data||[],abilityUsage:abilityUsage.error?[]:abilityUsage.data||[],usageAnalytics:usageAnalytics.error?{}:usageAnalytics.data||{},effectiveRuleset:effectiveRuleset.data||{gameRules:[],gameOverrides:[],globalFallbacks:[],standardAbilities:[],roleModifiers:[],unresolved:[]},assignmentPreviews:assignmentPreviews.data||[],assignmentHistory:assignmentHistory.data||[]};
+    return {sessions:sessions.data||[],precedents:precedents.data||[],drafts:drafts.data||[],interactions:interactions.data||[],summary:summary.data||{},usage:usage.error?[]:usage.data||[],usageMonth:usageMonth.error?null:usageMonth.data||null,limit:limit.error?null:limit.data||null,patterns:patterns.data||{},concepts:concepts.data||[],mappings:mappings.data||[],proposals:proposals.data||[],runs:runs.data||[],toolCalls:toolCalls.data||[],globalRules:globalRules.data||[],mechanicsReviews:mechanicsReviews.error?[]:mechanicsReviews.data||[],abilityUsage:abilityUsage.error?[]:abilityUsage.data||[],usageAnalytics:usageAnalytics.error?{}:usageAnalytics.data||{},effectiveRuleset:effectiveRuleset.data||{gameRules:[],gameOverrides:[],globalFallbacks:[],standardAbilities:[],roleModifiers:[],unresolved:[]},assignmentPreviews:assignmentPreviews.data||[],assignmentHistory:assignmentHistory.data||[]};
   }
   async function createRoleAssignmentPreview(gameId,gameVersion,replaceExisting,lockedAssignments={},factionConstraints={}){return unwrap(await required().rpc('create_role_assignment_preview',{target_game_id:gameId,expected_game_version:gameVersion,target_replace_existing:Boolean(replaceExisting),target_locked_assignments:lockedAssignments,target_faction_constraints:factionConstraints}))}
   async function shuffleRoleAssignmentPreview(previewId,previewVersion){return unwrap(await required().rpc('shuffle_role_assignment_preview',{target_preview_id:previewId,expected_preview_version:previewVersion}))}

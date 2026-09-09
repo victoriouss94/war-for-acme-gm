@@ -23,6 +23,7 @@ if(!app.includes("from './global-abilities.js?v=12.2.37'"))throw new Error('app.
 if(!app.includes("from './role-modes.js?v=12.2.38'"))throw new Error('app.js does not load role-scoped mode runtime');
 const release=JSON.parse(await readFile('package.json','utf8')).version;
 if(!html.includes(`js/app.js?v=${release}`))throw new Error('index.html does not load the current app release');
+if(!html.includes('js/cloud.js?v=12.2.41'))throw new Error('index.html does not load the monthly usage aggregate client');
 if(!app.includes(`from './night-engine.js?v=${release}'`))throw new Error('app.js does not load the current deterministic night engine');
 if(!app.includes("from './resolution-review.js?v=12.2.40'"))throw new Error('app.js does not load the tracker-style resolution review module');
 const classifierModules=new Set(['global-abilities','mechanics','document-import','player-abilities','resolution-editor']);
