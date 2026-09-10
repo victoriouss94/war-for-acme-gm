@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.19';
+export const NIGHT_ENGINE_VERSION='1.2.20';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -49,7 +49,7 @@ function guardEffectDispatch(behavior,standard){
   // These scalar fields are fixed by the existing standard handlers. A changed
   // value is not an implemented custom rule. Fields actually consumed at runtime
   // (for example killTier, tags and controlPool) retain their current behavior.
-  const fixedFields=['scope','factionKind','transformation','statusType','intelType','protectionTier','stopsKillTier','dropsOldRole','duration','activates','expires','visitorCollateral','bypassesProtectionTier','healRemoves','mayGenerate'];
+  const fixedFields=['scope','factionKind','transformation','statusType','intelType','protectionTier','stopsKillTier','dropsOldRole','duration','activates','expires','visitorCollateral','bypassesProtectionTier','healRemoves','mayGenerate','trigger','generatedAbility'];
   const conflicts=fixedFields.filter(field=>Object.hasOwn(standard?.behavior||{},field)&&Object.hasOwn(behavior,field)&&behavior[field]!==standard.behavior[field]);
   if(conflicts.length)return {...behavior,sourceBehaviorConflicts:conflicts,effect:'CUSTOM',requiresExplicitRule:true};
   return behavior;
@@ -104,7 +104,7 @@ function passiveRequiresReview(value){
   const custom=value.understanding?.customIdentity??value.understanding?.custom_identity??value.customIdentity??value.custom_identity;
   const behavior=value.engineBehavior??value.engine_behavior??value.understanding?.engineBehavior??value.understanding?.engine_behavior;
   // Passive triggers have fixed implementations, not an executable custom-primitive adapter.
-  return custom===true||behavior?.effect==='CUSTOM'||behavior?.requiresExplicitRule===true;
+  return custom===true||behavior?.effect==='CUSTOM'||behavior?.requiresExplicitRule===true||Boolean(behavior&&guardEffectDispatch(behavior,globalAbilityDefinition(value)).effect==='CUSTOM');
 }
 
 function resolvePassiveReference(value,ctx){
