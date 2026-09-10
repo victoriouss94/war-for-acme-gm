@@ -1,0 +1,2795 @@
+{
+  "observed_at": "2026-09-10",
+  "scope": "Literal RPC names and argument keys only; no execution, type, RLS-body or reachability proof.",
+  "counts": {
+    "MATCH": 97,
+    "MANUAL_REVIEW": 2
+  },
+  "results": [
+    {
+      "file": "js\\cloud.js",
+      "line": 140,
+      "name": "complete_legacy_account",
+      "target": "'complete_legacy_account'",
+      "keys": [
+        "requested_username"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "requested_username text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 168,
+      "name": "create_game",
+      "target": "'create_game'",
+      "keys": [
+        "game_id",
+        "initial_document"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "game_id uuid, initial_document jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 174,
+      "name": "create_game_from_import",
+      "target": "'create_game_from_import'",
+      "keys": [
+        "game_id",
+        "initial_document",
+        "source_import_id",
+        "source_file_name",
+        "source_storage_path",
+        "source_file_size",
+        "source_content_type",
+        "source_sha256",
+        "import_summary",
+        "import_warnings"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "game_id uuid, initial_document jsonb, source_import_id uuid, source_file_name text, source_storage_path text, source_file_size bigint, source_content_type text, source_sha256 text, import_summary jsonb, import_warnings jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 177,
+      "name": "save_game_document",
+      "target": "'save_game_document'",
+      "keys": [
+        "target_game_id",
+        "expected_version",
+        "next_document",
+        "change_action",
+        "change_entity_type",
+        "change_entity_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_version integer, next_document jsonb, change_action text, change_entity_type text, change_entity_id text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 181,
+      "name": "save_game_reimport",
+      "target": "'save_game_reimport'",
+      "keys": [
+        "target_game_id",
+        "expected_version",
+        "next_document",
+        "source_import_id",
+        "source_file_name",
+        "source_storage_path",
+        "source_file_size",
+        "source_content_type",
+        "source_sha256",
+        "import_summary",
+        "import_warnings"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_version integer, next_document jsonb, source_import_id uuid, source_file_name text, source_storage_path text, source_file_size bigint, source_content_type text, source_sha256 text, import_summary jsonb, import_warnings jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 183,
+      "name": "delete_game",
+      "target": "'delete_game'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 184,
+      "name": "redeem_game_invite",
+      "target": "'redeem_game_invite'",
+      "keys": [
+        "invite_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "invite_code text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 186,
+      "name": "generate_game_invite",
+      "target": "'generate_game_invite'",
+      "keys": [
+        "target_game_id",
+        "invite_permission",
+        "expires_in_seconds",
+        "requested_max_uses"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, invite_permission text, expires_in_seconds integer, requested_max_uses integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 187,
+      "name": "revoke_game_invite",
+      "target": "'revoke_game_invite'",
+      "keys": [
+        "target_invite_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_invite_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 188,
+      "name": "set_game_member_role",
+      "target": "'set_game_member_role'",
+      "keys": [
+        "target_game_id",
+        "target_user_id",
+        "next_role"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_user_id uuid, next_role text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 189,
+      "name": "remove_game_member",
+      "target": "'remove_game_member'",
+      "keys": [
+        "target_game_id",
+        "target_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_user_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 194,
+      "name": "get_player_status_history",
+      "target": "'get_player_status_history'",
+      "keys": [
+        "target_game_id",
+        "target_player_id",
+        "max_rows"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text, max_rows integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 195,
+      "name": "get_player_state",
+      "target": "'get_player_state'",
+      "keys": [
+        "target_game_id",
+        "target_player_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 196,
+      "name": "mutate_player_status",
+      "target": "'mutate_player_status'",
+      "keys": [
+        "target_game_id",
+        "target_status_id",
+        "target_operation",
+        "target_payload"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_status_id uuid, target_operation text, target_payload jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 197,
+      "name": "apply_player_status_changes",
+      "target": "'apply_player_status_changes'",
+      "keys": [
+        "target_game_id",
+        "target_changes"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_changes jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 199,
+      "name": "change_player_mode",
+      "target": "'change_player_mode'",
+      "keys": [
+        "target_game_id",
+        "target_player_id",
+        "target_mode_id",
+        "target_reason",
+        "target_source_type"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text, target_mode_id text, target_reason text, target_source_type text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 200,
+      "name": "mutate_temporary_mode_access",
+      "target": "'mutate_temporary_mode_access'",
+      "keys": [
+        "target_game_id",
+        "target_player_id",
+        "target_mode_id",
+        "target_operation",
+        "target_reason",
+        "target_expires_at",
+        "target_expires_cycle",
+        "target_expires_phase"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text, target_mode_id text, target_operation text, target_reason text, target_expires_at timestamp with time zone, target_expires_cycle integer, target_expires_phase text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 210,
+      "name": "grant_player_ability",
+      "target": "'grant_player_ability'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_player_id",
+        "target_ability_id",
+        "target_source_type",
+        "target_source_reference",
+        "target_reason",
+        "target_uses",
+        "target_duration_type",
+        "target_expires_at",
+        "target_expires_cycle",
+        "target_expires_phase",
+        "target_phase_restrictions",
+        "target_special_conditions",
+        "target_survives_conversion",
+        "target_stealable",
+        "target_metadata"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_player_id text, target_ability_id text, target_source_type text, target_source_reference text, target_reason text, target_uses integer, target_duration_type text, target_expires_at timestamp with time zone, target_expires_cycle integer, target_expires_phase text, target_phase_restrictions text[], target_special_conditions jsonb, target_survives_conversion boolean, target_stealable boolean, target_metadata jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 211,
+      "name": "bulk_grant_player_abilities",
+      "target": "'bulk_grant_player_abilities'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_grants"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_grants jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 212,
+      "name": "grant_random_player_ability",
+      "target": "'grant_random_player_ability'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_player_id",
+        "target_ability_pool",
+        "target_source_reference",
+        "target_reason",
+        "target_uses",
+        "target_duration_type"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_player_id text, target_ability_pool jsonb, target_source_reference text, target_reason text, target_uses integer, target_duration_type text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 213,
+      "name": "mutate_player_ability_grant",
+      "target": "'mutate_player_ability_grant'",
+      "keys": [
+        "target_grant_id",
+        "expected_version",
+        "target_operation",
+        "target_reason",
+        "target_uses_remaining"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_grant_id uuid, expected_version integer, target_operation text, target_reason text, target_uses_remaining integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 214,
+      "name": "queue_player_action",
+      "target": "'queue_player_action'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_action",
+        "target_replace_action_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_action jsonb, target_replace_action_id text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 215,
+      "name": "remove_queued_action",
+      "target": "'remove_queued_action'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_action_id",
+        "target_reason",
+        "target_phase_id",
+        "target_phase_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_action_id text, target_reason text, target_phase_id uuid, target_phase_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 216,
+      "name": "get_game_phase_context",
+      "target": "'get_game_phase_context'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 217,
+      "name": "preview_game_phase_advance",
+      "target": "'preview_game_phase_advance'",
+      "keys": [
+        "target_game_id",
+        "target_phase_id",
+        "target_phase_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_phase_id uuid, target_phase_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 218,
+      "name": "start_game_phase",
+      "target": "'start_game_phase'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_starting_phase",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_starting_phase text, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 219,
+      "name": "set_game_phase_pause",
+      "target": "'set_game_phase_pause'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_phase_id",
+        "target_phase_version",
+        "target_paused",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_phase_id uuid, target_phase_version integer, target_paused boolean, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 220,
+      "name": "advance_game_phase",
+      "target": "'advance_game_phase'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_phase_id",
+        "target_phase_version",
+        "target_allow_unresolved",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_phase_id uuid, target_phase_version integer, target_allow_unresolved boolean, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 221,
+      "name": "admin_correct_phase_action",
+      "target": "'admin_correct_phase_action'",
+      "keys": [
+        "target_game_id",
+        "target_phase_id",
+        "expected_phase_version",
+        "target_operation",
+        "target_action_id",
+        "target_action",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_phase_id uuid, expected_phase_version integer, target_operation text, target_action_id text, target_action jsonb, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 241,
+      "name": "list_standard_abilities",
+      "target": "'list_standard_abilities'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 245,
+      "name": "ensure_ai_conversation",
+      "target": "'ensure_ai_conversation'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 254,
+      "name": "create_knowledge_document",
+      "target": "'create_knowledge_document'",
+      "keys": [
+        "target_game_id",
+        "target_document_id",
+        "target_version_id",
+        "target_document_key",
+        "target_title",
+        "target_document_type",
+        "target_source_file_name",
+        "target_storage_path",
+        "target_file_size",
+        "target_content_type",
+        "target_source_sha256",
+        "target_status",
+        "target_scope"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_document_id uuid, target_version_id uuid, target_document_key text, target_title text, target_document_type text, target_source_file_name text, target_storage_path text, target_file_size bigint, target_content_type text, target_source_sha256 text, target_status text, target_scope text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 260,
+      "name": "activate_standard_ability_dataset",
+      "target": "'activate_standard_ability_dataset'",
+      "keys": [
+        "target_game_id",
+        "target_dataset_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_dataset_id text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 261,
+      "name": "create_standard_ability_version",
+      "target": "'create_standard_ability_version'",
+      "keys": [
+        "target_game_id",
+        "target_ability_id",
+        "target_description",
+        "target_structured_data",
+        "target_change_note"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_ability_id text, target_description text, target_structured_data jsonb, target_change_note text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 263,
+      "name": "save_role_ability_modifier",
+      "target": "'save_role_ability_modifier'",
+      "keys": [
+        "target_game_id",
+        "target_role_id",
+        "target_ability_id",
+        "target_modifier_text"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_role_id text, target_ability_id text, target_modifier_text text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 264,
+      "name": "start_new_ai_conversation",
+      "target": "'start_new_ai_conversation'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 271,
+      "name": "get_ai_learning_summary",
+      "target": "'get_ai_learning_summary'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 274,
+      "name": "get_cross_game_learning_patterns",
+      "target": "'get_cross_game_learning_patterns'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 275,
+      "name": "get_global_ability_concepts",
+      "target": "'get_global_ability_concepts'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 280,
+      "name": "get_global_rules",
+      "target": "'get_global_rules'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 281,
+      "name": "get_effective_ruleset",
+      "target": "'get_effective_ruleset'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 284,
+      "name": "get_mechanics_review_queue",
+      "target": "'get_mechanics_review_queue'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 285,
+      "name": "get_ability_usage_statistics",
+      "target": "'get_ability_usage_statistics'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 286,
+      "name": "get_resolution_usage_analytics",
+      "target": "'get_resolution_usage_analytics'",
+      "keys": [
+        "target_game_id",
+        "target_filters"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_filters jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 287,
+      "name": "get_ai_usage_month_summary",
+      "target": "'get_ai_usage_month_summary'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 292,
+      "name": "create_role_assignment_preview",
+      "target": "'create_role_assignment_preview'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version",
+        "target_replace_existing",
+        "target_locked_assignments",
+        "target_faction_constraints"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer, target_replace_existing boolean, target_locked_assignments jsonb, target_faction_constraints jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 293,
+      "name": "shuffle_role_assignment_preview",
+      "target": "'shuffle_role_assignment_preview'",
+      "keys": [
+        "target_preview_id",
+        "expected_preview_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_preview_id uuid, expected_preview_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 294,
+      "name": "cancel_role_assignment_preview",
+      "target": "'cancel_role_assignment_preview'",
+      "keys": [
+        "target_preview_id",
+        "expected_preview_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_preview_id uuid, expected_preview_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 295,
+      "name": "apply_role_assignment_preview",
+      "target": "'apply_role_assignment_preview'",
+      "keys": [
+        "target_preview_id",
+        "expected_preview_version",
+        "confirm_active_game"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_preview_id uuid, expected_preview_version integer, confirm_active_game boolean"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 296,
+      "name": "save_global_rule",
+      "target": "'save_global_rule'",
+      "keys": [
+        "target_game_id",
+        "target_rule_id",
+        "target_rule_key",
+        "target_name",
+        "target_category",
+        "target_description",
+        "target_structured_data",
+        "target_notes",
+        "target_active",
+        "expected_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_rule_id uuid, target_rule_key text, target_name text, target_category text, target_description text, target_structured_data jsonb, target_notes text, target_active boolean, expected_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 298,
+      "name": "start_resolution_session",
+      "target": "'start_resolution_session'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 299,
+      "name": "save_deterministic_resolution",
+      "target": "'save_deterministic_resolution'",
+      "keys": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_engine_proposal"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_engine_proposal jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 300,
+      "name": "approve_and_apply_resolution",
+      "target": "'approve_and_apply_resolution'",
+      "keys": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_final_resolution",
+        "target_gm_explanation",
+        "target_teach_ai",
+        "target_teach_scope",
+        "target_consumed_action_ids",
+        "target_idempotency_key",
+        "target_override_warnings",
+        "target_reject"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_final_resolution jsonb, target_gm_explanation text, target_teach_ai boolean, target_teach_scope text, target_consumed_action_ids text[], target_idempotency_key uuid, target_override_warnings boolean, target_reject boolean"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 301,
+      "name": "review_ai_draft",
+      "target": "'review_ai_draft'",
+      "keys": [
+        "target_draft_id",
+        "target_status"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_draft_id uuid, target_status text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 302,
+      "name": "approve_and_add_ai_draft",
+      "target": "'approve_and_add_ai_draft'",
+      "keys": [
+        "target_draft_id",
+        "expected_game_version",
+        "target_entity"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_draft_id uuid, expected_game_version integer, target_entity jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 303,
+      "name": "review_ai_change_proposal",
+      "target": "'review_ai_change_proposal'",
+      "keys": [
+        "target_proposal_id",
+        "expected_version",
+        "target_decision",
+        "target_edited_changes",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_proposal_id uuid, expected_version integer, target_decision text, target_edited_changes jsonb, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 304,
+      "name": "manage_gm_precedent",
+      "target": "'manage_gm_precedent'",
+      "keys": [
+        "target_precedent_id",
+        "expected_version",
+        "target_status",
+        "target_superseded_by",
+        "target_scope",
+        "target_authority",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_precedent_id uuid, expected_version integer, target_status text, target_superseded_by uuid, target_scope text, target_authority text, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 305,
+      "name": "promote_global_pattern",
+      "target": "'promote_global_pattern'",
+      "keys": [
+        "target_game_id",
+        "target_precedent_ids",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_precedent_ids uuid[], target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 306,
+      "name": "create_global_ability_concept",
+      "target": "'create_global_ability_concept'",
+      "keys": [
+        "target_game_id",
+        "target_concept_key",
+        "target_name",
+        "target_description",
+        "target_mechanics"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_concept_key text, target_name text, target_description text, target_mechanics jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 307,
+      "name": "approve_ability_concept_mapping",
+      "target": "'approve_ability_concept_mapping'",
+      "keys": [
+        "target_game_id",
+        "target_game_ability_id",
+        "target_global_concept_id",
+        "target_compatibility_level",
+        "target_notes",
+        "target_mechanic_fingerprint"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_game_ability_id text, target_global_concept_id uuid, target_compatibility_level text, target_notes text, target_mechanic_fingerprint jsonb"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 308,
+      "name": "remove_ability_concept_mapping",
+      "target": "'remove_ability_concept_mapping'",
+      "keys": [
+        "target_mapping_id",
+        "target_reason"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_mapping_id uuid, target_reason text"
+    },
+    {
+      "file": "js\\cloud.js",
+      "line": 309,
+      "name": "set_ai_usage_limit",
+      "target": "'set_ai_usage_limit'",
+      "keys": [
+        "target_game_id",
+        "target_monthly_limit_usd",
+        "target_requests_per_minute"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_monthly_limit_usd numeric, target_requests_per_minute integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 74,
+      "name": "complete_ai_usage_internal",
+      "target": "'complete_ai_usage_internal'",
+      "keys": [],
+      "unresolved": "; Argument object supplied by expression",
+      "status": "MANUAL_REVIEW"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 142,
+      "name": "record_master_gm_tool_call_internal",
+      "target": "'record_master_gm_tool_call_internal'",
+      "keys": [
+        "target_run_id",
+        "target_tool_name",
+        "target_required_permission",
+        "target_read_only",
+        "target_approval_required",
+        "target_game_scoped",
+        "target_input_summary",
+        "target_output_summary",
+        "target_success",
+        "target_error_code",
+        "target_duration_ms"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_tool_name text, target_required_permission text, target_read_only boolean, target_approval_required boolean, target_game_scoped boolean, target_input_summary jsonb, target_output_summary jsonb, target_success boolean, target_error_code text, target_duration_ms integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 164,
+      "name": "reserve_ai_usage_internal",
+      "target": "'reserve_ai_usage_internal'",
+      "keys": [
+        "target_game_id",
+        "actor_user_id",
+        "target_feature",
+        "target_model",
+        "target_request_id",
+        "target_pricing_snapshot"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, actor_user_id uuid, target_feature text, target_model text, target_request_id uuid, target_pricing_snapshot jsonb"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 181,
+      "name": "ensure_ai_conversation",
+      "target": "'ensure_ai_conversation'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 187,
+      "name": "create_master_gm_run_internal",
+      "target": "'create_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_game_id",
+        "target_conversation_id",
+        "target_request_id",
+        "target_user_message",
+        "target_requested_task",
+        "target_resolved_intent",
+        "target_referenced_entities",
+        "target_ambiguous_entities",
+        "target_selected_tools",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_game_id uuid, target_conversation_id uuid, target_request_id uuid, target_user_message text, target_requested_task text, target_resolved_intent text, target_referenced_entities jsonb, target_ambiguous_entities jsonb, target_selected_tools text[], actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 190,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 193,
+      "name": "get_game_phase_context",
+      "target": "'get_game_phase_context'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 201,
+      "name": "start_resolution_session",
+      "target": "'start_resolution_session'",
+      "keys": [
+        "target_game_id",
+        "expected_game_version"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, expected_game_version integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 208,
+      "name": "get_active_effects",
+      "target": "'get_active_effects'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 208,
+      "name": "get_pending_effects",
+      "target": "'get_pending_effects'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 208,
+      "name": "get_player_status_history",
+      "target": "'get_player_status_history'",
+      "keys": [
+        "target_game_id",
+        "target_player_id",
+        "max_rows"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text, max_rows integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 212,
+      "name": "get_player_state",
+      "target": "'get_player_state'",
+      "keys": [
+        "target_game_id",
+        "target_player_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_player_id text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 217,
+      "name": "get_effective_ruleset",
+      "target": "'get_effective_ruleset'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 220,
+      "name": "get_global_rules",
+      "target": "'get_global_rules'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 226,
+      "name": "record_master_gm_exchange_internal",
+      "target": "'record_master_gm_exchange_internal'",
+      "keys": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_user_content",
+        "target_assistant_content",
+        "target_result",
+        "target_model",
+        "target_game_version",
+        "target_request_id",
+        "target_intent",
+        "target_referenced_entities",
+        "target_tool_trace",
+        "target_context",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_user_content text, target_assistant_content text, target_result jsonb, target_model text, target_game_version integer, target_request_id uuid, target_intent text, target_referenced_entities jsonb, target_tool_trace jsonb, target_context jsonb, actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 226,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 230,
+      "name": "record_master_gm_exchange_internal",
+      "target": "'record_master_gm_exchange_internal'",
+      "keys": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_user_content",
+        "target_assistant_content",
+        "target_result",
+        "target_model",
+        "target_game_version",
+        "target_request_id",
+        "target_intent",
+        "target_referenced_entities",
+        "target_tool_trace",
+        "target_context",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_user_content text, target_assistant_content text, target_result jsonb, target_model text, target_game_version integer, target_request_id uuid, target_intent text, target_referenced_entities jsonb, target_tool_trace jsonb, target_context jsonb, actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 230,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 233,
+      "name": "record_master_gm_exchange_internal",
+      "target": "'record_master_gm_exchange_internal'",
+      "keys": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_user_content",
+        "target_assistant_content",
+        "target_result",
+        "target_model",
+        "target_game_version",
+        "target_request_id",
+        "target_intent",
+        "target_referenced_entities",
+        "target_tool_trace",
+        "target_context",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_user_content text, target_assistant_content text, target_result jsonb, target_model text, target_game_version integer, target_request_id uuid, target_intent text, target_referenced_entities jsonb, target_tool_trace jsonb, target_context jsonb, actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 233,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 237,
+      "name": "list_standard_abilities",
+      "target": "'list_standard_abilities'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 240,
+      "name": "reserve_ai_usage_internal",
+      "target": "'reserve_ai_usage_internal'",
+      "keys": [
+        "target_game_id",
+        "actor_user_id",
+        "target_feature",
+        "target_model",
+        "target_request_id",
+        "target_pricing_snapshot"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, actor_user_id uuid, target_feature text, target_model text, target_request_id uuid, target_pricing_snapshot jsonb"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 244,
+      "name": "match_game_knowledge",
+      "target": "'match_game_knowledge'",
+      "keys": [
+        "target_game_id",
+        "query_embedding",
+        "query_text",
+        "match_count"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, query_embedding vector, query_text text, match_count integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 246,
+      "name": "get_mechanics_review_queue",
+      "target": "'get_mechanics_review_queue'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 246,
+      "name": "get_cross_game_ability_usage_statistics",
+      "target": "'get_cross_game_ability_usage_statistics'",
+      "keys": [],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": ""
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 246,
+      "name": "get_resolution_usage_analytics",
+      "target": "'get_resolution_usage_analytics'",
+      "keys": [
+        "target_game_id",
+        "target_filters"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_filters jsonb"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 250,
+      "name": "search_gm_precedents",
+      "target": "'search_gm_precedents'",
+      "keys": [
+        "target_game_id",
+        "target_signature_tokens",
+        "target_query",
+        "match_count"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_signature_tokens text[], target_query text, match_count integer"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 250,
+      "name": "get_cross_game_learning_patterns",
+      "target": "'get_cross_game_learning_patterns'",
+      "keys": [
+        "target_game_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 284,
+      "name": "record_resolution_ai_proposal_internal",
+      "target": "'record_resolution_ai_proposal_internal'",
+      "keys": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_proposal",
+        "target_model",
+        "target_request_id",
+        "target_response_id",
+        "actor_user_id",
+        "target_used_precedent_ids"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_proposal jsonb, target_model text, target_request_id uuid, target_response_id text, actor_user_id uuid, target_used_precedent_ids uuid[]"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 286,
+      "name": "create_ai_draft_internal",
+      "target": "'create_ai_draft_internal'",
+      "keys": [
+        "target_game_id",
+        "target_draft_type",
+        "target_title",
+        "target_request_text",
+        "target_payload",
+        "target_possible_duplicate",
+        "target_duplicate_notes",
+        "target_model",
+        "target_request_id",
+        "target_source_versions",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_draft_type text, target_title text, target_request_text text, target_payload jsonb, target_possible_duplicate boolean, target_duplicate_notes text, target_model text, target_request_id uuid, target_source_versions jsonb, actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 288,
+      "name": null,
+      "target": "proposalFunction",
+      "keys": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_run_id",
+        "target_request_id",
+        "target_idempotency_key",
+        "target_title",
+        "target_summary",
+        "target_changes",
+        "target_source_game_version",
+        "target_model",
+        "actor_user_id"
+      ],
+      "unresolved": "Dynamic RPC target",
+      "status": "MANUAL_REVIEW"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 291,
+      "name": "record_master_gm_exchange_internal",
+      "target": "'record_master_gm_exchange_internal'",
+      "keys": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_user_content",
+        "target_assistant_content",
+        "target_result",
+        "target_model",
+        "target_game_version",
+        "target_request_id",
+        "target_intent",
+        "target_referenced_entities",
+        "target_tool_trace",
+        "target_context",
+        "actor_user_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_user_content text, target_assistant_content text, target_result jsonb, target_model text, target_game_version integer, target_request_id uuid, target_intent text, target_referenced_entities jsonb, target_tool_trace jsonb, target_context jsonb, actor_user_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 292,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-copilot\\index.ts",
+      "line": 294,
+      "name": "complete_master_gm_run_internal",
+      "target": "'complete_master_gm_run_internal'",
+      "keys": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text"
+    },
+    {
+      "file": "supabase\\functions\\gm-knowledge-ingest\\index.ts",
+      "line": 23,
+      "name": "claim_knowledge_ingestion_internal",
+      "target": "'claim_knowledge_ingestion_internal'",
+      "keys": [
+        "target_version_id",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_version_id uuid, actor_user_id uuid, target_claim_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-knowledge-ingest\\index.ts",
+      "line": 34,
+      "name": "complete_claimed_knowledge_ingestion_internal",
+      "target": "'complete_claimed_knowledge_ingestion_internal'",
+      "keys": [
+        "target_version_id",
+        "target_extracted_text",
+        "target_summary",
+        "target_chunks",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_version_id uuid, target_extracted_text text, target_summary text, target_chunks jsonb, actor_user_id uuid, target_claim_id uuid"
+    },
+    {
+      "file": "supabase\\functions\\gm-knowledge-ingest\\index.ts",
+      "line": 38,
+      "name": "fail_claimed_knowledge_ingestion_internal",
+      "target": "'fail_claimed_knowledge_ingestion_internal'",
+      "keys": [
+        "target_version_id",
+        "target_error",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "unresolved": "",
+      "status": "MATCH",
+      "signature": "target_version_id uuid, target_error text, actor_user_id uuid, target_claim_id uuid"
+    }
+  ],
+  "manual_review_resolution": {
+    "proposalFunction": {
+      "targets": [
+        "create_ai_change_proposal_internal",
+        "create_global_rule_proposal_internal"
+      ],
+      "status": "MATCH",
+      "argument_count": 11
+    },
+    "completeUsageRecord": {
+      "target": "complete_ai_usage_internal",
+      "status": "MATCH",
+      "payload_call_sites": 4,
+      "argument_count": 9
+    }
+  },
+  "catalog": [
+    {
+      "name": "activate_standard_ability_dataset",
+      "signature": "target_game_id uuid, target_dataset_id text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_dataset_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "admin_correct_phase_action",
+      "signature": "target_game_id uuid, target_phase_id uuid, expected_phase_version integer, target_operation text, target_action_id text, target_action jsonb, target_reason text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_phase_id",
+        "expected_phase_version",
+        "target_operation",
+        "target_action_id",
+        "target_action",
+        "target_reason"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "advance_game_phase",
+      "signature": "target_game_id uuid, expected_game_version integer, target_phase_id uuid, target_phase_version integer, target_allow_unresolved boolean, target_reason text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_phase_id",
+        "target_phase_version",
+        "target_allow_unresolved",
+        "target_reason"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "apply_player_status_changes",
+      "signature": "target_game_id uuid, target_changes jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_changes"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "apply_role_assignment_preview",
+      "signature": "target_preview_id uuid, expected_preview_version integer, confirm_active_game boolean",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_preview_id",
+        "expected_preview_version",
+        "confirm_active_game"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "approve_ability_concept_mapping",
+      "signature": "target_game_id uuid, target_game_ability_id text, target_global_concept_id uuid, target_compatibility_level text, target_notes text, target_mechanic_fingerprint jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_game_ability_id",
+        "target_global_concept_id",
+        "target_compatibility_level",
+        "target_notes",
+        "target_mechanic_fingerprint"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "approve_and_add_ai_draft",
+      "signature": "target_draft_id uuid, expected_game_version integer, target_entity jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": false,
+      "input_argument_names": [
+        "target_draft_id",
+        "expected_game_version",
+        "target_entity"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "approve_and_apply_resolution",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_final_resolution jsonb, target_gm_explanation text, target_teach_ai boolean, target_teach_scope text, target_consumed_action_ids text[], target_idempotency_key uuid, target_override_warnings boolean, target_reject boolean",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_final_resolution",
+        "target_gm_explanation",
+        "target_teach_ai",
+        "target_teach_scope",
+        "target_consumed_action_ids",
+        "target_idempotency_key",
+        "target_override_warnings",
+        "target_reject"
+      ],
+      "default_count": 5
+    },
+    {
+      "name": "bulk_grant_player_abilities",
+      "signature": "target_game_id uuid, expected_game_version integer, target_grants jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_grants"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "cancel_role_assignment_preview",
+      "signature": "target_preview_id uuid, expected_preview_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_preview_id",
+        "expected_preview_version"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "change_player_mode",
+      "signature": "target_game_id uuid, target_player_id text, target_mode_id text, target_reason text, target_source_type text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_player_id",
+        "target_mode_id",
+        "target_reason",
+        "target_source_type"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "claim_knowledge_ingestion_internal",
+      "signature": "target_version_id uuid, actor_user_id uuid, target_claim_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_version_id",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "complete_ai_usage_internal",
+      "signature": "target_request_id uuid, target_provider_response_id text, target_input_tokens integer, target_cached_input_tokens integer, target_output_tokens integer, target_estimated_cost_usd numeric, target_latency_ms integer, target_status text, target_error_code text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_request_id",
+        "target_provider_response_id",
+        "target_input_tokens",
+        "target_cached_input_tokens",
+        "target_output_tokens",
+        "target_estimated_cost_usd",
+        "target_latency_ms",
+        "target_status",
+        "target_error_code"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "complete_claimed_knowledge_ingestion_internal",
+      "signature": "target_version_id uuid, target_extracted_text text, target_summary text, target_chunks jsonb, actor_user_id uuid, target_claim_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_version_id",
+        "target_extracted_text",
+        "target_summary",
+        "target_chunks",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "complete_legacy_account",
+      "signature": "requested_username text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "requested_username"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "complete_master_gm_run_internal",
+      "signature": "target_run_id uuid, target_status text, target_result_summary text, target_error_code text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_run_id",
+        "target_status",
+        "target_result_summary",
+        "target_error_code"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_ai_draft_internal",
+      "signature": "target_game_id uuid, target_draft_type text, target_title text, target_request_text text, target_payload jsonb, target_possible_duplicate boolean, target_duplicate_notes text, target_model text, target_request_id uuid, target_source_versions jsonb, actor_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_draft_type",
+        "target_title",
+        "target_request_text",
+        "target_payload",
+        "target_possible_duplicate",
+        "target_duplicate_notes",
+        "target_model",
+        "target_request_id",
+        "target_source_versions",
+        "actor_user_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_game",
+      "signature": "game_id uuid, initial_document jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "game_id",
+        "initial_document"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_game_from_import",
+      "signature": "game_id uuid, initial_document jsonb, source_import_id uuid, source_file_name text, source_storage_path text, source_file_size bigint, source_content_type text, source_sha256 text, import_summary jsonb, import_warnings jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "game_id",
+        "initial_document",
+        "source_import_id",
+        "source_file_name",
+        "source_storage_path",
+        "source_file_size",
+        "source_content_type",
+        "source_sha256",
+        "import_summary",
+        "import_warnings"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_global_ability_concept",
+      "signature": "target_game_id uuid, target_concept_key text, target_name text, target_description text, target_mechanics jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_concept_key",
+        "target_name",
+        "target_description",
+        "target_mechanics"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_knowledge_document",
+      "signature": "target_game_id uuid, target_document_id uuid, target_version_id uuid, target_document_key text, target_title text, target_document_type text, target_source_file_name text, target_storage_path text, target_file_size bigint, target_content_type text, target_source_sha256 text, target_status text, target_scope text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_document_id",
+        "target_version_id",
+        "target_document_key",
+        "target_title",
+        "target_document_type",
+        "target_source_file_name",
+        "target_storage_path",
+        "target_file_size",
+        "target_content_type",
+        "target_source_sha256",
+        "target_status",
+        "target_scope"
+      ],
+      "default_count": 3
+    },
+    {
+      "name": "create_master_gm_run_internal",
+      "signature": "target_run_id uuid, target_game_id uuid, target_conversation_id uuid, target_request_id uuid, target_user_message text, target_requested_task text, target_resolved_intent text, target_referenced_entities jsonb, target_ambiguous_entities jsonb, target_selected_tools text[], actor_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_run_id",
+        "target_game_id",
+        "target_conversation_id",
+        "target_request_id",
+        "target_user_message",
+        "target_requested_task",
+        "target_resolved_intent",
+        "target_referenced_entities",
+        "target_ambiguous_entities",
+        "target_selected_tools",
+        "actor_user_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_role_assignment_preview",
+      "signature": "target_game_id uuid, expected_game_version integer, target_replace_existing boolean, target_locked_assignments jsonb, target_faction_constraints jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_replace_existing",
+        "target_locked_assignments",
+        "target_faction_constraints"
+      ],
+      "default_count": 3
+    },
+    {
+      "name": "create_standard_ability_version",
+      "signature": "target_game_id uuid, target_ability_id text, target_description text, target_structured_data jsonb, target_change_note text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_ability_id",
+        "target_description",
+        "target_structured_data",
+        "target_change_note"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "delete_game",
+      "signature": "target_game_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "ensure_ai_conversation",
+      "signature": "target_game_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "fail_claimed_knowledge_ingestion_internal",
+      "signature": "target_version_id uuid, target_error text, actor_user_id uuid, target_claim_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_version_id",
+        "target_error",
+        "actor_user_id",
+        "target_claim_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "generate_game_invite",
+      "signature": "target_game_id uuid, invite_permission text, expires_in_seconds integer, requested_max_uses integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "invite_permission",
+        "expires_in_seconds",
+        "requested_max_uses"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_ability_usage_statistics",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_active_effects",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_ai_learning_summary",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_ai_usage_month_summary",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_cross_game_ability_usage_statistics",
+      "signature": "",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [],
+      "default_count": 0
+    },
+    {
+      "name": "get_cross_game_learning_patterns",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_effective_ruleset",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_game_phase_context",
+      "signature": "target_game_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_global_ability_concepts",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_global_rules",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_mechanics_review_queue",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "get_pending_effects",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_player_state",
+      "signature": "target_game_id uuid, target_player_id text",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_player_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "get_player_status_history",
+      "signature": "target_game_id uuid, target_player_id text, max_rows integer",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_player_id",
+        "max_rows"
+      ],
+      "default_count": 2
+    },
+    {
+      "name": "get_resolution_usage_analytics",
+      "signature": "target_game_id uuid, target_filters jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_filters"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "grant_player_ability",
+      "signature": "target_game_id uuid, expected_game_version integer, target_player_id text, target_ability_id text, target_source_type text, target_source_reference text, target_reason text, target_uses integer, target_duration_type text, target_expires_at timestamp with time zone, target_expires_cycle integer, target_expires_phase text, target_phase_restrictions text[], target_special_conditions jsonb, target_survives_conversion boolean, target_stealable boolean, target_metadata jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_player_id",
+        "target_ability_id",
+        "target_source_type",
+        "target_source_reference",
+        "target_reason",
+        "target_uses",
+        "target_duration_type",
+        "target_expires_at",
+        "target_expires_cycle",
+        "target_expires_phase",
+        "target_phase_restrictions",
+        "target_special_conditions",
+        "target_survives_conversion",
+        "target_stealable",
+        "target_metadata"
+      ],
+      "default_count": 13
+    },
+    {
+      "name": "grant_random_player_ability",
+      "signature": "target_game_id uuid, expected_game_version integer, target_player_id text, target_ability_pool jsonb, target_source_reference text, target_reason text, target_uses integer, target_duration_type text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_player_id",
+        "target_ability_pool",
+        "target_source_reference",
+        "target_reason",
+        "target_uses",
+        "target_duration_type"
+      ],
+      "default_count": 2
+    },
+    {
+      "name": "list_standard_abilities",
+      "signature": "target_game_id uuid",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "manage_gm_precedent",
+      "signature": "target_precedent_id uuid, expected_version integer, target_status text, target_superseded_by uuid, target_scope text, target_authority text, target_reason text",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_precedent_id",
+        "expected_version",
+        "target_status",
+        "target_superseded_by",
+        "target_scope",
+        "target_authority",
+        "target_reason"
+      ],
+      "default_count": 4
+    },
+    {
+      "name": "match_game_knowledge",
+      "signature": "target_game_id uuid, query_embedding vector, query_text text, match_count integer",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "query_embedding",
+        "query_text",
+        "match_count"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "mutate_player_ability_grant",
+      "signature": "target_grant_id uuid, expected_version integer, target_operation text, target_reason text, target_uses_remaining integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_grant_id",
+        "expected_version",
+        "target_operation",
+        "target_reason",
+        "target_uses_remaining"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "mutate_player_status",
+      "signature": "target_game_id uuid, target_status_id uuid, target_operation text, target_payload jsonb",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_status_id",
+        "target_operation",
+        "target_payload"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "mutate_temporary_mode_access",
+      "signature": "target_game_id uuid, target_player_id text, target_mode_id text, target_operation text, target_reason text, target_expires_at timestamp with time zone, target_expires_cycle integer, target_expires_phase text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_player_id",
+        "target_mode_id",
+        "target_operation",
+        "target_reason",
+        "target_expires_at",
+        "target_expires_cycle",
+        "target_expires_phase"
+      ],
+      "default_count": 3
+    },
+    {
+      "name": "preview_game_phase_advance",
+      "signature": "target_game_id uuid, target_phase_id uuid, target_phase_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_phase_id",
+        "target_phase_version"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "promote_global_pattern",
+      "signature": "target_game_id uuid, target_precedent_ids uuid[], target_reason text",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_precedent_ids",
+        "target_reason"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "queue_player_action",
+      "signature": "target_game_id uuid, expected_game_version integer, target_action jsonb, target_replace_action_id text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_action",
+        "target_replace_action_id"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "record_master_gm_exchange_internal",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_user_content text, target_assistant_content text, target_result jsonb, target_model text, target_game_version integer, target_request_id uuid, target_intent text, target_referenced_entities jsonb, target_tool_trace jsonb, target_context jsonb, actor_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_user_content",
+        "target_assistant_content",
+        "target_result",
+        "target_model",
+        "target_game_version",
+        "target_request_id",
+        "target_intent",
+        "target_referenced_entities",
+        "target_tool_trace",
+        "target_context",
+        "actor_user_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "record_master_gm_tool_call_internal",
+      "signature": "target_run_id uuid, target_tool_name text, target_required_permission text, target_read_only boolean, target_approval_required boolean, target_game_scoped boolean, target_input_summary jsonb, target_output_summary jsonb, target_success boolean, target_error_code text, target_duration_ms integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_run_id",
+        "target_tool_name",
+        "target_required_permission",
+        "target_read_only",
+        "target_approval_required",
+        "target_game_scoped",
+        "target_input_summary",
+        "target_output_summary",
+        "target_success",
+        "target_error_code",
+        "target_duration_ms"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "record_resolution_ai_proposal_internal",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_proposal jsonb, target_model text, target_request_id uuid, target_response_id text, actor_user_id uuid, target_used_precedent_ids uuid[]",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_proposal",
+        "target_model",
+        "target_request_id",
+        "target_response_id",
+        "actor_user_id",
+        "target_used_precedent_ids"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "redeem_game_invite",
+      "signature": "invite_code text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "invite_code"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "remove_ability_concept_mapping",
+      "signature": "target_mapping_id uuid, target_reason text",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_mapping_id",
+        "target_reason"
+      ],
+      "default_count": 1
+    },
+    {
+      "name": "remove_game_member",
+      "signature": "target_game_id uuid, target_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_user_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "remove_queued_action",
+      "signature": "target_game_id uuid, expected_game_version integer, target_action_id text, target_reason text, target_phase_id uuid, target_phase_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_action_id",
+        "target_reason",
+        "target_phase_id",
+        "target_phase_version"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "reserve_ai_usage_internal",
+      "signature": "target_game_id uuid, actor_user_id uuid, target_feature text, target_model text, target_request_id uuid, target_pricing_snapshot jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "actor_user_id",
+        "target_feature",
+        "target_model",
+        "target_request_id",
+        "target_pricing_snapshot"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "review_ai_change_proposal",
+      "signature": "target_proposal_id uuid, expected_version integer, target_decision text, target_edited_changes jsonb, target_reason text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_proposal_id",
+        "expected_version",
+        "target_decision",
+        "target_edited_changes",
+        "target_reason"
+      ],
+      "default_count": 2
+    },
+    {
+      "name": "review_ai_draft",
+      "signature": "target_draft_id uuid, target_status text",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_draft_id",
+        "target_status"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "revoke_game_invite",
+      "signature": "target_invite_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_invite_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "save_deterministic_resolution",
+      "signature": "target_session_id uuid, expected_lock_version integer, target_engine_proposal jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_session_id",
+        "expected_lock_version",
+        "target_engine_proposal"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "save_game_document",
+      "signature": "target_game_id uuid, expected_version integer, next_document jsonb, change_action text, change_entity_type text, change_entity_id text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_version",
+        "next_document",
+        "change_action",
+        "change_entity_type",
+        "change_entity_id"
+      ],
+      "default_count": 3
+    },
+    {
+      "name": "save_game_reimport",
+      "signature": "target_game_id uuid, expected_version integer, next_document jsonb, source_import_id uuid, source_file_name text, source_storage_path text, source_file_size bigint, source_content_type text, source_sha256 text, import_summary jsonb, import_warnings jsonb",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_version",
+        "next_document",
+        "source_import_id",
+        "source_file_name",
+        "source_storage_path",
+        "source_file_size",
+        "source_content_type",
+        "source_sha256",
+        "import_summary",
+        "import_warnings"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "save_global_rule",
+      "signature": "target_game_id uuid, target_rule_id uuid, target_rule_key text, target_name text, target_category text, target_description text, target_structured_data jsonb, target_notes text, target_active boolean, expected_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_rule_id",
+        "target_rule_key",
+        "target_name",
+        "target_category",
+        "target_description",
+        "target_structured_data",
+        "target_notes",
+        "target_active",
+        "expected_version"
+      ],
+      "default_count": 4
+    },
+    {
+      "name": "save_role_ability_modifier",
+      "signature": "target_game_id uuid, target_role_id text, target_ability_id text, target_modifier_text text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_role_id",
+        "target_ability_id",
+        "target_modifier_text"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "search_gm_precedents",
+      "signature": "target_game_id uuid, target_signature_tokens text[], target_query text, match_count integer",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_signature_tokens",
+        "target_query",
+        "match_count"
+      ],
+      "default_count": 2
+    },
+    {
+      "name": "set_ai_usage_limit",
+      "signature": "target_game_id uuid, target_monthly_limit_usd numeric, target_requests_per_minute integer",
+      "security_definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_monthly_limit_usd",
+        "target_requests_per_minute"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "set_game_member_role",
+      "signature": "target_game_id uuid, target_user_id uuid, next_role text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_user_id",
+        "next_role"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "set_game_phase_pause",
+      "signature": "target_game_id uuid, expected_game_version integer, target_phase_id uuid, target_phase_version integer, target_paused boolean, target_reason text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_phase_id",
+        "target_phase_version",
+        "target_paused",
+        "target_reason"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "shuffle_role_assignment_preview",
+      "signature": "target_preview_id uuid, expected_preview_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_preview_id",
+        "expected_preview_version"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "start_game_phase",
+      "signature": "target_game_id uuid, expected_game_version integer, target_starting_phase text, target_reason text",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version",
+        "target_starting_phase",
+        "target_reason"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "start_new_ai_conversation",
+      "signature": "target_game_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "start_resolution_session",
+      "signature": "target_game_id uuid, expected_game_version integer",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "expected_game_version"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_ai_change_proposal_internal",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_run_id uuid, target_request_id uuid, target_idempotency_key uuid, target_title text, target_summary text, target_changes jsonb, target_source_game_version integer, target_model text, actor_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_run_id",
+        "target_request_id",
+        "target_idempotency_key",
+        "target_title",
+        "target_summary",
+        "target_changes",
+        "target_source_game_version",
+        "target_model",
+        "actor_user_id"
+      ],
+      "default_count": 0
+    },
+    {
+      "name": "create_global_rule_proposal_internal",
+      "signature": "target_game_id uuid, target_conversation_id uuid, target_run_id uuid, target_request_id uuid, target_idempotency_key uuid, target_title text, target_summary text, target_changes jsonb, target_source_game_version integer, target_model text, actor_user_id uuid",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_execute": true,
+      "input_argument_names": [
+        "target_game_id",
+        "target_conversation_id",
+        "target_run_id",
+        "target_request_id",
+        "target_idempotency_key",
+        "target_title",
+        "target_summary",
+        "target_changes",
+        "target_source_game_version",
+        "target_model",
+        "actor_user_id"
+      ],
+      "default_count": 0
+    }
+  ],
+  "legacy_textual_references": [
+    {
+      "caller": "private.approve_and_apply_resolution_v11_5",
+      "referenced_legacy_name": "finalize_resolution_with_grants"
+    },
+    {
+      "caller": "private.finalize_resolution_with_grants_v11_2",
+      "referenced_legacy_name": "finalize_resolution_session"
+    },
+    {
+      "caller": "public.finalize_resolution_session",
+      "referenced_legacy_name": "finalize_resolution_with_grants"
+    }
+  ]
+}
