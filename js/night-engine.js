@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.16';
+export const NIGHT_ENGINE_VERSION='1.2.17';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -363,7 +363,13 @@ export function recalculateNight(previous={},input={},correction={}){
   for(const patch of overrides.values())if(patch.standardizedAbilityType){
     patch.gmResolutionClassification={name:patch.standardizedAbilityType,resolutionCategory:patch.resolutionCategory,resolutionTiming:patch.resolutionTiming};
   }
-  const next=resolveNightDeterministically({...input,randomOutcomes:previous.random_outcomes||previous.randomOutcomes||{},aiAdjudications:correction.aiAdjudications??input.aiAdjudications,rules:[...array(input.rules),...array(correction.rules)],actions:array(input.actions).map(action=>({...action,...overrides.get(action.id)}))});
-  next.recalculation={from_resolution_id:text(previous.starting_snapshot?.resolution_id||previous.observability?.resolution_id,120),earliest_affected_stage:GLOBAL_RESOLUTION_ORDER[stageIndex],random_outcomes_reused:true,correction:clone(correction),action_overrides:[...overrides].map(([action_id,patch])=>({action_id,patch}))};
+  // Replays use the same source precedence as buildNightSnapshot. Keep appended
+  // GM rules separately from the immutable source so subsequent edits retain
+  // earlier corrections without replacing game rules or compiling their prose.
+  const nested=input.snapshot&&typeof input.snapshot==='object',source=nested?input.snapshot:input;
+  const ruleAdditions=[...array(previous.recalculation?.rule_additions??prior?.rules),...array(correction.rules)].map(clone);
+  const rules=[...array(source.rules??input.rules),...ruleAdditions];
+  const next=resolveNightDeterministically({...input,...(nested?{snapshot:{...source,rules}}:{}),randomOutcomes:previous.random_outcomes||previous.randomOutcomes||{},aiAdjudications:correction.aiAdjudications??input.aiAdjudications,rules,actions:array(input.actions??source.submitted_actions).map(action=>({...action,...overrides.get(action.id)}))});
+  next.recalculation={from_resolution_id:text(previous.starting_snapshot?.resolution_id||previous.observability?.resolution_id,120),earliest_affected_stage:GLOBAL_RESOLUTION_ORDER[stageIndex],random_outcomes_reused:true,correction:clone(correction),rule_additions:ruleAdditions,action_overrides:[...overrides].map(([action_id,patch])=>({action_id,patch}))};
   return next;
 }
