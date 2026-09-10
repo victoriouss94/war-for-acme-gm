@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.15';
+export const NIGHT_ENGINE_VERSION='1.2.16';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -39,6 +39,16 @@ export function buildNightSnapshot(input={}){
   return {schema_version:1,game_id:text(input.gameId??source.game_id,120),resolution_id:text(input.resolutionId??source.resolution_id,120),round:Number(input.round??input.cycle??source.round??source.cycle)||0,phase:text((input.phase??source.phase)||'Night',40),players,roles,factions,abilities,statuses,grants,modes,temporaryModeAccess,passives,rules,precedents,submitted_actions:array(input.actions??source.submitted_actions).map(clone),captured_at:text(source.captured_at||new Date().toISOString(),80)};
 }
 
+function guardEffectDispatch(behavior,standard){
+  // Existing handlers dispatch by standard identity, not arbitrary effect text.
+  // Preserve a conflicting source effect for review; never silently execute the
+  // named standard or guess another standard that happens to share that effect.
+  if(standard?.behavior?.effect&&behavior.effect&&behavior.effect!=='CUSTOM'&&behavior.effect!==standard.behavior.effect){
+    return {...behavior,sourceEffect:behavior.effect,effect:'CUSTOM',requiresExplicitRule:true};
+  }
+  return behavior;
+}
+
 function behaviorFor(action,ability){
   const standard=globalAbilityDefinition(action.standardizedAbilityType||action.standardized_ability_type||ability||action),explicit=action.engineBehavior||action.engine_behavior||ability?.engineBehavior||ability?.engine_behavior||ability?.understanding?.engineBehavior||ability?.understanding?.engine_behavior;
   const runtime=key(action.standardizedAbilityType||action.abilityName||action.name)==='capture'?{effect:'APPLY_STATUS',statusType:'ABILITIES_DISABLED',captureWindow:'CURRENT_NIGHT',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']}:null;
@@ -47,7 +57,7 @@ function behaviorFor(action,ability){
   // A base-standard mapping describes only the known part of a custom identity.
   // Require a reviewed executable primitive or a per-action GM correction.
   if(customIdentity===true&&!action.gmResolutionClassification&&explicit?.requiresExplicitRule!==false){behavior.effect='CUSTOM';behavior.requiresExplicitRule=true;}
-  return {standard,...behavior};
+  return {standard,...guardEffectDispatch(behavior,standard)};
 }
 
 function normalizeEngineAction(raw,index,abilityById){
@@ -166,7 +176,7 @@ export function resolveNightDeterministically(input={}){
       const adjudication=action.gmResolutionClassification?null:adjudicationByAction.get(action.id);
       if(adjudication?.status!=='ADJUDICATED'||!['HIGH','MEDIUM'].includes(adjudication.confidence)||adjudication.behavior?.requiresExplicitRule!==false||!GLOBAL_RESOLUTION_ORDER.includes(adjudication.resolution_category))continue;
       const definition=globalAbilityDefinition(adjudication.standardized_type),overrides=Object.fromEntries(Object.entries(adjudication.behavior).filter(([,value])=>value!==null));
-      const behavior={...definition?.behavior,...overrides,standard:definition};
+      const behavior=guardEffectDispatch({...definition?.behavior,...overrides,standard:definition},definition);
       action.behavior=behavior;action.tags=unique(behavior.tags);action.strength=Number(behavior.killTier??behavior.protectionTier)||0;
       for(const flag of ['blockable','redirectable','reflectable','protectable'])action[flag]=action.tags.includes(flag.toUpperCase());
       action.resolutionCategory=adjudication.resolution_category;action.resolutionPriority=GLOBAL_RESOLUTION_ORDER.indexOf(action.resolutionCategory)+1;
@@ -208,7 +218,7 @@ export function resolveNightDeterministically(input={}){
       const blockedReason=actionBlockReason(action);if(blockedReason){mark(action,'BLOCKED',blockedReason,[]);action.useDisposition='NOT_CONSUMED';return false;}
       // A familiar name is not permission to replace an explicitly unsupported
       // source primitive with the encyclopedia's default effect.
-      if(action.behavior.effect==='CUSTOM'){unresolved(action,'Which supported effect primitive implements this explicit CUSTOM behavior? The standard ability name cannot override its source rule.');return false;}
+      if(action.behavior.effect==='CUSTOM'){unresolved(action,action.behavior.sourceEffect?`The explicit ${action.behavior.sourceEffect} effect conflicts with the ${action.behavior.standard?.abilityId} standard handler. Which reviewed standard and effect should apply?`:'Which supported effect primitive implements this explicit CUSTOM behavior? The standard ability name cannot override its source rule.');return false;}
       action.executionStarted=true;
       const mechanic=action.behavior.standard?.abilityId||key(action.standardizedAbilityType);
       if(ctx.stage==='STATUS_EFFECTS'&&mechanic==='steal'){
