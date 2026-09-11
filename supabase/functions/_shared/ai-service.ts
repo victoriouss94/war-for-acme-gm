@@ -61,12 +61,16 @@ export async function structuredResponse(options:{model:string;userId:string;ins
   return {result:parsed.value,responseId:textValue(payload?.id,200),usage,repairAttempts};
 }
 
-export async function createEmbeddings(inputs:string[]){
+export async function createEmbeddings(inputs:string[],options:{onUsage?:(usage:unknown,model:string)=>void}={}){
   const key=Deno.env.get('OPENAI_API_KEY')||'';if(!key)throw new OpenAIServiceError('The AI service is not configured.',503,'CONFIGURATION_ERROR');
   let response:Response;
   try{response=await fetch('https://api.openai.com/v1/embeddings',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:embeddingModel(),input:inputs,encoding_format:'float'})})}
   catch{throw new OpenAIServiceError('The AI embedding service could not be reached.',502,'OPENAI_UNAVAILABLE')}
-  const payload=await response.json().catch(()=>({}));if(!response.ok)throw apiError(payload,response.status);
+  const payload=await response.json().catch(()=>({}));
+  // Preserve available provider usage before HTTP/vector validation can throw.
+  // This is request-local observation, not a durable ledger or a cost estimate.
+  options.onUsage?.(payload?.usage||null,embeddingModel());
+  if(!response.ok)throw apiError(payload,response.status);
   const rows=payload?.data;
   // Each input must have exactly one finite vector at its own index. Truncating
   // extra rows or accepting duplicate indexes can attach a passage to the wrong vector.

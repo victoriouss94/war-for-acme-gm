@@ -16,14 +16,16 @@ const base={model:'audit-model',userId:'synthetic-user',instructions:'Test',inpu
 const usage=(input,output,cached=0)=>({input_tokens:input,output_tokens:output,input_tokens_details:{cached_tokens:cached}});
 const payload=(output_text='{"answer":"ok"}',id='response-1',tokens=usage(100,20,30))=>({status:'completed',id,usage:tokens,output_text});
 
-function mocks(t,responses,environment={}){
+function mocks(t,responses,environment={},embeddingResponse){
   const calls=[];
   calls.attemptedUrls=[];
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     calls.attemptedUrls.push(url);
     if(url==='https://api.openai.com/v1/embeddings'){
       assert.equal(options.headers.Authorization,'Bearer synthetic-test-key');
-      return Response.json({data:[{index:0,embedding:Array(1536).fill(0)}],usage:{prompt_tokens:10,total_tokens:10}});
+      if(embeddingResponse instanceof Error)throw embeddingResponse;
+      const next=embeddingResponse??{data:[{index:0,embedding:Array(1536).fill(0)}],usage:{prompt_tokens:10,total_tokens:10}};
+      return Response.json(next.body??next,{status:next.httpStatus??200});
     }
     assert.equal(url,'https://api.openai.com/v1/responses');
     assert.equal(options.headers.Authorization,'Bearer synthetic-test-key');
@@ -83,6 +85,44 @@ test('initial transport failure does not invent unreported provider usage',async
   assert.deepEqual(tracker.usage,usage(0,0));assert.equal(tracker.responseId,'');
 });
 
+const embeddingVectors=[{index:0,embedding:Array(1536).fill(0)}];
+for(const [name,embeddingResponse,observed,expected,successfulSearch] of [
+  ['valid',{data:embeddingVectors,usage:{prompt_tokens:17,total_tokens:17,private_field:'must-not-leak'}},true,{prompt_tokens:17,total_tokens:17},true],
+  ['invalid vectors',{data:[],usage:{prompt_tokens:19,total_tokens:19}},true,{prompt_tokens:19,total_tokens:19},false],
+  ['HTTP failure',{httpStatus:429,body:{error:{code:'insufficient_quota'},usage:{prompt_tokens:23,total_tokens:23}}},true,{prompt_tokens:23,total_tokens:23},false],
+  ['missing usage',{data:embeddingVectors},true,{prompt_tokens:null,total_tokens:null},true],
+  ['malformed usage',{data:embeddingVectors,usage:{prompt_tokens:-1,total_tokens:'23'}},true,{prompt_tokens:null,total_tokens:null},true],
+  ['network failure',new Error('Synthetic embedding transport failure'),false,null,false],
+]){
+  test('document search retains separate private embedding usage: '+name,async t=>{
+    t.mock.method(console,'warn',()=>{});
+    const {response,rpcCalls,calls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{
+      task:'explain_content',message:'Explain the official document rules',embeddingResponse
+    });
+    assert.equal(response.status,200);
+    const trace=rpcCalls.find(call=>call.name==='record_master_gm_tool_call_internal'&&call.args.target_tool_name==='searchDocuments');
+    assert.ok(trace,'Document search must be persisted in the existing tool trace');
+    assert.equal(trace.args.target_success,successfulSearch);
+    assert.equal(trace.args.target_output_summary.embedding_usage_observed,observed);
+    assert.deepEqual(trace.args.target_output_summary.embedding_usage,expected&&{model:'text-embedding-3-small',...expected});
+    const completed=rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args;
+    assert.equal(completed.target_input_tokens,100,'Embedding tokens are not response-model tokens');
+    assert.equal(completed.target_output_tokens,20);
+    assert.equal(calls.attemptedUrls.filter(url=>url.endsWith('/embeddings')).length,1);
+    const result=await response.json(),providerInput=JSON.parse(calls[0].input);
+    assert.ok(!JSON.stringify(result).includes('embedding_usage'),'Private trace counts are not exposed to the client');
+    assert.ok(!JSON.stringify(providerInput.tool_results).includes('embedding_usage'),'Private trace counts are not sent to the language model');
+    assert.ok(!JSON.stringify(trace.args.target_output_summary).includes('private_field'));
+  });
+}
+test('document search usage is retained when subsequent answer parsing fails',async t=>{
+  const {response,rpcCalls}=await handlerFixture(t,payload('{'),{task:'explain_content',message:'Explain the official document rules'});
+  assert.equal(response.status,502);
+  const trace=rpcCalls.find(call=>call.name==='record_master_gm_tool_call_internal'&&call.args.target_tool_name==='searchDocuments');
+  assert.deepEqual(trace.args.target_output_summary.embedding_usage,{model:'text-embedding-3-small',prompt_tokens:10,total_tokens:10});
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
+});
+
 const copilotSource=await readFile(new URL('gm-copilot/index.ts',root),'utf8');
 const globalResolution=dataModule(stripTypeScriptTypes(await readFile(new URL('_shared/global-resolution.ts',root),'utf8')));
 const copilotJs=stripTypeScriptTypes(copilotSource
@@ -90,7 +130,7 @@ const copilotJs=stripTypeScriptTypes(copilotSource
   .replace("'../_shared/global-resolution.ts'",JSON.stringify(globalResolution))
   .replace(/'(\.\.\/_shared\/[^']+\.js)'/g,(_,path)=>JSON.stringify(new URL(path,new URL('gm-copilot/',root)).href)));
 async function handlerFixture(t,body,options={}){
-  const calls=mocks(t,[body],{SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-public',SUPABASE_SERVICE_ROLE_KEY:'synthetic-service'});
+  const calls=mocks(t,[body],{SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-public',SUPABASE_SERVICE_ROLE_KEY:'synthetic-service'},options.embeddingResponse);
   const gameId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222';
   const rpcCalls=[],userRpcCalls=[],rows={
     game_members:{member_role:options.memberRole??'gm'},

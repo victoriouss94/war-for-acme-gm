@@ -241,7 +241,27 @@ Deno.serve(async(req:Request)=>{
   if(reservation.error){const code=reservation.error.message.includes('MONTHLY')?'AI_MONTHLY_LIMIT_REACHED':reservation.error.message.includes('RATE')?'RATE_LIMITED':'AI_USAGE_UNAVAILABLE';await failRun(code,'The AI usage request was not authorized.');return json({error:code==='AI_MONTHLY_LIMIT_REACHED'?'This game reached its configured monthly AI spending limit.':'The AI usage request could not be authorized.',code},code==='RATE_LIMITED'?429:code==='AI_MONTHLY_LIMIT_REACHED'?402:503,origin)}
   try{
   let chunks:any[]=[];
-  if(selectedTools.includes('searchDocuments')){const documentStarted=Date.now();try{const {vectors}=await createEmbeddings([message]);const matched=await client.rpc('match_game_knowledge',{target_game_id:gameId,query_embedding:vectors[0],query_text:message,match_count:8});if(!matched.error)chunks=list(matched.data,20);trace.push({name:'searchDocuments',success:!matched.error,error_code:matched.error?'DOCUMENT_SEARCH_FAILED':'',duration_ms:Date.now()-documentStarted,input:{terms:terms.slice(0,10)},output:{matches:chunks.length}})}catch(error){trace.push({name:'searchDocuments',success:false,error_code:'DOCUMENT_SEARCH_FAILED',duration_ms:Date.now()-documentStarted,input:{terms:terms.slice(0,10)},output:{}});console.warn('Knowledge retrieval unavailable',error)}}
+  if(selectedTools.includes('searchDocuments')){
+    const documentStarted=Date.now();
+    let embeddingUsage:any=null,embeddingUsageObserved=false;
+    const observeEmbeddingUsage=(usage:any,model:string)=>{
+      const count=(value:unknown)=>Number.isSafeInteger(value)&&Number(value)>=0?value:null;
+      embeddingUsageObserved=true;
+      embeddingUsage={model,prompt_tokens:count(usage?.prompt_tokens),total_tokens:count(usage?.total_tokens)};
+    };
+    // Keep embedding counts in the private tool trace, not response-model pricing.
+    // Missing provider usage remains unknown; this trace is not a durable cost ledger.
+    const searchOutput=()=>({matches:chunks.length,embedding_usage_observed:embeddingUsageObserved,embedding_usage:embeddingUsage});
+    try{
+      const {vectors}=await createEmbeddings([message],{onUsage:observeEmbeddingUsage});
+      const matched=await client.rpc('match_game_knowledge',{target_game_id:gameId,query_embedding:vectors[0],query_text:message,match_count:8});
+      if(!matched.error)chunks=list(matched.data,20);
+      trace.push({name:'searchDocuments',success:!matched.error,error_code:matched.error?'DOCUMENT_SEARCH_FAILED':'',duration_ms:Date.now()-documentStarted,input:{terms:terms.slice(0,10)},output:searchOutput()});
+    }catch(error){
+      trace.push({name:'searchDocuments',success:false,error_code:'DOCUMENT_SEARCH_FAILED',duration_ms:Date.now()-documentStarted,input:{terms:terms.slice(0,10)},output:searchOutput()});
+      console.warn('Knowledge retrieval unavailable',error);
+    }
+  }
   for(const chunk of chunks){const sourceId=`doc:${chunk.chunk_id}`,scope=chunk.knowledge_scope||'GAME_SPECIFIC';sources.set(sourceId,sourceRecord(sourceId,scope==='GLOBAL'?'global_official_document':'official_document',chunk.document_title,String(chunk.document_version),chunk.source_locator||chunk.heading,chunk.content,{scope,originGame:chunk.origin_game_name||''}));retrievedReferences.push({type:'document',id:String(chunk.document_id||chunk.chunk_id),name:String(chunk.document_title||'Official document')})}
   const roleIds=list(gameContext.relevant.roles,100).map((role:any)=>role.id),[modifierResult,mechanicsReviewResult,abilityUsageResult]=await Promise.all([roleIds.length?client.from('role_ability_modifiers').select('role_id,ability_id,modifier_text,version_number').eq('game_id',gameId).eq('status','ACTIVE').in('role_id',roleIds):Promise.resolve({data:[]}),client.rpc('get_mechanics_review_queue',{target_game_id:crossGameQuestion?null:gameId}),crossGameQuestion?client.rpc('get_cross_game_ability_usage_statistics'):client.rpc('get_resolution_usage_analytics',{target_game_id:gameId,target_filters:{}})]);
   const abilityUsageHistory=crossGameQuestion||abilityUsageResult.error?[]:list(abilityUsageResult.data?.history,1000);if(!crossGameQuestion&&!abilityUsageResult.error)abilityUsageResult.data=list(abilityUsageResult.data?.rows,1000);
