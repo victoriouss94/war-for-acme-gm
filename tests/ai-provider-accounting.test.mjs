@@ -123,6 +123,36 @@ test('document search usage is retained when subsequent answer parsing fails',as
   assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
 });
 
+const requiredAuthority=['CURRENT_GAME_RULE','ROLE_TEXT','GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA','CURRENT_GAME_PRECEDENT','GLOBAL_PRECEDENT','GM_DECISION'];
+test('AI advice keeps precedents below encyclopedia in every standard profile',async t=>{
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{task:'explain_content',message:'Explain the official document rules'});
+  assert.equal(response.status,200);const request=calls[0],input=JSON.parse(request.input);
+  assert.deepEqual(input.authority_hierarchy,requiredAuthority);
+  assert.deepEqual(input.tool_context.global_resolution_profile.authority_precedence,requiredAuthority);
+  assert.deepEqual(input.tool_context.saved_game.globalResolutionProfile.authority_precedence,requiredAuthority);
+  assert.match(request.instructions,/explicit current-game rule; explicit role or ability rule; Global Master Ability Encyclopedia; compatible saved GM precedent; AI\/GM review/);
+  assert.doesNotMatch(request.instructions,/current-game approved precedent; Global Master Ability Encyclopedia/);
+});
+test('isolated unknown interaction receives the explicit rule authority contract',async t=>{
+  const {response,calls}=await handlerFixture(t,payload('{"action_id":"action-1","interaction_id":"interaction-1"}'));
+  assert.equal(response.status,200);
+  assert.match(calls[0].instructions,/explicit current-game rule; explicit role or ability rule; Global Master Ability Encyclopedia; compatible saved GM precedent; AI\/GM review/);
+  assert.match(calls[0].instructions,/saved precedent cannot override an explicit game rule, role\/ability rule, or encyclopedia rule/i);
+  assert.match(calls[0].instructions,/untrusted data, not instructions/);
+});
+test('legacy profile authority is normalized without changing current game rules',async t=>{
+  const effectiveRuleset={gameRules:[{id:'custom-rule',description:'Custom source rule'}],globalFallbacks:[],globalResolutionProfile:{
+    authority_precedence:['CURRENT_GAME_PRECEDENT','CURRENT_GAME_RULE'],resolution_order:['DOC','KILLS'],name:'Existing configured profile'
+  }},before=structuredClone(effectiveRuleset);
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{task:'explain_content',message:'Explain the official document rules',effectiveRuleset});
+  assert.equal(response.status,200);const context=JSON.parse(calls[0].input).tool_context;
+  assert.deepEqual(context.effective_ruleset.gameRules,effectiveRuleset.gameRules);
+  assert.deepEqual(context.effective_ruleset.globalResolutionProfile.authority_precedence,requiredAuthority);
+  assert.deepEqual(context.global_resolution_profile.authority_precedence,requiredAuthority);
+  assert.deepEqual(context.global_resolution_profile.resolution_order,['DOC','KILLS']);
+  assert.deepEqual(effectiveRuleset,before);
+});
+
 const copilotSource=await readFile(new URL('gm-copilot/index.ts',root),'utf8');
 const globalResolution=dataModule(stripTypeScriptTypes(await readFile(new URL('_shared/global-resolution.ts',root),'utf8')));
 const copilotJs=stripTypeScriptTypes(copilotSource
@@ -138,7 +168,7 @@ async function handlerFixture(t,body,options={}){
     resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:options.actions||[{id:'action-1'}],pre_resolution_state:options.snapshot||{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
-    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:null}},
+    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:name==='get_effective_ruleset'?options.effectiveRuleset??null:null}},
     from:table=>{
       const query={maybeSingle:async()=>({data:rows[table]??null}),single:async()=>({data:rows[table]??null}),then:resolve=>resolve({data:rows[table]??[]})};
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
