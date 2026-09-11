@@ -146,7 +146,7 @@ async function handlerFixture(t,body,options={}){
     }};
   const accountingErrors=[...(options.accountingErrors||[])],logs=[];
   t.mock.method(console,'error',(...args)=>logs.push(args));
-  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});if(name==='complete_ai_usage_internal'&&accountingErrors.length){const error=accountingErrors.shift();if(error instanceof Error)throw error;return {data:null,error,status:503}}return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
+  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});if(name==='complete_ai_usage_internal'&&accountingErrors.length){const error=accountingErrors.shift();if(error instanceof Error)throw error;return {data:null,error,status:error.httpStatus??503}}return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
   const previous=globalThis.__auditCreateClient;
   globalThis.__auditCreateClient=(_url,key)=>key==='synthetic-service'?serviceClient:userClient;
   t.after(()=>{if(previous===undefined)delete globalThis.__auditCreateClient;else globalThis.__auditCreateClient=previous});
@@ -276,6 +276,23 @@ test('exhausted accounting retries preserve the useful result and expose incompl
   assert.equal(logs.length,1);assert.equal(logs[0][1].requestId,body.accounting.requestId);assert.equal(logs[0][1].inputTokens,100);
   assert.doesNotMatch(JSON.stringify(logs),/synthetic-test-key|Keep this answer/);
 });
+
+for(const task of ['adjudicate_interaction','explain_content']){
+  test(task+' exposes a missing usage reservation without repeating paid work',async t=>{
+    const result=task==='adjudicate_interaction'?{action_id:'action-1',interaction_id:'interaction-1'}:{answer:'Keep this answer',sources:[]};
+    const {response,rpcCalls,calls}=await handlerFixture(t,payload(JSON.stringify(result)),{
+      task,message:'Explain this rule',accountingErrors:Array(3).fill({code:'P0002',message:'AI_USAGE_EVENT_NOT_FOUND',httpStatus:500})
+    });
+    assert.equal(response.status,200);const body=await response.json();
+    assert.equal(body.accounting.recorded,false);assert.equal(body.accounting.attempts,3);
+    assert.equal(body.accounting.code,'AI_USAGE_RECORD_FAILED');
+    if(task==='adjudicate_interaction')assert.match(body.adjudication.accounting_warning,/usage could not be saved/i);
+    else assert.ok(body.result.warnings.some(warning=>/usage could not be saved/i.test(warning)));
+    assert.equal(calls.length,1);
+    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,3);
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+  });
+}
 
 test('a failed provider response keeps its original error if usage persistence also fails',async t=>{
   const {response,rpcCalls,calls}=await handlerFixture(t,payload('{'),{accountingErrors:Array(3).fill(new TypeError('Synthetic fetch failed'))});
