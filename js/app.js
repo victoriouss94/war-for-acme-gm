@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.45';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.2.37';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.53';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.54';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.38';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -886,7 +886,9 @@ async function resolveSelectedNight(){
   const session=currentResolutionSession();if(!session||resolutionPending||['FINALIZED','REJECTED'].includes(session.status))return;
   resolutionPending=true;renderAll();try{
     const input=nightEngineInput(session);let proposal=resolveNightDeterministically(input),adjudications=[...(input.aiAdjudications||[])];
-    for(const interaction of (proposal.unresolved_interactions||[]).slice(0,10)){try{const adjudication=await GMCloud.adjudicateInteraction(currentGame().id,session.id,interaction);if(adjudication?.status==='ADJUDICATED'&&['HIGH','MEDIUM'].includes(adjudication.confidence)&&adjudication.behavior?.requiresExplicitRule===false)adjudications.push(adjudication)}catch(error){console.warn('One unresolved mechanic remains for GM review.',error)}}
+    // A rejected ruling can still have incurred a charge whose recording failed.
+    // Preserve that notice; engine eligibility checks still reject its effect.
+    for(const interaction of (proposal.unresolved_interactions||[]).slice(0,10)){try{const adjudication=await GMCloud.adjudicateInteraction(currentGame().id,session.id,interaction);if((adjudication?.status==='ADJUDICATED'&&['HIGH','MEDIUM'].includes(adjudication.confidence)&&adjudication.behavior?.requiresExplicitRule===false)||(typeof adjudication?.accounting_warning==='string'&&adjudication.accounting_warning.trim()))adjudications.push(adjudication)}catch(error){console.warn('One unresolved mechanic remains for GM review.',error)}}
     if(adjudications.length!==(input.aiAdjudications||[]).length)proposal=resolveNightDeterministically({...input,aiAdjudications:adjudications,randomOutcomes:proposal.random_outcomes});
     await GMCloud.saveDeterministicResolution(session.id,session.lock_version,persistableNightProposal(proposal));await refreshAiGmData();selectedResolutionSessionId=session.id;loadedResolutionFormId=null;showView('resolutionsView')
   }catch(error){alert(error.message||'The deterministic night simulation could not be saved. No live game state was changed.')}finally{resolutionPending=false;renderAll()}
