@@ -1,5 +1,5 @@
-import {TARGET_TYPES as MECHANIC_TARGET_TYPES,normalizeAbilityUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.45';
-import {classifyAbility} from './global-abilities.js?v=12.2.37';
+import {TARGET_TYPES as MECHANIC_TARGET_TYPES,normalizeAbilityUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.55';
+import {classifyAbility} from './global-abilities.js?v=12.2.55';
 import {abilityModeAccess,isModeContextAbility,normalizeRoleModes,roleModeContext} from './role-modes.js?v=12.2.38';
 
 import {abilityDisablingStatuses,roleAbilityCounter} from './player-runtime.js?v=12.0.1';

@@ -12,7 +12,7 @@ test('global catalog has 37 unique standardized abilities and the exact order',(
   assert.ok(GLOBAL_ABILITY_DEFINITIONS.every(item=>/^[a-z0-9_]+$/.test(item.abilityId)));
   assert.equal(globalAbilityDefinition('Roleblock').abilityId,'roleblock');
   assert.deepEqual(GLOBAL_RESOLUTION_ORDER,['BLOCKS','GUARANTEE','CONTROL','SWAPS','REDIRECTS','STATUS_EFFECTS','INTEL','CONVERTS','KILLS','DOC']);
-  assert.deepEqual(GLOBAL_AUTHORITY_PRECEDENCE,['CURRENT_GAME_RULE','ROLE_TEXT','CURRENT_GAME_PRECEDENT','GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA','GLOBAL_PRECEDENT','GM_DECISION']);
+  assert.deepEqual(GLOBAL_AUTHORITY_PRECEDENCE,['CURRENT_GAME_RULE','ROLE_TEXT','GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA','CURRENT_GAME_PRECEDENT','GLOBAL_PRECEDENT','GM_DECISION']);
   for(const passive of GLOBAL_ABILITY_DEFINITIONS.filter(item=>item.activePassive==='PASSIVE')){assert.equal(passive.resolutionCategory,'PASSIVES');assert.equal(passive.resolutionTiming,'EVENT_TRIGGERED');assert.equal(passive.resolutionPriority,null)}
 });
 
