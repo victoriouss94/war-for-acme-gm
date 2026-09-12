@@ -35,6 +35,7 @@ for(const [name,field,value] of conflicts)test(`${name} cannot silently ignore e
 
 test('field conflicts in isolated adjudication cannot reinstate the wrong status',()=>{
   const input=fixture('Poison',{effect:'CUSTOM'});input.aiAdjudications=[{action_id:'attempt',status:'ADJUDICATED',confidence:'HIGH',standardized_type:'Poison',resolution_category:'STATUS_EFFECTS',behavior:{statusType:'DRUNK',requiresExplicitRule:false}}];
+  const context=resolveNightDeterministically({...input,aiAdjudications:[]}).unresolved_interactions[0];Object.assign(input.aiAdjudications[0],{interaction_id:context.interaction_id,source_context_signature:context.source_context_signature});
   const result=resolveNightDeterministically(input);
   assert.equal(row(result).result,'INELIGIBLE_EFFECT');assert.deepEqual(result.status_effects,[]);
 });

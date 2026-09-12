@@ -32,7 +32,7 @@ test('explicit executable role behavior remains above saved AI interpretation',(
 });
 
 test('a currently unresolved custom interaction still uses isolated adjudication',()=>{
-  const input=fixture('Temporal Strike');input.aiAdjudications=[adjudication('Personal Instant Kill')];
+  const input=fixture('Temporal Strike'),context=resolve(input).unresolved_interactions[0];input.aiAdjudications=[{...adjudication('Personal Instant Kill'),source_context_signature:context.source_context_signature}];
   const result=resolve(input);
   assert.deepEqual(result.deaths,['Target']);assert.equal(result.observability.ai_fallback_call_count,1);
 });

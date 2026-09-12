@@ -91,6 +91,7 @@ test('unsupported CUSTOM attempts do not appear as completed visits in Watch',()
 
 test('a supported isolated adjudication can replace the CUSTOM primitive without rewriting source',()=>{
   const input=fixture();input.aiAdjudications=[{action_id:'custom-action',status:'ADJUDICATED',confidence:'HIGH',standardized_type:'Personal Instant Kill',resolution_category:'KILLS',behavior:{...globalAbilityDefinition('Personal Instant Kill').behavior,requiresExplicitRule:false}}];
+  const context=resolveNightDeterministically({...input,aiAdjudications:[]}).unresolved_interactions[0];Object.assign(input.aiAdjudications[0],{interaction_id:context.interaction_id,source_context_signature:context.source_context_signature});
   const r=resolveNightDeterministically(input);
   assert.equal(row(r).result,'SUCCESS');assert.equal(r.unresolved_interactions.length,0);
   assert.equal(r.observability.ai_adjudication_count,1);assert.equal(input.abilities[0].engineBehavior.effect,'CUSTOM');

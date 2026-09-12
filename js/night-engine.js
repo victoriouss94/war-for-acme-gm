@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.24';
+export const NIGHT_ENGINE_VERSION='1.2.25';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -179,8 +179,13 @@ function passiveReviewQuestions(ctx){
 }
 function authorityFor(action){return action.sourceGameRule?'CURRENT_GAME_RULE':action.roleRule||action.modeRule||action.classificationSource==='CURRENT_GAME_ROLE_TEXT'?'ROLE_TEXT':action.precedentId?'CURRENT_GAME_PRECEDENT':action.behavior.standard?'GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA':'AI_ADJUDICATION_REQUIRED'}
 
+export function nightAdjudicationContextSignature(snapshot={}){
+  const {captured_at,...source}=snapshot;
+  return `v1:${NIGHT_ENGINE_VERSION}:${stableHash(source)}`;
+}
+
 export function compactAdjudicationContext(interaction={}){
-  return {interaction_id:text(interaction.id,160),action_id:text(interaction.action?.id,160),player:{id:text(interaction.player?.id,120),name:text(interaction.player?.name,200),role:text(interaction.player?.roleName,200),mode:text(interaction.player?.modeName,200)},ability:{id:text(interaction.action?.abilityId,120),name:text(interaction.action?.abilityName,200),original_text:text(interaction.originalText,8000)},target_ids:unique(interaction.action?.effectiveTargetIds),relevant_game_rules:array(interaction.relevantGameRules).slice(0,20),relevant_precedents:array(interaction.relevantPrecedents).slice(0,20),conflicting_mechanics:array(interaction.conflictingMechanics).slice(0,20),question:text(interaction.question,4000)};
+  return {interaction_id:text(interaction.id,160),action_id:text(interaction.action?.id,160),source_context_signature:text(interaction.sourceContextSignature,120),player:{id:text(interaction.player?.id,120),name:text(interaction.player?.name,200),role:text(interaction.player?.roleName,200),mode:text(interaction.player?.modeName,200)},ability:{id:text(interaction.action?.abilityId,120),name:text(interaction.action?.abilityName,200),original_text:text(interaction.originalText,8000)},target_ids:unique(interaction.action?.effectiveTargetIds),relevant_game_rules:array(interaction.relevantGameRules).slice(0,20),relevant_precedents:array(interaction.relevantPrecedents).slice(0,20),conflicting_mechanics:array(interaction.conflictingMechanics).slice(0,20),question:text(interaction.question,4000)};
 }
 
 function resultRecord(action,ctx){
@@ -204,8 +209,11 @@ export function resolveNightDeterministically(input={}){
     const emit=(type,payload={})=>{const event={sequence:++ctx.eventSequence,type,stage:ctx.stage,...clone(payload)};ctx.events.push(event);return event},trace=(summary,details={})=>ctx.trace.push({sequence:ctx.trace.length+1,stage:ctx.stage,summary,...clone(details)}),mark=(action,result,reason,affected=action.effectiveTargetIds)=>{action.result=result;action.reason=text(reason,4000);action.affectedPlayerIds=unique(affected);action.status='RESOLVED';if(action.playerAbilityGrantId)action.useDisposition=result==='SUCCESS'?'CONSUMED':'NOT_CONSUMED';emit('ABILITY_USED',{action_id:action.id,actor_player_id:action.actionUserId,result,affected_player_ids:action.affectedPlayerIds,summary:action.reason});trace(`${action.abilityName||action.standardizedAbilityType}: ${result}`,{action_id:action.id,reason:action.reason});return action};
     const actions=array(input.actions??snapshot.submitted_actions).map((action,index)=>normalizeEngineAction(action,index,abilityById)),classified=classifyAndOrderActions(actions,action=>abilityById.get(action.abilityId)),allActions=[...classified.ordered,...classified.passives].map((action,index)=>Object.assign(actions.find(item=>item.id===action.id)||action,{order:index+1})),submittedActions=[...allActions];
     for(const action of submittedActions)emit('ACTION_SUBMITTED',{action_id:action.id,actor_player_id:action.actionUserId,target_ids:action.effectiveTargetIds,ability_id:action.abilityId});
+    // Bind cached interpretations to the immutable source and complete queue.
+    // Capture time is not rule context; excluding it keeps unchanged replays stable.
+    const sourceContextSignature=nightAdjudicationContextSignature(snapshot);
     const adjudicationByAction=new Map(ctx.adjudications.map(item=>[text(item.action_id??item.actionId,160),item]));
-    const unresolved=(action,question)=>{const actor=playerMap.get(action.actionUserId),item={id:`unknown:${action.id}`,action:clone(action),player:{...actor,roleName:roleMap.get(actor?.roleId)?.name||''},originalText:action.originalText||abilityById.get(action.abilityId)?.definition||'',relevantGameRules:snapshot.rules,relevantPrecedents:snapshot.precedents,conflictingMechanics:[],question};ctx.unresolved.push(item);mark(action,'INELIGIBLE_EFFECT','This custom interaction requires a GM-reviewed structured rule before its effect can be applied.',[]);trace('Unknown interaction isolated for review.',{action_id:action.id,question});return true};
+    const unresolved=(action,question)=>{const actor=playerMap.get(action.actionUserId),item={id:`unknown:${action.id}`,sourceContextSignature,action:clone(action),player:{...actor,roleName:roleMap.get(actor?.roleId)?.name||''},originalText:action.originalText||abilityById.get(action.abilityId)?.definition||'',relevantGameRules:snapshot.rules,relevantPrecedents:snapshot.precedents,conflictingMechanics:[],question};ctx.unresolved.push(item);mark(action,'INELIGIBLE_EFFECT','This custom interaction requires a GM-reviewed structured rule before its effect can be applied.',[]);trace('Unknown interaction isolated for review.',{action_id:action.id,question});return true};
     for(const action of submittedActions){
       if(action.activePassive==='PASSIVE'||action.resolutionCategory==='PASSIVES')continue;
       const adjudication=action.gmResolutionClassification?null:adjudicationByAction.get(action.id);
@@ -214,6 +222,10 @@ export function resolveNightDeterministically(input={}){
       // A saved answer must not replace a now-executable role rule or standard.
       if(action.resolutionCategory!=='UNCLASSIFIED'&&action.behavior.effect!=='CUSTOM'){
         trace('Saved AI adjudication ignored: the current action already has an executable rule.',{action_id:action.id});
+        continue;
+      }
+      if(adjudication.source_context_signature!==sourceContextSignature||adjudication.interaction_id!==`unknown:${action.id}`){
+        trace('Saved AI adjudication ignored: its source context changed or freshness evidence is missing.',{action_id:action.id});
         continue;
       }
       const definition=globalAbilityDefinition(adjudication.standardized_type),runtime=runtimeDefinitionFor(adjudication.standardized_type),overrides=Object.fromEntries(Object.entries(adjudication.behavior).filter(([,value])=>value!==null));

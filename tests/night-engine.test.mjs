@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {GLOBAL_RESOLUTION_ORDER,globalAbilityDefinition} from '../js/global-abilities.js';
-import {NIGHT_ENGINE_EVENTS,NIGHT_ENGINE_STATUSES,buildNightSnapshot,recalculateNight,resolveNightDeterministically} from '../js/night-engine.js';
+import {NIGHT_ENGINE_EVENTS,NIGHT_ENGINE_STATUSES,buildNightSnapshot,nightAdjudicationContextSignature,recalculateNight,resolveNightDeterministically} from '../js/night-engine.js';
 
 const factions=[{id:'village',name:'Villagers'},{id:'den',name:'Den'},{id:'neutral',name:'Neutral'}];
 const players=Array.from({length:12},(_,index)=>({id:`p${index+1}`,name:`Player ${index+1}`,alive:true,roleId:`r${index+1}`,currentFactionId:index===1?'den':'village',currentModeId:index===9?'mode-a':''}));
@@ -141,6 +141,7 @@ test('unknown custom interactions are isolated while deterministic actions still
 
 test('one compact AI adjudication can map an unknown action without taking over the night',()=>{
   const custom=action('custom','Temporal Strike','p3','p4'),adjudication={interaction_id:'unknown:custom',action_id:'custom',status:'ADJUDICATED',standardized_type:'Personal Instant Kill',resolution_category:'KILLS',behavior:{effect:'ATTEMPT_KILL',killTier:1,tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE','PROTECTABLE'],requiresExplicitRule:false},confidence:'HIGH'};
+  adjudication.source_context_signature=nightAdjudicationContextSignature(run([custom]).starting_snapshot);
   const resolution=run([custom],{aiAdjudications:[adjudication]});
   assert.equal(resolution.resolution_status,'RESOLVED_WITH_AI_ASSISTANCE');
   assert.equal(result(resolution,'custom').result,'SUCCESS');
@@ -213,13 +214,16 @@ test('Save cannot remove a Super Kill even when a standard death is also pending
 
 test('AI-mapped kills retain normal blocking and protection behavior',()=>{
   const adjudication={interaction_id:'unknown:custom',action_id:'custom',status:'ADJUDICATED',standardized_type:'Personal Instant Kill',resolution_category:'KILLS',behavior:{effect:'ATTEMPT_KILL',killTier:1,tags:['ACTIVE_ACTION','BLOCKABLE','PROTECTABLE'],requiresExplicitRule:false},confidence:'HIGH'};
-  const resolution=run([action('block','Roleblock','p2','p3'),action('custom','Temporal Strike','p3','p4')],{aiAdjudications:[adjudication]});
+  const actions=[action('block','Roleblock','p2','p3'),action('custom','Temporal Strike','p3','p4')];
+  adjudication.source_context_signature=nightAdjudicationContextSignature(run(actions).starting_snapshot);
+  const resolution=run(actions,{aiAdjudications:[adjudication]});
   assert.equal(result(resolution,'custom').result,'BLOCKED');
   assert.equal(outcome(resolution,'p4').alive_after_resolution,true);
 });
 
 test('unknown AI mappings stay reviewable rather than returning PENDING',()=>{
-  const resolution=run([action('custom','Temporal Strike','p3','p4')],{aiAdjudications:[{action_id:'custom',status:'ADJUDICATED',standardized_type:'Temporal Strike',resolution_category:'SWAPS',behavior:{effect:'CUSTOM',requiresExplicitRule:false},confidence:'HIGH'}]});
+  const actions=[action('custom','Temporal Strike','p3','p4')],context=run(actions).unresolved_interactions[0];
+  const resolution=run(actions,{aiAdjudications:[{action_id:'custom',interaction_id:context.interaction_id,source_context_signature:context.source_context_signature,status:'ADJUDICATED',standardized_type:'Temporal Strike',resolution_category:'SWAPS',behavior:{effect:'CUSTOM',requiresExplicitRule:false},confidence:'HIGH'}]});
   assert.equal(resolution.resolution_status,'GM_REVIEW_REQUIRED');
   assert.equal(result(resolution,'custom').result,'INELIGIBLE_EFFECT');
 });

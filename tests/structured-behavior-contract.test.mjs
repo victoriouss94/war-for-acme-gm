@@ -48,5 +48,6 @@ test('default Capture continues to disable later actions in the current night',(
 
 test('isolated Capture adjudication cannot bypass behavior compatibility',()=>{
   const input=fixture('Capture',{effect:'CUSTOM'});input.aiAdjudications=[{action_id:'attempt',status:'ADJUDICATED',confidence:'HIGH',standardized_type:'Capture',resolution_category:'STATUS_EFFECTS',behavior:{effect:'APPLY_STATUS',statusType:'DRUNK',requiresExplicitRule:false}}];
+  const context=resolve({...input,aiAdjudications:[]}).unresolved_interactions[0];Object.assign(input.aiAdjudications[0],{interaction_id:context.interaction_id,source_context_signature:context.source_context_signature});
   const result=resolve(input);assert.equal(result.resolution_status,'GM_REVIEW_REQUIRED');assert.deepEqual(result.status_effects,[]);
 });

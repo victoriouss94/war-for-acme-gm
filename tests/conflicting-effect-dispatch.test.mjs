@@ -39,6 +39,7 @@ test('conflicting primitive is not counted as a Watch visit',()=>{
 
 test('conflicting isolated adjudication stays review-only',()=>{
   const input=fixture();input.aiAdjudications=[{action_id:'attempt',status:'ADJUDICATED',confidence:'HIGH',standardized_type:'Personal Instant Kill',resolution_category:'KILLS',behavior:{effect:'APPLY_PROTECTION',requiresExplicitRule:false}}];
+  const context=resolveNightDeterministically({...input,aiAdjudications:[]}).unresolved_interactions[0];Object.assign(input.aiAdjudications[0],{interaction_id:context.interaction_id,source_context_signature:context.source_context_signature});
   const result=resolveNightDeterministically(input);
   assert.equal(row(result).result,'INELIGIBLE_EFFECT');assert.deepEqual(result.deaths,[]);assert.equal(result.resolution_status,'GM_REVIEW_REQUIRED');
 });

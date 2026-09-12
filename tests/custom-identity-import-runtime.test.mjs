@@ -83,6 +83,7 @@ test('blocking a custom identity prevents execution without effect adjudication'
 test('isolated supported adjudication resolves custom identity without altering its source',()=>{
   const ability={id:'beam',name:'Beam',standardAbilityId:'personal_instant_kill',understanding:{customIdentity:true}},data=input(ability);
   data.aiAdjudications=[{action_id:'shot',status:'ADJUDICATED',confidence:'HIGH',standardized_type:'Personal Instant Kill',resolution_category:'KILLS',behavior:{...globalAbilityDefinition('Personal Instant Kill').behavior,requiresExplicitRule:false}}];
+  const context=resolveNightDeterministically({...data,aiAdjudications:[]}).unresolved_interactions[0];Object.assign(data.aiAdjudications[0],{interaction_id:context.interaction_id,source_context_signature:context.source_context_signature});
   const r=resolveNightDeterministically(data);assert.equal(r.action_results[0].result,'SUCCESS');
   assert.equal(r.unresolved_interactions.length,0);assert.equal(ability.understanding.customIdentity,true);
 });
