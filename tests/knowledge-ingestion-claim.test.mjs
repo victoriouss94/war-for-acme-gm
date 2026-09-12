@@ -24,7 +24,7 @@ async function setup(t,{claimFailure='',alreadyClaimed=false,providerFails=false
     }
     throw Error('Unexpected RPC '+name);
   }};
-  globalThis.__claimAudit={allowedOrigins:new Set(),corsHeaders:()=>({}),createServiceClient:()=>client,createUserClient:()=>client,verifiedUser:async()=>({id:'synthetic-owner'}),json:(data,status)=>Response.json(data,{status}),list:(value,max)=>Array.isArray(value)?value.slice(0,max):[],textValue:(value,max)=>String(value??'').slice(0,max),modelForDepth:()=> 'synthetic-model',OpenAIServiceError:ServiceError,
+  globalThis.__claimAudit={allowedOrigins:new Set(),corsHeaders:()=>({}),createServiceClient:()=>client,createUserClient:()=>client,verifiedUser:async()=>({id:'synthetic-owner'}),json:(data,status)=>Response.json(data,{status}),list:(value,max)=>Array.isArray(value)?value.slice(0,max):[],textValue:(value,max)=>String(value??'').slice(0,max),embeddingModel:()=> 'text-embedding-3-small',modelForDepth:()=> 'synthetic-model',OpenAIServiceError:ServiceError,
     structuredResponse:async()=>{calls.push({name:'provider'});await new Promise(resolve=>setTimeout(resolve,10));if(providerFails)throw new ServiceError('Synthetic provider failure',502,'SYNTHETIC_FAILURE');return {result:{summary:'Synthetic',warnings:[],chunks:[{heading:'Rule',source_locator:'1',content:'Synthetic rule'}]}};},
     createEmbeddings:async()=>{calls.push({name:'embeddings'});return {model:'synthetic-embedding',vectors:[Array(1536).fill(0)]};}
   };

@@ -113,7 +113,11 @@ for(const [name,embeddingResponse,observed,expected,successfulSearch] of [
     assert.equal(trace.args.target_success,successfulSearch);
     assert.equal(trace.args.target_output_summary.embedding_usage_observed,observed);
     assert.deepEqual(trace.args.target_output_summary.embedding_usage,expected&&{model:'text-embedding-3-small',...expected});
-    const completed=rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args;
+    const embeddingReserve=rpcCalls.find(x=>x.name==='reserve_ai_usage_internal'&&x.args.target_model==='text-embedding-3-small');
+    const embeddingRecord=rpcCalls.find(x=>x.name==='complete_ai_usage_internal'&&x.args.target_request_id===embeddingReserve.args.target_request_id);
+    assert.equal(embeddingRecord.args.target_input_tokens,expected?.prompt_tokens??0);
+    assert.equal(embeddingRecord.args.target_status,successfulSearch?'COMPLETED':'FAILED');
+    const completed=rpcCalls.find(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).args;
     assert.equal(completed.target_input_tokens,100,'Embedding tokens are not response-model tokens');
     assert.equal(completed.target_output_tokens,20);
     assert.equal(calls.attemptedUrls.filter(url=>url.endsWith('/embeddings')).length,1);
@@ -128,7 +132,7 @@ test('document search usage is retained when subsequent answer parsing fails',as
   assert.equal(response.status,502);
   const trace=rpcCalls.find(call=>call.name==='record_master_gm_tool_call_internal'&&call.args.target_tool_name==='searchDocuments');
   assert.deepEqual(trace.args.target_output_summary.embedding_usage,{model:'text-embedding-3-small',prompt_tokens:10,total_tokens:10});
-  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).args.target_status,'FAILED');
 });
 
 const requiredAuthority=['CURRENT_GAME_RULE','ROLE_TEXT','GLOBAL_MASTER_ABILITY_ENCYCLOPEDIA','CURRENT_GAME_PRECEDENT','GLOBAL_PRECEDENT','GM_DECISION'];
@@ -178,7 +182,8 @@ async function handlerFixture(t,body,options={}){
     }};
   const accountingErrors=[...(options.accountingErrors||[])],logs=[];
   t.mock.method(console,'error',(...args)=>logs.push(args));
-  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});if(name==='complete_ai_usage_internal'&&accountingErrors.length){const error=accountingErrors.shift();if(error instanceof Error)throw error;return {data:null,error,status:error.httpStatus??503}}return {data:{},error:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
+  let primaryRequestId='';
+  const serviceClient={rpc:async(name,args)=>{rpcCalls.push({name,args});if(name==='reserve_ai_usage_internal'&&!primaryRequestId)primaryRequestId=args.target_request_id;if(name==='complete_ai_usage_internal'&&args.target_request_id===primaryRequestId&&accountingErrors.length){const error=accountingErrors.shift();if(error instanceof Error)throw error;return {data:null,error,status:error.httpStatus??503}}return {data:name==='reserve_ai_usage_internal'?args.target_request_id:{},error:options.denyEmbedding&&name==='reserve_ai_usage_internal'&&args.target_model==='text-embedding-3-small'?{message:options.denyEmbedding}:options.denyBudget&&name==='reserve_ai_usage_internal'?{message:options.budgetError||'AI_MONTHLY_LIMIT_REACHED'}:options.failDraftSave&&name==='create_ai_draft_internal'?{message:'Synthetic persistence failure'}:null}}};
   const previous=globalThis.__auditCreateClient;
   globalThis.__auditCreateClient=(_url,key)=>key==='synthetic-service'?serviceClient:userClient;
   t.after(()=>{if(previous===undefined)delete globalThis.__auditCreateClient;else globalThis.__auditCreateClient=previous});
@@ -269,21 +274,21 @@ for(const [code,status] of [['AI_MONTHLY_LIMIT_REACHED',402],['AI_RATE_LIMIT_REA
   test('document search performs no paid request when reservation denies '+code,async t=>{
     const {response,calls,rpcCalls}=await handlerFixture(t,payload(),{task:'explain_content',message:'Explain the official document rules',denyBudget:true,budgetError:code});
     assert.equal(response.status,status);assert.deepEqual(calls.attemptedUrls,[]);
-    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
-    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,0);
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,1);
+    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,0);
   });
 }
 test('reserved document search still retrieves and answers when budget is available',async t=>{
   const {response,calls,rpcCalls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{task:'explain_content',message:'Explain the official document rules'});
   assert.equal(response.status,200);assert.deepEqual(calls.attemptedUrls,['https://api.openai.com/v1/embeddings','https://api.openai.com/v1/responses']);
-  assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
-  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'COMPLETED');
+  assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,1);
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).args.target_status,'COMPLETED');
 });
 test('context preparation failure closes its reservation with a visible error',async t=>{
   const {response,calls,rpcCalls}=await handlerFixture(t,payload(),{task:'explain_content',message:'Explain the official document rules',failContext:true});
   assert.equal(response.status,502);assert.match((await response.json()).error,/context lookup failed/);
-  assert.equal(calls.length,0);assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
-  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal').args.target_status,'FAILED');
+  assert.equal(calls.length,0);assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,1);
+  assert.equal(rpcCalls.find(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).args.target_status,'FAILED');
 });
 
 for(const task of ['adjudicate_interaction','explain_content']){
@@ -291,10 +296,10 @@ for(const task of ['adjudicate_interaction','explain_content']){
     const result=task==='adjudicate_interaction'?{action_id:'action-1',interaction_id:'interaction-1'}:{answer:'Synthetic answer',sources:[]};
     const {response,rpcCalls,calls}=await handlerFixture(t,payload(JSON.stringify(result)),{task,message:'Explain this rule',accountingErrors:[{code:'08006',message:'Synthetic connection failure'},new TypeError('Synthetic fetch failed')]});
     assert.equal(response.status,200);
-    const completion=rpcCalls.filter(call=>call.name==='complete_ai_usage_internal');
+    const completion=rpcCalls.filter(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id);
     assert.equal(completion.length,3);assert.deepEqual(completion[1].args,completion[0].args);assert.deepEqual(completion[2].args,completion[0].args);
     assert.equal(calls.length,1,'accounting retries must not repeat the paid request');
-    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,1);
     const body=await response.json();assert.equal(body.accounting.recorded,true);assert.equal(body.accounting.attempts,3);
   });
 }
@@ -304,7 +309,7 @@ test('exhausted accounting retries preserve the useful result and expose incompl
   assert.equal(response.status,200);const body=await response.json();assert.equal(body.result.answer,'Keep this answer');
   assert.equal(body.accounting.recorded,false);assert.equal(body.accounting.attempts,3);assert.equal(body.accounting.code,'AI_USAGE_RECORD_FAILED');
   assert.ok(body.result.warnings.some(item=>/usage could not be saved/i.test(item)));
-  assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,3);
+  assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,3);
   assert.equal(logs.length,1);assert.equal(logs[0][1].requestId,body.accounting.requestId);assert.equal(logs[0][1].inputTokens,100);
   assert.doesNotMatch(JSON.stringify(logs),/synthetic-test-key|Keep this answer/);
 });
@@ -321,8 +326,8 @@ for(const task of ['adjudicate_interaction','explain_content']){
     if(task==='adjudicate_interaction')assert.match(body.adjudication.accounting_warning,/usage could not be saved/i);
     else assert.ok(body.result.warnings.some(warning=>/usage could not be saved/i.test(warning)));
     assert.equal(calls.length,1);
-    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal').length,3);
-    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal').length,1);
+    assert.equal(rpcCalls.filter(call=>call.name==='complete_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,3);
+    assert.equal(rpcCalls.filter(call=>call.name==='reserve_ai_usage_internal'&&call.args.target_request_id===rpcCalls.find(x=>x.name==='reserve_ai_usage_internal').args.target_request_id).length,1);
   });
 }
 
@@ -346,4 +351,24 @@ test('main-handler validation failure retries its usage record without changing 
   assert.equal(response.status,502);const body=await response.json();assert.equal(body.code,'INVALID_AI_RESPONSE');assert.equal(body.accounting.recorded,true);
   const writes=rpcCalls.filter(call=>call.name==='complete_ai_usage_internal');assert.equal(writes.length,2);assert.deepEqual(writes[1].args,writes[0].args);assert.equal(writes[0].args.target_status,'FAILED');
   assert.equal(calls.length,1);assert.equal(rpcCalls.filter(call=>call.name==='create_ai_draft_internal').length,0);
+});
+
+test('document search records embeddings separately from response-model usage',async t=>{
+  const {response,rpcCalls}=await handlerFixture(t,payload('{"answer":"Synthetic answer","sources":[]}'),{task:'explain_content',message:'Explain the official document rules'});
+  assert.equal(response.status,200);
+  const reserve=rpcCalls.find(x=>x.name==='reserve_ai_usage_internal'&&x.args.target_model==='text-embedding-3-small');
+  assert.ok(reserve,'Embedding request must have its own priced ledger row');
+  const record=rpcCalls.find(x=>x.name==='complete_ai_usage_internal'&&x.args.target_request_id===reserve.args.target_request_id);
+  assert.ok(record);assert.equal(record.args.target_input_tokens,10);assert.equal(record.args.target_output_tokens,0);assert.equal(record.args.target_estimated_cost_usd,10*.02/1_000_000);
+});
+
+for(const code of ['AI_MONTHLY_LIMIT_REACHED','AI_RATE_LIMIT_REACHED','private detail'])test('embedding reservation denial stops later paid response: '+code,async t=>{
+  const {response,rpcCalls,calls}=await handlerFixture(t,payload(),{task:'explain_content',message:'Explain the official document rules',denyEmbedding:code});
+  assert.equal(response.status,code.startsWith('AI_')?429:503);assert.deepEqual(calls.attemptedUrls,[]);
+  const records=rpcCalls.filter(x=>x.name==='complete_ai_usage_internal');assert.equal(records.length,1);assert.equal(records[0].args.target_input_tokens,0);assert.equal(records[0].args.target_status,'FAILED');
+  const body=await response.json();assert.doesNotMatch(body.error,/private detail/);
+});
+test('request cost combines separately priced embedding and response costs',async t=>{
+  const {response}=await handlerFixture(t,payload('{"answer":"Synthetic","sources":[]}'),{task:'explain_content',message:'Explain the official document rules'});
+  const body=await response.json();assert.equal(body.usage.embeddingCost,10*.02/1_000_000);assert.equal(body.usage.cost,body.usage.responseCost+body.usage.embeddingCost);assert.equal(body.usage.input,100);
 });
