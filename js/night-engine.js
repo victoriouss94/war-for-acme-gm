@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.23';
+export const NIGHT_ENGINE_VERSION='1.2.24';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -210,6 +210,12 @@ export function resolveNightDeterministically(input={}){
       if(action.activePassive==='PASSIVE'||action.resolutionCategory==='PASSIVES')continue;
       const adjudication=action.gmResolutionClassification?null:adjudicationByAction.get(action.id);
       if(adjudication?.status!=='ADJUDICATED'||!['HIGH','MEDIUM'].includes(adjudication.confidence)||adjudication.behavior?.requiresExplicitRule!==false||!GLOBAL_RESOLUTION_ORDER.includes(adjudication.resolution_category))continue;
+      // AI answers apply only to interactions that are unknown in this snapshot.
+      // A saved answer must not replace a now-executable role rule or standard.
+      if(action.resolutionCategory!=='UNCLASSIFIED'&&action.behavior.effect!=='CUSTOM'){
+        trace('Saved AI adjudication ignored: the current action already has an executable rule.',{action_id:action.id});
+        continue;
+      }
       const definition=globalAbilityDefinition(adjudication.standardized_type),runtime=runtimeDefinitionFor(adjudication.standardized_type),overrides=Object.fromEntries(Object.entries(adjudication.behavior).filter(([,value])=>value!==null));
       const behavior=guardEffectDispatch({...definition?.behavior,...overrides,standard:definition},definition||runtime);
       action.behavior=behavior;action.tags=unique(behavior.tags);action.strength=Number(behavior.killTier??behavior.protectionTier)||0;
