@@ -1,4 +1,5 @@
-import {allowedOrigins,corsHeaders,createUserClient,json,list,modelForDepth,OpenAIServiceError,structuredResponse,textValue,verifiedUser} from '../_shared/ai-service.ts';
+import {allowedOrigins,corsHeaders,createServiceClient,createUserClient,json,list,modelForDepth,OpenAIServiceError,responseUsageTracker,structuredResponse,textValue,verifiedUser} from '../_shared/ai-service.ts';
+import {usagePrice,usageCost,completeUsageRecord} from '../_shared/usage-accounting.js';
 
 const rateWindows=new Map<string,{count:number;resetAt:number}>();
 
@@ -70,6 +71,26 @@ Faction and global effects are first-class. A faction-wide action is one attempt
 Use VERIFIED only for explicit, unambiguous source/rule facts; HIGH_CONFIDENCE for clear semantic interpretation; PARTIALLY_UNDERSTOOD, NEEDS_REVIEW, or UNRESOLVED for uncertainty. Record confidence per component. Preserve known parts and list only unknown parts in unresolved_components. Use the global category order as the default; never invent a different interaction order, failure behavior, duration, self-targeting, or use consumption. Set origin to SOURCE_DOCUMENT for text-supported mechanics, GAME_RULE/GLOBAL_RULE/APPROVED_PRECEDENT only when that supplied source actually supports the component, otherwise AI_INTERPRETATION_PENDING.
 
 Extract every supported game detail and link every role to a faction by exact faction_name. Put every actual role ability in ability_names and create a complete ability record for it. Use unique role-qualified names for repeated labels. A role is BASIC only with explicit Basic/No abilities/Vanilla evidence; copy it into basic_evidence and return no abilities and no mechanical statements. Missing data without that evidence is UNRESOLVED, not Basic. slot_count is explicit multiplicity or 1. Give rules stable UPPER_SNAKE_CASE keys. Current-game rules override matching global fallbacks; referenced-only fallbacks are not copied into game rules. Report granular review items, source mismatches, possible inherited/invented mechanics, duplicate candidates, ambiguities, conflicts, and custom mechanics. Return empty strings, empty arrays, or null for unsupported values. Confidence is 0 to 1. Return only the strict schema. A human GM reviews every record before save.`;
-  try{const ai=await structuredResponse({model,userId:user.id,instructions,input:JSON.stringify({file_name:fileName,document_blocks:blocks,ability_catalog:abilityCatalog,versioned_global_settings:globalSettings}),schema:responseSchema,schemaName:'gm_document_import',maxOutputTokens:30000,effort:depth==='deep'?'high':'medium'});return json({result:ai.result,model,generatedAt:new Date().toISOString()},200,origin)}
-  catch(error){const failure=error as OpenAIServiceError;return json({error:failure.code==='OPENAI_CREDITS_REQUIRED'?'Add OpenAI API credits before using AI document import.':failure.message||'The AI service could not analyze this document. The local parser result is still available.',code:failure.code||'OPENAI_ERROR'},failure.status||502,origin)}
+  const requestId=crypto.randomUUID(),price=usagePrice(model),usage=responseUsageTracker(),started=Date.now();
+  let service:any=null,reserved=false;
+  const recordUsage=(status:string,code='')=>{const value=usageCost(usage.usage,price);return completeUsageRecord(service,{target_request_id:requestId,target_provider_response_id:usage.responseId,target_input_tokens:value.input,target_cached_input_tokens:value.cached,target_output_tokens:value.output,target_estimated_cost_usd:value.cost,target_latency_ms:Date.now()-started,target_status:status,target_error_code:code})};
+  try{
+    service=createServiceClient();
+    let reservation;
+    try{reservation=await service.rpc('reserve_ai_usage_internal',{target_game_id:mode==='reimport'?gameId:null,actor_user_id:user.id,target_feature:'document_import',target_model:model,target_request_id:requestId,target_pricing_snapshot:price})}
+    catch{throw new OpenAIServiceError('AI usage reservation could not be confirmed. No AI request was made.',503,'AI_USAGE_RESERVATION_FAILED')}
+    if(reservation?.error||reservation?.data!==requestId){
+      const code=String(reservation?.error?.message||''),limited=['AI_MONTHLY_LIMIT_REACHED','AI_RATE_LIMIT_REACHED'].includes(code);
+      throw new OpenAIServiceError(code==='AI_MONTHLY_LIMIT_REACHED'?'This game has reached its monthly AI limit.':code==='AI_RATE_LIMIT_REACHED'?'The AI document request limit has been reached. Wait one minute before trying again.':'AI usage reservation could not be confirmed. No AI request was made.',limited?429:503,limited?code:'AI_USAGE_RESERVATION_FAILED');
+    }
+    reserved=true;
+    const ai=await structuredResponse({model,userId:user.id,instructions,input:JSON.stringify({file_name:fileName,document_blocks:blocks,ability_catalog:abilityCatalog,versioned_global_settings:globalSettings}),schema:responseSchema,schemaName:'gm_document_import',maxOutputTokens:30000,effort:depth==='deep'?'high':'medium',onUsage:usage.observe});
+    const accounting=await recordUsage('COMPLETED');
+    return json({result:ai.result,model,generatedAt:new Date().toISOString(),accounting,accounting_warning:accounting.warning,accounting_scope:mode==='reimport'?'GAME':'PRE_GAME'},200,origin);
+  }
+  catch(error){
+    const failure=error as OpenAIServiceError,accounting=reserved?await recordUsage('FAILED',failure.code||'OPENAI_ERROR'):null;
+    const message=failure.code==='OPENAI_CREDITS_REQUIRED'?'Add OpenAI API credits before using AI document import.':failure.message||'The AI service could not analyze this document. The local parser result is still available.';
+    return json({error:message+(accounting?.warning?' '+accounting.warning:''),code:failure.code||'OPENAI_ERROR',accounting,accounting_warning:accounting?.warning||''},failure.status||502,origin);
+  }
 });
