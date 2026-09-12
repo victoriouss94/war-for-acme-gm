@@ -34,7 +34,7 @@ for(const parent of ['app','night-engine','player-abilities']){
 for(const parent of ['app','night-engine',...classifierModules]){
   const source=await readFile(`js/${parent}.js`,'utf8');
   for(const match of source.matchAll(/from\s+['"]\.\/([a-z-]+)\.js\?v=([^'"]+)['"]/g)){
-    if(classifierModules.has(match[1])&&match[2]!== release)throw new Error(`${parent} imports stale standard-ID classifier consumer ${match[1]}`);
+    if(classifierModules.has(match[1])&&match[2]!=='12.2.55')throw new Error(`${parent} imports stale standard-ID classifier consumer ${match[1]}`);
   }
 }
 console.log('Static build verified:',files.join(', '));

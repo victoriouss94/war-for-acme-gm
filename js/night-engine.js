@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.22';
+export const NIGHT_ENGINE_VERSION='1.2.23';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -109,12 +109,29 @@ function passiveIdentity(player,ctx,name){
   return {ability_id:ability?.id||'',ability_name:ability?.name||name,role_id:ctx.resolutionRoleContexts?.get(player.id)||player.roleId,role_version:Number(role.version)||1};
 }
 
+function passiveHasUnimplementedGate(source,standard){
+  if(!source||typeof source!=='object')return false;
+  const behavior=key(source.passiveBehavior??source.passive_behavior);
+  // Normalization emits automatic:false for UNDEFINED/NOT_APPLICABLE too.
+  // Those defaults are not an explicit opt-out from the standard trigger.
+  if(source.optional===true||behavior==='optional'||(source.automatic===false&&!['undefined','not_applicable'].includes(behavior)))return true;
+  const nonempty=value=>Array.isArray(value)?value.some(item=>text(item)):Boolean(text(value));
+  if(nonempty(source.conditions)||nonempty(source.dependencies))return true;
+  if((source.triggerLimit??source.trigger_limit)!=null)return true;
+  const triggers=[...array(source.triggers),...(source.trigger!=null?[source.trigger]:[])];
+  return triggers.some(trigger=>text(trigger)&&text(trigger)!==standard?.behavior?.trigger);
+}
+
 function passiveRequiresReview(value){
   if(!value||typeof value!=='object')return false;
   const custom=value.understanding?.customIdentity??value.understanding?.custom_identity??value.customIdentity??value.custom_identity;
   const behavior=value.engineBehavior??value.engine_behavior??value.understanding?.engineBehavior??value.understanding?.engine_behavior;
   // Passive triggers have fixed implementations, not an executable custom-primitive adapter.
-  return custom===true||behavior?.effect==='CUSTOM'||behavior?.requiresExplicitRule===true||Boolean(behavior&&guardEffectDispatch(behavior,globalAbilityDefinition(value)).effect==='CUSTOM');
+  const standard=globalAbilityDefinition(value),passiveTypes=new Set(['PASSIVE','IMMUNITY','CONDITIONAL_IMMUNITY','TRIGGER','COUNTERATTACK','REFLECTION','DEATH_TRIGGER','EXTRA_LIFE','PROTECTION_EFFECT']);
+  const mechanics=[...array(value.understanding?.mechanics),...array(value.mechanicalStatements),...array(value.mechanical_statements)].filter(item=>passiveTypes.has(text(item?.type??item?.mechanicType??item?.mechanic_type).toUpperCase()));
+  // Stored source constraints must not disappear behind a standard name. Until
+  // a predicate/choice/limited-trigger executor exists, retain them for GM review.
+  return custom===true||behavior?.effect==='CUSTOM'||behavior?.requiresExplicitRule===true||Boolean(behavior&&guardEffectDispatch(behavior,standard).effect==='CUSTOM')||[value,value.understanding,...mechanics].some(source=>passiveHasUnimplementedGate(source,standard));
 }
 
 function resolvePassiveReference(value,ctx){

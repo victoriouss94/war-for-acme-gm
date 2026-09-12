@@ -12,6 +12,14 @@ const serviceUrl=dataModule(stripTypeScriptTypes(serviceSource
   .replace("import {createClient} from 'npm:@supabase/supabase-js@2.95.0';","const createClient=(...args)=>globalThis.__auditCreateClient(...args);")
   .replace("'./response-parser.js'",JSON.stringify(new URL('_shared/response-parser.js',root).href))));
 const {structuredResponse,responseUsageTracker}=await import(serviceUrl);
+// Complete asynchronous fixture compilation before registering runnable tests.
+// Node can start earlier tests while a later top-level await is still pending.
+const copilotSource=await readFile(new URL('gm-copilot/index.ts',root),'utf8');
+const globalResolution=dataModule(stripTypeScriptTypes(await readFile(new URL('_shared/global-resolution.ts',root),'utf8')));
+const copilotJs=stripTypeScriptTypes(copilotSource
+  .replace("'../_shared/ai-service.ts'",JSON.stringify(serviceUrl))
+  .replace("'../_shared/global-resolution.ts'",JSON.stringify(globalResolution))
+  .replace(/'(\.\.\/_shared\/[^']+\.js)'/g,(_,path)=>JSON.stringify(new URL(path,new URL('gm-copilot/',root)).href)));
 const base={model:'audit-model',userId:'synthetic-user',instructions:'Test',input:'Synthetic input',schema:{type:'object'},schemaName:'audit'};
 const usage=(input,output,cached=0)=>({input_tokens:input,output_tokens:output,input_tokens_details:{cached_tokens:cached}});
 const payload=(output_text='{"answer":"ok"}',id='response-1',tokens=usage(100,20,30))=>({status:'completed',id,usage:tokens,output_text});
@@ -153,12 +161,6 @@ test('legacy profile authority is normalized without changing current game rules
   assert.deepEqual(effectiveRuleset,before);
 });
 
-const copilotSource=await readFile(new URL('gm-copilot/index.ts',root),'utf8');
-const globalResolution=dataModule(stripTypeScriptTypes(await readFile(new URL('_shared/global-resolution.ts',root),'utf8')));
-const copilotJs=stripTypeScriptTypes(copilotSource
-  .replace("'../_shared/ai-service.ts'",JSON.stringify(serviceUrl))
-  .replace("'../_shared/global-resolution.ts'",JSON.stringify(globalResolution))
-  .replace(/'(\.\.\/_shared\/[^']+\.js)'/g,(_,path)=>JSON.stringify(new URL(path,new URL('gm-copilot/',root)).href)));
 async function handlerFixture(t,body,options={}){
   const calls=mocks(t,[body],{SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-public',SUPABASE_SERVICE_ROLE_KEY:'synthetic-service'},options.embeddingResponse);
   const gameId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222';
