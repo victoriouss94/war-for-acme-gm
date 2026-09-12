@@ -2,7 +2,7 @@ import {GLOBAL_AUTHORITY_PRECEDENCE,GLOBAL_RESOLUTION_ORDER,classifyAbility,clas
 import {abilityDisablingStatuses,statusAppliesToPhase,poisonDueAtPhaseEnd} from './player-runtime.js?v=12.2.14';
 import {normalizePlayerModeState,resolveModeAwareIntel} from './role-modes.js?v=12.2.38';
 
-export const NIGHT_ENGINE_VERSION='1.2.25';
+export const NIGHT_ENGINE_VERSION='1.2.26';
 export const NIGHT_ENGINE_STATUSES=Object.freeze(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED','RESOLUTION_ERROR']);
 export const NIGHT_ENGINE_EVENTS=Object.freeze(['ACTION_SUBMITTED','ACTION_ABOUT_TO_EXECUTE','PLAYER_TARGETED','PLAYER_VISITED','PLAYER_TARGETED_BY_KILL','PLAYER_TARGETED_BY_INTEL','ACTION_REDIRECTED','STATUS_APPLIED','PROTECTION_APPLIED','KILL_ATTEMPTED','KILL_PREVENTED','PLAYER_ABOUT_TO_DIE','PLAYER_DIED','PLAYER_CONVERTED','MODE_CHANGED','ABILITY_USED','PHASE_STARTED','PHASE_ENDED']);
 
@@ -166,7 +166,9 @@ function passiveReviewQuestions(ctx){
     if(!player.alive)continue;
     const {role,mode,accessibleModes,explicit}=passiveContext(player,ctx),owners=[role,mode,...accessibleModes],seen=new Set(),implemented=mechanicNames(player,ctx);
     const linked=owners.flatMap(linkedPassiveIds).map(id=>ctx.snapshot.abilities.find(ability=>ability.id===id)||{name:'Missing linked passive',id});
-    const declared=[...linked,...owners.flatMap(owner=>[owner.passiveAbilityName,...array(owner.passiveAbilityNames),...array(owner.passives),...array(owner.immunities).filter(passiveRequiresReview),...array(owner.protections).filter(passiveRequiresReview)]),...array(player.immunities).filter(passiveRequiresReview),...explicit];
+    // Plain names and minimally structured defenses also carry source rules.
+    // Review every declared defense that has no executable implementation.
+    const declared=[...linked,...owners.flatMap(owner=>[owner.passiveAbilityName,...array(owner.passiveAbilityNames),...array(owner.passives),...array(owner.immunities),...array(owner.protections)]),...array(player.immunities),...explicit];
     for(const value of declared){
       const referenceId=text(value?.abilityId??value?.ability_id??value?.sourceAbilityId??value?.source_ability_id,120),reference=referenceId&&ctx.snapshot.abilities.find(ability=>ability.id===referenceId);
       const name=text(typeof value==='string'?value:value?.name??value?.abilityName??value?.ability_name??reference?.name??(referenceId?'Missing linked passive':value&&Object.keys(value).length?'Unnamed custom passive':''),200),mechanic=passiveMechanicKey(resolvePassiveReference(value,ctx));
