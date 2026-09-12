@@ -1,4 +1,5 @@
 import {allowedOrigins,corsHeaders,createEmbeddings,createServiceClient,createUserClient,json,list,modelForDepth,OpenAIServiceError,responseUsageTracker,structuredResponse,textValue,verifiedUser} from '../_shared/ai-service.ts';
+import {usagePrice,usageCost,combinedUsage,completeUsageRecord} from '../_shared/usage-accounting.js';
 import {deterministicLiveAnswer,humanizeMasterGmResult,inferMasterIntent,isWriteIntent,MASTER_GM_MAX_TOOL_CALLS,MASTER_GM_TOOLS,nextConversationContext,publicToolTrace,requestedPlayerName,resolveMasterEntities,statusTypeFromMessage,toolsForMasterIntent} from '../_shared/master-gm.js';
 import {RULE_AUTHORITY_INSTRUCTIONS,GLOBAL_RESOLUTION_PROFILE,classifyAndOrderResolutionActions,classifyResolutionAction} from '../_shared/global-resolution.ts';
 import {resolutionFailureDetails,resolutionRepairInput,validateStructuredResolution} from '../_shared/resolution-validator.js';
@@ -61,31 +62,7 @@ function searchable(value:unknown){return textValue(value,5000).toLowerCase()}
 function queryTerms(query:string){return [...new Set(query.toLowerCase().match(/[a-z0-9_/-]{3,}/g)||[])].filter(term=>!['what','when','where','which','would','could','should','about','this','that','with','from','have'].includes(term)).slice(0,40)}
 function matches(record:any,terms:string[]){const haystack=searchable(Object.values(record||{}).flat().join(' '));return terms.some(term=>haystack.includes(term))}
 function slug(value:unknown){return searchable(value).replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)}
-function usagePrice(model:string){return model.includes('sol')?{input:5,cachedInput:.5,output:30,currency:'USD',unit:'per_million_tokens'}:{input:2.5,cachedInput:.25,output:15,currency:'USD',unit:'per_million_tokens'}}
-function usageValues(usage:any){const input=Math.max(0,Number(usage?.input_tokens)||0),cached=Math.min(input,Math.max(0,Number(usage?.input_tokens_details?.cached_tokens)||0)),output=Math.max(0,Number(usage?.output_tokens)||0);return {input,cached,output}}
-function combinedUsage(...items:any[]){const totals=items.map(usageValues).reduce((sum,item)=>({input:sum.input+item.input,cached:sum.cached+item.cached,output:sum.output+item.output}),{input:0,cached:0,output:0});return {input_tokens:totals.input,output_tokens:totals.output,input_tokens_details:{cached_tokens:totals.cached}}}
-function usageCost(usage:any,price:any){const value=usageValues(usage);return {...value,cost:((value.input-value.cached)*price.input+value.cached*price.cachedInput+value.output*price.output)/1_000_000}}
-const ACCOUNTING_WARNING='AI usage could not be saved. The displayed cost is an estimate and the saved usage total may be incomplete. Do not repeat the AI request just to repair accounting.';
-async function completeUsageRecord(service:any,values:any){
-  let attempts=0,lastError:any=null;
-  for(let attempt=1;attempt<=3;attempt++){
-    attempts=attempt;let status=0;
-    try{
-      const response=await service.rpc('complete_ai_usage_internal',values);
-      if(response&&!response.error)return {recorded:true,attempts,requestId:values.target_request_id,code:'',warning:''};
-      lastError=response?.error||new Error('Empty accounting response');status=Number(response?.status)||0;
-    }catch(error){lastError=error}
-    const code=String(lastError?.code||''),message=String(lastError?.message||'');
-    const permanent=/^(22|23|28|42)/.test(code);
-    const transient=!permanent&&(/^(08|53)/.test(code)||['57P01','57P02','57P03','PGRST000','PGRST001','PGRST002','PGRST003'].includes(code)||[408,429,500,502,503,504].includes(status)||/fetch|network|timeout|timed out|connection/i.test(message));
-    if(attempt===3||!transient)break;
-    await new Promise(resolve=>setTimeout(resolve,100*2**(attempt-1)));
-  }
-  // Never log prompts, keys, access tokens or provider output; these identifiers and
-  // measured amounts permit reconciliation without reissuing a paid request.
-  console.error('AI_USAGE_RECORD_FAILED',{requestId:values.target_request_id,providerResponseId:values.target_provider_response_id,inputTokens:values.target_input_tokens,cachedInputTokens:values.target_cached_input_tokens,outputTokens:values.target_output_tokens,estimatedCostUsd:values.target_estimated_cost_usd,usageStatus:values.target_status,attempts,errorCode:String(lastError?.code||'ACCOUNTING_UNAVAILABLE')});
-  return {recorded:false,attempts,requestId:values.target_request_id,code:'AI_USAGE_RECORD_FAILED',warning:ACCOUNTING_WARNING};
-}
+// Reuse one accounting implementation across AI entrypoints.
 
 function normalizedId(value:unknown){return slug(value)}
 function versionMap(sourceVersions:any){const versions=new Map<string,number>();for(const record of list(sourceVersions?.standardAbilities,1000)){const id=normalizedId(record?.abilityId),version=Number(record?.version);if(id&&version>0)versions.set(id,version)}return versions}

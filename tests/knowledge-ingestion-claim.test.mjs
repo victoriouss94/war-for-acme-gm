@@ -10,6 +10,8 @@ async function setup(t,{claimFailure='',alreadyClaimed=false,providerFails=false
   class ServiceError extends Error{constructor(message,status,code){super(message);this.status=status;this.code=code}}
   const client={from(){const query={select(){return query},eq(){return query},single:async()=>({data:{id:'00000000-0000-4000-8000-000000000001',status,requested_status:'ACTIVE',source_file_name:'audit.txt',storage_path:'synthetic.txt',content_type:'text/plain',official_documents:{game_id:'synthetic',title:'Synthetic',document_type:'CUSTOM'}}}),maybeSingle:async()=>({data:{member_role:'owner'}})};return query;},storage:{from:()=>({download:async()=>{calls.push({name:'download'});return {data:new Blob(['Synthetic'])};}})},rpc:async(name,args)=>{
     calls.push({name,args});
+    if(name==='reserve_ai_usage_internal')return {data:args.target_request_id};
+    if(name==='complete_ai_usage_internal')return {data:null};
     if(name==='claim_knowledge_ingestion_internal'){
       if(claimFailure==='returned')return {error:{message:'private SQL detail'}};
       if(claimFailure==='malformed')return {data:{claimed:true}};
@@ -27,7 +29,7 @@ async function setup(t,{claimFailure='',alreadyClaimed=false,providerFails=false
     createEmbeddings:async()=>{calls.push({name:'embeddings'});return {model:'synthetic-embedding',vectors:[Array(1536).fill(0)]};}
   };
   t.after(()=>{if(previousDeno===undefined)delete globalThis.Deno;else globalThis.Deno=previousDeno;if(previousApi===undefined)delete globalThis.__claimAudit;else globalThis.__claimAudit=previousApi;});
-  async function load(){let handler;globalThis.Deno={serve:callback=>{handler=callback}};const source=entry.replace(/^import \{([^}]+)\} from '..\/_shared\/ai-service.ts';/,'const {$1}=globalThis.__claimAudit;');await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)+'\n// claim test '+serial++).toString('base64'));return handler;}
+  async function load(){let handler;globalThis.Deno={serve:callback=>{handler=callback}};const source=entry.replace(/^import \{([^}]+)\} from '..\/_shared\/ai-service.ts';/,'const {$1}=globalThis.__claimAudit;').replace("'../_shared/usage-accounting.js'",JSON.stringify(new URL('../supabase/functions/_shared/usage-accounting.js',import.meta.url).href));await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)+'\n// claim test '+serial++).toString('base64'));return handler;}
   const request=()=>new Request('https://synthetic.invalid/ingest',{method:'POST',headers:{Authorization:'Bearer synthetic','Content-Type':'application/json'},body:JSON.stringify({documentVersionId:'00000000-0000-4000-8000-000000000001'})});
   return {load,calls,request,getStatus:()=>status};
 }
