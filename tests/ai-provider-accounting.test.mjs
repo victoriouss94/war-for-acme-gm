@@ -170,11 +170,12 @@ async function handlerFixture(t,body,options={}){
   const gameId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222';
   const rpcCalls=[],userRpcCalls=[],rows={
     game_members:{member_role:options.memberRole??'gm'},
-    game_documents:{document:{},version:1},
+    game_documents:{document:options.gameDocument??{},version:1},
+    ability_concept_mappings:options.conceptMappings??[],
     resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:options.actions||[{id:'action-1'}],pre_resolution_state:options.snapshot||{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
-    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:name==='get_effective_ruleset'?options.effectiveRuleset??null:null}},
+    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:name==='get_effective_ruleset'?options.effectiveRuleset??null:name==='search_gm_precedents'?options.precedents??[]:null}},
     from:table=>{
       const query={maybeSingle:async()=>({data:rows[table]??null}),single:async()=>({data:rows[table]??null}),then:resolve=>resolve({data:rows[table]??[]})};
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
@@ -192,6 +193,62 @@ async function handlerFixture(t,body,options={}){
   const response=await handler(new Request('https://synthetic.invalid/gm-copilot',{method:'POST',headers:{Authorization:'Bearer synthetic-session','Content-Type':'application/json',Origin:'https://victoriouss94.github.io'},body:JSON.stringify({gameId,resolutionSessionId:sessionId,task:options.task??'adjudicate_interaction',message:options.message,interaction:{question:'Synthetic?',interaction_id:'interaction-1',action_id:'action-1'}})}));
   return {response,rpcCalls,userRpcCalls,calls,logs};
 }
+
+const learnedPrecedent={id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',precedent_number:1,title:'Saved ruling',summary:'Reference only',interaction_signature:'nova',signature_tokens:['ability:nova'],scope:'GLOBAL',status:'ACTIVE',authority:'GM_PRECEDENT',role_ids:[],status_types:[],rule_versions:{},global_concept_ids:['concept-one'],version:1,applicability:'STRONG',origin_game_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',origin_game_name:'Historical game',authority_layer:'GLOBAL_APPROVED_GM_PRECEDENT'};
+const learnedMapping=(ability,level,concept='concept-one')=>({game_ability_id:ability,global_concept_id:concept,compatibility_level:level,global_ability_concepts:{concept_key:concept,name:concept}});
+const learnedDocument={game:{id:'11111111-1111-4111-8111-111111111111',name:'Current game'},data:{abilities:[{id:'nova',name:'Nova'},{id:'beam',name:'Beam'},{id:'remote',name:'Unrelated'}],roles:[],players:[],rules:[]}};
+for(const reversed of [false,true])test('cross-game incompatible mappings are never overwritten by row order '+reversed,async t=>{
+  const mappings=[learnedMapping('nova','INCOMPATIBLE'),learnedMapping('beam','EXACT')];if(reversed)mappings.reverse();
+  const {response,calls}=await handlerFixture(t,payload(JSON.stringify({answer:'Check current mechanics',sources:[{source_id:'precedent:'+learnedPrecedent.id,claim:'Must be filtered'}]})),{task:'search_precedents',message:'Have we seen Nova and Beam before?',gameDocument:learnedDocument,conceptMappings:mappings,precedents:[learnedPrecedent]});
+  assert.equal(response.status,200);const input=JSON.parse(calls[0].input),body=await response.json();
+  assert.deepEqual(input.tool_context.relevant_precedents,[]);assert.equal(body.result.global_knowledge.compatible_global_precedent_count,0);
+  assert.equal(body.result.sources.some(source=>source.id==='precedent:'+learnedPrecedent.id),false);
+});
+test('cross-game partially mapped multi-concept precedent cannot remain strong',async t=>{
+  const precedent={...learnedPrecedent,global_concept_ids:['concept-one','concept-two']};
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Review missing mapping","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,conceptMappings:[learnedMapping('nova','EXACT')],precedents:[precedent]});
+  assert.equal(response.status,200);const result=JSON.parse(calls[0].input).tool_context.relevant_precedents[0];
+  assert.equal(result.applicability,'PARTIAL');assert.ok(result.compatibility_reasons.some(reason=>/not every/i.test(reason)));
+});
+test('unrelated ability mapping cannot certify a global precedent for the queried ability',async t=>{
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"No confirmed mapping","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,conceptMappings:[learnedMapping('remote','EXACT')],precedents:[learnedPrecedent]});
+  assert.equal(response.status,200);assert.equal(JSON.parse(calls[0].input).tool_context.relevant_precedents[0].applicability,'PARTIAL');
+});
+test('unrelated incompatible mapping cannot suppress a compatible queried ability',async t=>{
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Relevant compatible ruling","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,conceptMappings:[learnedMapping('nova','EXACT'),learnedMapping('remote','INCOMPATIBLE')],precedents:[learnedPrecedent]});
+  assert.equal(response.status,200);const results=JSON.parse(calls[0].input).tool_context.relevant_precedents;
+  assert.equal(results.length,1);assert.equal(results[0].applicability,'STRONG');
+});
+for(const reversed of [false,true])test('partial compatibility survives any mapping row order '+reversed,async t=>{
+  const mappings=[learnedMapping('nova','PARTIAL'),learnedMapping('beam','EXACT')];if(reversed)mappings.reverse();
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Review differing mechanics","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova and Beam before?',gameDocument:learnedDocument,conceptMappings:mappings,precedents:[learnedPrecedent]});
+  assert.equal(response.status,200);assert.equal(JSON.parse(calls[0].input).tool_context.relevant_precedents[0].applicability,'PARTIAL');
+});
+
+
+test('strong concept mapping cannot promote a retrieved precedent to exact',async t=>{
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Strong match only","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,conceptMappings:[learnedMapping('nova','STRONG')],precedents:[{...learnedPrecedent,applicability:'EXACT'}]});
+  assert.equal(response.status,200);assert.equal(JSON.parse(calls[0].input).tool_context.relevant_precedents[0].applicability,'STRONG');
+});
+test('all required exact mappings retain an exact global match and its citation',async t=>{
+  const precedent={...learnedPrecedent,applicability:'EXACT',global_concept_ids:['concept-one','concept-two']};
+  const mappings=[learnedMapping('nova','EXACT'),learnedMapping('beam','EXACT','concept-two')],before=structuredClone({precedent,mappings});
+  const {response,calls}=await handlerFixture(t,payload(JSON.stringify({answer:'Compatible historical reference',sources:[{source_id:'precedent:'+precedent.id,claim:'Exact mapped reference'}]})),{task:'search_precedents',message:'Have we seen Nova and Beam before?',gameDocument:learnedDocument,conceptMappings:mappings,precedents:[precedent]});
+  assert.equal(response.status,200);assert.equal(JSON.parse(calls[0].input).tool_context.relevant_precedents[0].applicability,'EXACT');
+  const body=await response.json();assert.equal(body.result.global_knowledge.compatible_global_precedent_count,1);assert.equal(body.result.sources.length,1);
+  assert.deepEqual({precedent,mappings},before);
+});
+test('current-game precedent remains available when the global match is incompatible',async t=>{
+  const local={...learnedPrecedent,id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',scope:'GAME_SPECIFIC',origin_game_id:learnedDocument.game.id,authority_layer:'CURRENT_GAME_APPROVED_PRECEDENT'};
+  const {response,calls}=await handlerFixture(t,payload('{"answer":"Current-game reference","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,conceptMappings:[learnedMapping('nova','INCOMPATIBLE')],precedents:[learnedPrecedent,local]});
+  assert.equal(response.status,200);assert.deepEqual(JSON.parse(calls[0].input).tool_context.relevant_precedents.map(row=>row.id),[local.id]);
+  const body=await response.json();assert.equal(body.result.global_knowledge.current_game_precedent_count,1);assert.equal(body.result.global_knowledge.global_precedent_count,0);
+});
+for(const [name,options,status] of [['viewer',{memberRole:'viewer'},403],['unauthenticated',{invalidUser:true},401]])test('precedent search denies '+name+' before retrieval or AI',async t=>{
+  const {response,calls,userRpcCalls}=await handlerFixture(t,payload(),{...options,task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,precedents:[learnedPrecedent]});
+  assert.equal(response.status,status);assert.deepEqual(calls.attemptedUrls,[]);assert.equal(userRpcCalls.includes('search_gm_precedents'),false);
+});
+
 test('canonical queue actor alias retains relevant role context without including unrelated players',async t=>{
   // Real normalized public-queue records contain both actorId and sourcePlayerId.
   const actions=[{id:'action-1',actorId:'actor',sourcePlayerId:'actor',abilityId:'ability',targetIds:['target']}];
