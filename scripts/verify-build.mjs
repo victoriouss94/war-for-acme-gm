@@ -20,7 +20,7 @@ if(!copilot.includes("from '../supabase/functions/_shared/master-gm.js?v=12.2.33
 if(!app.includes("from './mechanics.js?v=12.2.55'"))throw new Error('app.js does not load scoped mechanic review identities');
 if(!app.includes("from './phase-controller.js?v=12.2.14'"))throw new Error('app.js does not load timed status review support');
 if(!app.includes("from './player-abilities.js?v=12.2.55'"))throw new Error('app.js does not load role-scoped player ability availability');
-if(!app.includes("from './resolution-editor.js?v=12.2.63'"))throw new Error('app.js does not load the versioned resolution editor');
+if(!app.includes("from './resolution-editor.js?v=12.2.64'"))throw new Error('app.js does not load the versioned resolution editor');
 if(!app.includes("from './global-abilities.js?v=12.2.55'"))throw new Error('app.js does not load the versioned global resolution module');
 if(!app.includes("from './role-modes.js?v=12.2.38'"))throw new Error('app.js does not load role-scoped mode runtime');
 const release=JSON.parse(await readFile('package.json','utf8')).version;
@@ -36,7 +36,7 @@ for(const parent of ['app','night-engine','player-abilities']){
 for(const parent of ['app','night-engine',...classifierModules]){
   const source=await readFile(`js/${parent}.js`,'utf8');
   for(const match of source.matchAll(/from\s+['"]\.\/([a-z-]+)\.js\?v=([^'"]+)['"]/g)){
-    const expected=match[1]==='resolution-editor'?'12.2.63':'12.2.55';
+    const expected=match[1]==='resolution-editor'?'12.2.64':'12.2.55';
     if(classifierModules.has(match[1])&&match[2]!==expected)throw new Error(`${parent} imports stale standard-ID classifier consumer ${match[1]}`);
   }
 }

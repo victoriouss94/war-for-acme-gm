@@ -3,14 +3,14 @@ import {COPILOT_MAX_MESSAGE_LENGTH,copilotChangeLabel,normalizeCopilotRequest,no
 import {knowledgeDocumentKey,knowledgeFileMetadata,reconcileOfficialAbilities,validateKnowledgeFile} from './knowledge.js?v=12.0.1';
 import {PLAYER_STATUS_TYPES,groupPlayerStatuses,normalizePlayerStatus,playerMatchesStatusFilter,statusLabel,statusMutationPayload,statusTypeDefinition} from './statuses.js?v=12.0.1';
 import {manualResolutionPayload,normalizeAiDraft,normalizeResolution,precedentVisibility,validateManualResolution} from './resolution.js?v=12.0.1';
-import {buildResolutionDraft,finalResolutionPayload,humanizeResolutionText,playerOutcomeDisplayRows,resolutionDifferences,resolutionDisplayLookup,resolutionEntityName,usageAggregates,validateResolutionDraft} from './resolution-editor.js?v=12.2.63';
+import {buildResolutionDraft,finalResolutionPayload,humanizeResolutionText,playerOutcomeDisplayRows,resolutionDifferences,resolutionDisplayLookup,resolutionEntityName,usageAggregates,validateResolutionDraft} from './resolution-editor.js?v=12.2.64';
 import {buildTrackerResolutionReview,trackerActionBadges} from './resolution-review.js?v=12.2.40';
 import {ABILITY_DATA_STATUSES,ROLE_TYPES,normalizeRoleSetup,normalizedPlayerName,parsePlayerFile,parsePlayerText,previewPlayerImport,rosterAnalysis} from './player-setup.js?v=12.0.1';
 import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,normalizeAbilityGrant,naturalNumber,validateActionTargets} from './player-abilities.js?v=12.2.55';
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.55';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.2.55';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.63';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.64';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.38';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -902,9 +902,17 @@ async function recalculateSelectedNight(){
     const editedAction=edited.action_results.find(item=>item.action_id===actionId),previousAction=baseline.action_results.find(item=>item.action_id===actionId);
     if(!editedAction||!previousAction)return null;
     const resultChanged=editedAction.result!==previousAction.result;
-    return {actionId,actionPatch:{targetIds:editedAction.final_target_ids,resolutionCategory:editedAction.resolution_category,...(editedAction.standardized_ability_type!==previousAction.standardized_ability_type?{standardizedAbilityType:editedAction.standardized_ability_type}:{}),...(resultChanged?{forceResult:editedAction.result==='SUCCESS'?'':editedAction.result,forceReason:editedAction.reason!==previousAction.reason?editedAction.reason:''}:{}),gmOverride:{reason:'GM-edited resolution recalculation',changes:changes.filter(change=>change.path.startsWith(`actions.${actionId}.`))}}};
+    const reclassification=editedAction.standardized_ability_type!==previousAction.standardized_ability_type?classifyAbility({name:editedAction.standardized_ability_type}):null;
+    const targetChanged=JSON.stringify(editedAction.final_target_ids)!==JSON.stringify(previousAction.final_target_ids);
+    return {actionId,actionPatch:{...(targetChanged?{targetIds:editedAction.final_target_ids,originalTargetIds:previousAction.original_target_ids,effectiveTargetIds:editedAction.final_target_ids}:{}),resolutionCategory:reclassification?.resolutionCategory??editedAction.resolution_category,...(editedAction.standardized_ability_type!==previousAction.standardized_ability_type?{standardizedAbilityType:editedAction.standardized_ability_type}:{}),...(resultChanged?{forceResult:editedAction.result==='SUCCESS'?'':editedAction.result,forceReason:editedAction.reason!==previousAction.reason?editedAction.reason:''}:{}),gmOverride:{reason:'GM-edited resolution recalculation',changes:changes.filter(change=>change.path.startsWith(`actions.${actionId}.`))}}};
   }).filter(Boolean);
-  resolutionPending=true;renderAll();try{const proposal=recalculateNight(previous,nightEngineInput(session),{earliestStage:'BLOCKS',actionCorrections,gmChanges:changes});await GMCloud.saveDeterministicResolution(session.id,session.lock_version,persistableNightProposal(proposal));await refreshAiGmData();selectedResolutionSessionId=session.id;loadedResolutionFormId=null}catch(error){alert(error.message||'The corrected night could not be recalculated. No live state was changed.')}finally{resolutionPending=false;renderAll()}
+  resolutionPending=true;renderAll();try{
+    const proposal=recalculateNight(previous,nightEngineInput(session),{earliestStage:'BLOCKS',actionCorrections,gmChanges:changes});
+    const replayDraft=buildResolutionDraft({proposal,actions:session.submitted_actions||[],players:session.pre_resolution_state?.players||state.players});
+    const requestedPaths=new Set(changes.map(change=>change.path)),unapplied=resolutionDifferences(edited,replayDraft).filter(change=>requestedPaths.has(change.path));
+    if(unapplied.length){alert('Recalculation could not apply these edits: '+[...new Set(unapplied.map(change=>change.path.split('.').at(-1).replaceAll('_',' ')))].join(', ')+'. Nothing was saved and your edits remain in the editor. Review the source rule and finalize the manual ruling, or revise the causative action.');return;}
+    await GMCloud.saveDeterministicResolution(session.id,session.lock_version,persistableNightProposal(proposal));await refreshAiGmData();selectedResolutionSessionId=session.id;loadedResolutionFormId=null;
+  }catch(error){alert(error.message||'The corrected night could not be recalculated. No live state was changed.')}finally{resolutionPending=false;renderAll()}
 }
 function resolutionListCard(session){const count=Array.isArray(session.submitted_actions)?session.submitted_actions.length:0;return '<button type="button" class="resolution-session-card '+(session.id===selectedResolutionSessionId?'active ':'')+(['FINALIZED','REJECTED'].includes(session.status)?'resolution-finalized':'')+'" data-resolution-id="'+esc(session.id)+'"><strong>'+esc(session.phase)+' '+session.cycle+'</strong><span>'+esc(session.status.replaceAll('_',' '))+' • '+count+' action'+(count===1?'':'s')+'</span><small>'+esc(formatDateTime(session.created_at))+' • v'+session.lock_version+'</small></button>'}
 function currentResolutionDisplayLookup(session=currentResolutionSession()){
