@@ -169,16 +169,31 @@
   async function uploadImportSource(file,metadata){
     const path=session.user.id+'/'+metadata.id+'/'+safeFileName(file.name),options={contentType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',cacheControl:'3600',upsert:false};unwrap(await required().storage.from(importBucket).upload(path,file,options));return path;
   }
-  async function removeImportSource(path){try{unwrap(await required().storage.from(importBucket).remove([path]))}catch(error){console.warn('Could not clean up import source',error)}}
+  async function removeImportSource(path){unwrap(await required().storage.from(importBucket).remove([path]))}
+  async function documentSaveFailure(error,removeSource){
+    // Only explicit database rejection authorizes deleting this newly uploaded object.
+    // A connection error, including SQLSTATE 40003, does not prove the save rolled back.
+    const rejected=new Set(['22023','23502','23503','23505','23514','42501','P0001','40001','40P01','57014']).has(error?.code);
+    let warning,flags;
+    if(rejected){
+      try{await removeSource();return error}
+      catch{warning='Source cleanup could not be confirmed. The uploaded source may remain; contact a GM before retrying.';flags={sourceCleanupFailed:true}}
+    }else{
+      warning='Save outcome is uncertain. The uploaded source was retained because the save may already have completed. Refresh Saved Games or the document library and verify the saved entry before retrying.';
+      flags={saveOutcomeUnknown:true,sourceRetained:true};
+    }
+    const message=(error?.message||'Document save could not be confirmed.')+' '+warning;
+    return Object.assign(new Error(message,{cause:error}),error&&typeof error==='object'?error:{},{message,...flags});
+  }
   async function createImportedGame(document,file,metadata){
-    const storagePath=await uploadImportSource(file,metadata);try{return unwrap(await required().rpc('create_game_from_import',{game_id:document.game.id,initial_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}))}catch(error){await removeImportSource(storagePath);throw error}
+    const storagePath=await uploadImportSource(file,metadata);try{return unwrap(await required().rpc('create_game_from_import',{game_id:document.game.id,initial_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}))}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
   }
   async function saveGame(gameId,version,document,audit={}){
     const rows=unwrap(await required().rpc('save_game_document',{target_game_id:gameId,expected_version:version,next_document:document,change_action:audit.action||'Game updated',change_entity_type:audit.entityType||'game',change_entity_id:audit.entityId||null}));
     return rows[0];
   }
   async function reimportGame(gameId,version,document,file,metadata){
-    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return rows[0]}catch(error){await removeImportSource(storagePath);throw error}
+    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return rows[0]}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
   }
   async function deleteGame(gameId){return unwrap(await required().rpc('delete_game',{target_game_id:gameId}))}
   async function joinGame(code){const rows=unwrap(await required().rpc('redeem_game_invite',{invite_code:code}));return rows[0]}
@@ -252,7 +267,7 @@
     unwrap(await required().storage.from(knowledgeBucket).upload(storagePath,file,{contentType,cacheControl:'3600',upsert:false}));
     try{
       unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE',target_scope:metadata.scope||'GAME_SPECIFIC'}));
-    }catch(error){try{unwrap(await required().storage.from(knowledgeBucket).remove([storagePath]))}catch{}throw error}
+    }catch(error){throw await documentSaveFailure(error,async()=>unwrap(await required().storage.from(knowledgeBucket).remove([storagePath])))}
     const {data,error}=await required().functions.invoke('gm-knowledge-ingest',{body:{documentVersionId:versionId,depth:metadata.depth||'standard'}});
     if(error){let payload=null;try{payload=await error.context?.json?.()}catch{}throw Object.assign(new Error(payload?.error||error.message||'Document indexing failed.'),{code:payload?.code||'DOCUMENT_INGESTION_FAILED'})}
     return data;
