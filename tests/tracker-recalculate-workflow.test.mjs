@@ -51,3 +51,59 @@ test('reclassification does not turn an unchanged reflected target into a new su
 test('GM reclassification across categories uses the chosen standard stage',async()=>{
   const h=harness(draft=>{draft.action_results.find(a=>a.action_id==='attack').standardized_ability_type='Protect'});await h.context.recalculate();assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);assert.deepEqual(h.saved[0][2].deaths,[]);assert.equal(h.saved[0][2].action_results.find(a=>a.action_id==='attack').resolution_category,'STATUS_EFFECTS');
 });
+for(const [label,patch,deaths,generated] of [
+  ['cancelled root',{forceResult:'CANCELLED'},[],0],
+  ['retargeted root',{targetIds:['observer'],effectiveTargetIds:['observer'],originalTargetIds:['retaliator']},['observer'],0]
+])test('Resolve again preserves saved GM recalculation: '+label,async()=>{
+  const h=harness(),input={gameId:'button-test',resolutionId:'session',round:1,phase:'Night',snapshot:h.session.pre_resolution_state,actions:h.session.submitted_actions};
+  const corrected=recalculateNight(h.previous,input,{actionId:'attack',actionPatch:patch});
+  const {starting_snapshot,...savedProposal}=corrected;h.session.engine_proposal=JSON.parse(JSON.stringify(savedProposal));
+  const before=structuredClone(h.session);
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+  assert.deepEqual(h.saved[0][2].deaths,deaths);assert.equal(h.saved[0][2].observability.generated_effect_count,generated);
+  assert.deepEqual(h.saved[0][2].recalculation.action_overrides,corrected.recalculation.action_overrides);
+  assert.deepEqual(h.session,before);
+});
+
+test('Resolve again retains saved GM rule additions without duplicating them',async()=>{
+  const h=harness(),input={gameId:'button-test',resolutionId:'session',round:1,phase:'Night',snapshot:h.session.pre_resolution_state,actions:h.session.submitted_actions};
+  h.session.engine_proposal=recalculateNight(h.previous,input,{rules:[{id:'gm-rule',description:'Synthetic GM ruling context.'}]});
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+  assert.deepEqual(h.saved[0][2].recalculation?.rule_additions,[{id:'gm-rule',description:'Synthetic GM ruling context.'}]);
+});
+
+test('unknown-interaction second pass cannot discard a saved GM cancellation',async()=>{
+  const h=harness(()=>{},input=>{
+    input.snapshot.abilities.push({id:'unknown',name:'Unknown custom action',engineBehavior:{effect:'CUSTOM',requiresExplicitRule:true,tags:['ACTIVE_ACTION']}});
+    input.actions.push({id:'unknown-action',abilityId:'unknown',name:'Unknown custom action',sourcePlayerId:'observer',targetIds:['attacker']});
+  });
+  const input={gameId:'button-test',resolutionId:'session',round:1,phase:'Night',snapshot:h.session.pre_resolution_state,actions:h.session.submitted_actions};
+  h.session.engine_proposal=recalculateNight(h.previous,input,{actionId:'attack',actionPatch:{forceResult:'CANCELLED'}});
+  let requests=0;h.context.GMCloud.adjudicateInteraction=async()=>{requests++;return {status:'REJECTED',accounting_warning:'Synthetic accounting warning.'}};
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.equal(requests,1);assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+  assert.deepEqual(h.saved[0][2].deaths,[]);assert.equal(h.saved[0][2].observability.generated_effect_count,0);
+  assert.equal(h.saved[0][2].action_results.find(row=>row.action_id==='attack').result,'CANCELLED');
+  assert.equal(h.saved[0][2].resolution_status,'GM_REVIEW_REQUIRED');
+});
+
+test('repeated saved Resolve replay keeps cumulative rule additions exactly once',async()=>{
+  const h=harness(),input={gameId:'button-test',resolutionId:'session',round:1,phase:'Night',snapshot:h.session.pre_resolution_state,actions:h.session.submitted_actions};
+  h.session.engine_proposal=recalculateNight(h.previous,input,{rules:[{id:'first'}]});
+  h.session.engine_proposal=recalculateNight(h.session.engine_proposal,input,{rules:[{id:'second'}]});
+  for(let n=0;n<2;n++){
+    await vm.runInContext('resolveSelectedNight()',h.context);
+    h.session.engine_proposal=JSON.parse(JSON.stringify(h.saved.at(-1)[2]));
+  }
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,2);
+  assert.deepEqual(h.session.engine_proposal.recalculation.rule_additions,[{id:'first'},{id:'second'}]);
+});
+
+test('fresh Resolve still executes the existing engine without creating correction metadata',async()=>{
+  const h=harness();await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+  assert.deepEqual(new Set(h.saved[0][2].deaths),new Set(['attacker','retaliator']));
+  assert.equal(h.saved[0][2].recalculation,undefined);
+});
