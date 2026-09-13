@@ -185,15 +185,20 @@
     const message=(error?.message||'Document save could not be confirmed.')+' '+warning;
     return Object.assign(new Error(message,{cause:error}),error&&typeof error==='object'?error:{},{message,...flags});
   }
+  function documentRegistrationRow(rows,accept){
+    const row=Array.isArray(rows)&&rows.length===1?rows[0]:null;
+    if(!row||typeof row!=='object'||Array.isArray(row)||!accept(row))throw Object.assign(new Error('The server did not return a valid confirmation for this document save.'),{code:'DOCUMENT_SAVE_UNCONFIRMED'});
+    return row;
+  }
   async function createImportedGame(document,file,metadata){
-    const storagePath=await uploadImportSource(file,metadata);try{return unwrap(await required().rpc('create_game_from_import',{game_id:document.game.id,initial_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}))}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
+    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('create_game_from_import',{game_id:document.game.id,initial_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));documentRegistrationRow(rows,row=>row.id===document.game.id&&Number.isSafeInteger(row.version)&&row.version>0&&typeof row.share_code==='string');return rows}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
   }
   async function saveGame(gameId,version,document,audit={}){
     const rows=unwrap(await required().rpc('save_game_document',{target_game_id:gameId,expected_version:version,next_document:document,change_action:audit.action||'Game updated',change_entity_type:audit.entityType||'game',change_entity_id:audit.entityId||null}));
     return rows[0];
   }
   async function reimportGame(gameId,version,document,file,metadata){
-    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return rows[0]}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
+    const storagePath=await uploadImportSource(file,metadata);try{const rows=unwrap(await required().rpc('save_game_reimport',{target_game_id:gameId,expected_version:version,next_document:document,source_import_id:metadata.id,source_file_name:metadata.fileName,source_storage_path:storagePath,source_file_size:metadata.fileSize,source_content_type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',source_sha256:metadata.sha256||'',import_summary:metadata.summary||{},import_warnings:metadata.warnings||[]}));return documentRegistrationRow(rows,row=>row.version===version+1&&Number.isSafeInteger(row.version)&&row.document?.game?.id===gameId&&row.document?.data&&typeof row.document.data==='object'&&!Array.isArray(row.document.data)&&typeof row.updated_at==='string'&&Number.isFinite(Date.parse(row.updated_at)))}catch(error){throw await documentSaveFailure(error,()=>removeImportSource(storagePath))}
   }
   async function deleteGame(gameId){return unwrap(await required().rpc('delete_game',{target_game_id:gameId}))}
   async function joinGame(code){const rows=unwrap(await required().rpc('redeem_game_invite',{invite_code:code}));return rows[0]}
@@ -266,7 +271,8 @@
     if(!contentType)throw Object.assign(new Error('Choose a DOCX, PDF, or TXT document.'),{code:'INVALID_DOCUMENT'});
     unwrap(await required().storage.from(knowledgeBucket).upload(storagePath,file,{contentType,cacheControl:'3600',upsert:false}));
     try{
-      unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE',target_scope:metadata.scope||'GAME_SPECIFIC'}));
+      const rows=unwrap(await required().rpc('create_knowledge_document',{target_game_id:gameId,target_document_id:documentId,target_version_id:versionId,target_document_key:metadata.documentKey,target_title:metadata.title,target_document_type:metadata.documentType,target_source_file_name:file.name,target_storage_path:storagePath,target_file_size:file.size,target_content_type:contentType,target_source_sha256:metadata.sha256||'',target_status:metadata.status||'ACTIVE',target_scope:metadata.scope||'GAME_SPECIFIC'}));
+      documentRegistrationRow(rows,row=>row.document_id===documentId&&row.version_id===versionId&&Number.isSafeInteger(row.version_number)&&row.version_number>0);
     }catch(error){throw await documentSaveFailure(error,async()=>unwrap(await required().storage.from(knowledgeBucket).remove([storagePath])))}
     const {data,error}=await required().functions.invoke('gm-knowledge-ingest',{body:{documentVersionId:versionId,depth:metadata.depth||'standard'}});
     if(error){let payload=null;try{payload=await error.context?.json?.()}catch{}throw Object.assign(new Error(payload?.error||error.message||'Document indexing failed.'),{code:payload?.code||'DOCUMENT_INGESTION_FAILED'})}

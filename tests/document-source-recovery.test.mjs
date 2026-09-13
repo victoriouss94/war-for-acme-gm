@@ -12,7 +12,7 @@ const operations={
   reimport:api=>api.reimportGame('test-game',7,document,file,metadata),
   knowledge:api=>api.uploadKnowledgeDocument('test-game',file,metadata)
 };
-function harness({failure,throws=false,commit=false,uploadError,cleanupError,cleanupThrows=false,ingestError,malformed=false}={}){
+function harness({failure,throws=false,commit=false,uploadError,cleanupError,cleanupThrows=false,ingestError,malformed=false,responseRows=rows=>rows}={}){
   const calls=[],objects=new Set(),references=new Set();
   let sequence=0;
   const client={
@@ -27,7 +27,7 @@ function harness({failure,throws=false,commit=false,uploadError,cleanupError,cle
       if(throws)throw failure;
       if(failure)return {error:failure};
       if(malformed)return undefined;
-      return {data:[{id:'test-game',version:8,share_code:'test-code',document,updated_at:'2026-09-13',document_id:args.target_document_id,version_id:args.target_version_id,version_number:1}]};
+      return {data:responseRows([{id:'test-game',version:8,share_code:'test-code',document,updated_at:'2026-09-13',document_id:args.target_document_id,version_id:args.target_version_id,version_number:1}])};
     },
     functions:{invoke:async(name,args)=>{calls.push({kind:'invoke',name,args});return ingestError?{error:ingestError}:{data:{status:'ACTIVE'}};}}
   };
@@ -40,6 +40,23 @@ function harness({failure,throws=false,commit=false,uploadError,cleanupError,cle
 async function capture(promise){try{await promise;assert.fail('Expected a visible failure');}catch(error){if(error.code==='ERR_ASSERTION')throw error;return error;}}
 
 for(const [name,run] of Object.entries(operations)){
+  test(name+': a missing, non-row, or multiple-row registration reply is not a confirmed save',async()=>{
+    for(const responseRows of [()=>null,()=>undefined,()=>[],()=>({}),()=>[null],()=>[false],rows=>[...rows,...rows]]){
+      const h=harness({responseRows}),error=await capture(run(h.api));
+      assert.equal(error.code,'DOCUMENT_SAVE_UNCONFIRMED');assert.equal(error.saveOutcomeUnknown,true);assert.equal(h.objects.size,1);
+      assert.equal(h.calls.filter(c=>c.kind==='remove'||c.kind==='invoke').length,0);assert.equal(h.calls.filter(c=>c.kind==='rpc').length,1);
+    }
+  });
+  test(name+': returned identity and consumed metadata must match the request contract',async()=>{
+    const changes=name==='create'?[{id:'other-game'},{id:null},{version:null},{version:'8'},{version:0},{version:1.5},{share_code:null}]:
+      name==='reimport'?[{version:7},{version:9},{version:'8'},{document:{game:{id:'other-game'},data:{}}},{document:null},{document:{game:{id:'test-game'}}},{document:{game:{id:'test-game'},data:[]}},{updated_at:null},{updated_at:'not-a-date'}]:
+      [{document_id:'other-document'},{version_id:'other-version'},{document_id:null},{version_number:null},{version_number:'1'},{version_number:0}];
+    for(const change of changes){
+      const h=harness({responseRows:rows=>[{...rows[0],...change}]}),error=await capture(run(h.api));
+      assert.equal(error.code,'DOCUMENT_SAVE_UNCONFIRMED');assert.equal(error.saveOutcomeUnknown,true);assert.equal(h.objects.size,1);
+      assert.equal(h.calls.filter(c=>c.kind==='remove'||c.kind==='invoke').length,0);
+    }
+  });
   test(name+': committed save with lost response retains the referenced source and never retries',async()=>{
     const failure=Object.freeze(Object.assign(new Error('Failed to fetch'),{code:'',status:504}));
     const h=harness({failure,throws:true,commit:true}),error=await capture(run(h.api));
@@ -111,6 +128,25 @@ test('knowledge ingestion failure after registration never deletes the saved sou
   const h=harness({ingestError:new Error('Indexing failed')}),error=await capture(operations.knowledge(h.api));
   assert.equal(h.objects.size,1);assert.deepEqual([...h.objects],[...h.references]);assert.equal(error.code,'DOCUMENT_INGESTION_FAILED');
   assert.equal(h.calls.filter(c=>c.kind==='remove').length,0);assert.equal(h.calls.filter(c=>c.kind==='invoke').length,1);
+});
+
+
+for(const importMode of ['initial','reimport'])test('actual '+importMode+' handler never publishes mismatched registration into local game state',async()=>{
+  const h=harness({responseRows:rows=>rows.map(row=>importMode==='initial'?{...row,id:'other-game'}:{...row,document:{game:{id:'other-game'},data:{}}})}),elements={},writes=[],successes=[];
+  const originalState={preserved:true},current={...document.game},gameIndex={games:[]};
+  const context={GMCloud:h.api,importDraft:{roles:[]},importSourceFile:file,cloudSession:{},importMode,cloudVersion:7,id:()=>metadata.id,state:originalState,gameIndex,
+    validateGameImport:()=>({errors:[]}),validateReimportChoices:()=>[],$:id=>elements[id]??={},currentGame:()=>current,
+    createImportedDocument:()=>({...document,game:{...document.game},sourceRecord:metadata,modifierRecords:[],summary:{warnings:0}}),
+    createReimportDocument:()=>({document,sourceRecord:metadata,summary:{}}),localStorage:{setItem:(...args)=>writes.push(args)},gameDataKey:id=>id,
+    saveIndex:()=>writes.push('index'),persistImportedRoleModifiers:async()=>[],renderAll:()=>{},showImportSuccess:()=>successes.push(true),
+    migrateGameData:data=>data,normalizeMeta:meta=>meta,refreshOpenGame:async()=>{}};
+  vm.createContext(context);
+  const start=app.indexOf('async function confirmDocumentImport(){'),end=app.indexOf('\nfunction renderHistory',start);
+  vm.runInContext(app.slice(start,end)+'\nglobalThis.confirmImport=confirmDocumentImport;',context);
+  await context.confirmImport();
+  assert.deepEqual(writes,[]);assert.deepEqual(successes,[]);assert.equal(gameIndex.games.length,0);
+  assert.equal(context.state,originalState);assert.equal(context.cloudVersion,7);assert.equal(current.id,'test-game');
+  assert.match(elements.documentImportError.textContent,/could not be confirmed/);assert.equal(h.objects.size,1);
 });
 
 for(const importMode of ['initial','reimport'])test('actual '+importMode+' import handler shows uncertainty and preserves the preview',async()=>{
