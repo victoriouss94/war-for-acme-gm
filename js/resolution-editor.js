@@ -134,9 +134,10 @@ export function finalResolutionPayload(draft={},legacy={}){
   clean.events=resolutionEvents(clean);clean.proposed_order=clean.resolution_order;clean.expected_results=clean.action_results.map(item=>`${item.ability_name||item.ability_id}: ${item.result}${item.reason?' — '+item.reason:''}`);clean.status_changes=clean.status_effects.map(item=>`${item.operation}: ${item.status_name} → ${item.player_id}`);clean.deaths=clean.player_outcomes.filter(item=>item.life_state==='DEAD').map(item=>item.player_id);clean.conversions=clean.player_outcomes.filter(hasFactionChange).map(item=>`${item.player_id} → ${item.faction_id}`);clean.abilities_consumed=clean.action_results.filter(item=>item.use_disposition==='CONSUMED').map(item=>item.action_id);clean.reasoning=clean.why;return {...legacy,...clean};
 }
 
-export function validateResolutionDraft(draft,{actions=[],players=[],roles=[],abilities=[],factions=[],allowWarnings=false}={}){
+export function validateResolutionDraft(draft,{actions=[],players=[],roles=[],abilities=[],factions=[],allowWarnings=false,forApproval=false}={}){
   const errors=[],warnings=[],playerIds=new Set(players.map(item=>String(item.id))),roleIds=new Set(roles.map(item=>String(item.id))),abilityIds=new Set(abilities.map(item=>String(item.id))),factionIds=new Set(factions.map(item=>String(item.id))),actionIds=new Set(actions.map(item=>String(item.id))),seen=new Set();
   if(!['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE','GM_REVIEW_REQUIRED'].includes(text(draft.resolution_status).toUpperCase()))errors.push('The resolution needs a valid final status.');
+  if(forApproval&&(text(draft.resolution_status).toUpperCase()==='GM_REVIEW_REQUIRED'||array(draft.unresolved_questions).length))errors.push('Resolve all GM review questions and select a resolved status before approval.');
   if(!text(draft.master_ruling?.headline)||!text(draft.master_ruling?.summary||draft.final_ruling))errors.push('The Master GM ruling is incomplete.');
   if(text(draft.resolution_status).toUpperCase()==='GM_REVIEW_REQUIRED'&&!array(draft.unresolved_questions).length)errors.push('GM review requires an explicit unresolved question.');
   if(['RESOLVED','RESOLVED_WITH_AI_ASSISTANCE'].includes(text(draft.resolution_status).toUpperCase())&&array(draft.unresolved_questions).length)errors.push('Resolve or remove the unresolved questions before approval.');
@@ -178,8 +179,8 @@ export function validateResolutionDraft(draft,{actions=[],players=[],roles=[],ab
 
 export function resolutionDifferences(aiDraft={},finalDraft={}){
   const changes=[],compare=(path,before,after)=>{if(JSON.stringify(before??null)!==JSON.stringify(after??null))changes.push({path,before:before??null,after:after??null})};
-  const aiActions=new Map(array(aiDraft.action_results).map(item=>[item.action_id,item]));for(const item of array(finalDraft.action_results)){const before=aiActions.get(item.action_id)||{};for(const key of ['order','resolution_category','resolution_priority','resolution_timing','result','final_target_ids','affected_player_ids','transformation_history','generated_child_effects','passive_triggers','redirected','reflected','protected','immune','use_disposition','reason'])compare(`actions.${item.action_id}.${key}`,before[key],item[key])}
-  for(const key of ['passive_results','status_effects','player_outcomes','faction_results','grant_effects','other_effects','final_ruling','why','authority_used','confidence'])compare(key,aiDraft[key],finalDraft[key]);return changes.slice(0,1000);
+  const aiActions=new Map(array(aiDraft.action_results).map(item=>[item.action_id,item]));for(const item of array(finalDraft.action_results)){const before=aiActions.get(item.action_id)||{};for(const key of ['order','standardized_ability_type','resolution_category','resolution_priority','resolution_timing','result','final_target_ids','affected_player_ids','transformation_history','generated_child_effects','passive_triggers','redirected','reflected','protected','immune','use_disposition','reason'])compare(`actions.${item.action_id}.${key}`,before[key],item[key])}
+  for(const key of ['resolution_status','unresolved_questions','passive_results','status_effects','player_outcomes','faction_results','grant_effects','other_effects','final_ruling','why','authority_used','confidence'])compare(key,aiDraft[key],finalDraft[key]);return changes.slice(0,1000);
 }
 
 export function usageAggregates(rows=[]){

@@ -399,6 +399,7 @@
             <section class="ruling-editor-section"><div class="section-heading"><div><h4>Other Structured Effects</h4><p class="muted">Record cooldowns, marks, faction-wide effects, grants, or another bounded effect the AI missed.</p></div><button id="addResolutionEffectBtn" class="secondary" type="button">+ Add Effect</button></div><div id="resolutionOtherEffectEditor"></div></section>
             <div class="grid2"><label>Final Master GM ruling<textarea id="resolutionFinalRuling" rows="4" maxlength="12000" required></textarea></label><label>Why?<textarea id="manualResolutionReasoning" rows="4" maxlength="12000"></textarea></label></div>
             <div class="grid2"><label>Authority used (one source per line)<textarea id="resolutionAuthorityUsed" rows="3" maxlength="12000"></textarea></label><label>Confidence<select id="resolutionConfidence"><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select></label></div>
+            <div class="grid2"><label>Final review status<select id="resolutionFinalStatus"><option value="GM_REVIEW_REQUIRED">GM review required</option><option value="RESOLVED">Resolved by GM / engine</option><option value="RESOLVED_WITH_AI_ASSISTANCE">Resolved with AI assistance</option></select></label><label>Questions still unresolved (one per line)<textarea id="resolutionUnresolvedQuestions" rows="3" maxlength="12000"></textarea><span class="muted">Remove a question only after recording its ruling and consequences above. Select a resolved status when all questions are answered.</span></label></div>
             <div id="resolutionDifferenceSummary" class="resolution-difference-summary"></div>
             <label class="check"><input id="resolutionOverrideWarnings" type="checkbox"> I reviewed the consistency warnings and authorize this final ruling when a warning remains.</label>
             <details class="legacy-resolution-fields"><summary>Advanced precedent and legacy notes</summary>
@@ -732,6 +733,6 @@
 <script src="js/supabase-config.js?v=12.0.1"></script>
 <script src="js/cloud.js?v=12.2.41"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=12.2.62"></script>
+<script type="module" src="js/app.js?v=12.2.63"></script>
 </body>
 </html>
