@@ -101,6 +101,33 @@ test('repeated saved Resolve replay keeps cumulative rule additions exactly once
   assert.deepEqual(h.session.engine_proposal.recalculation.rule_additions,[{id:'first'},{id:'second'}]);
 });
 
+for(const [label,edit] of [
+  ['action cancellation',draft=>{draft.action_results[0].result='CANCELLED'}],
+  ['player survival',draft=>{draft.player_outcomes.find(p=>p.player_id==='retaliator').life_state='UNCHANGED'}],
+  ['manual ruling',draft=>{draft.final_ruling='My source-grounded manual ruling.'}],
+  ['review questions',draft=>{draft.unresolved_questions=['Resolve this condition first.']}]
+])test('Resolve does not overwrite current editor changes: '+label,async()=>{
+  const h=harness(edit),before=structuredClone(h.draft);h.context.loadedResolutionFormId=h.session.id;
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.equal(h.saved.length,0);assert.match(h.alerts.join(' '),/manual edits.*Recalculate/i);
+  assert.deepEqual(h.draft,before);assert.equal(h.context.loadedResolutionFormId,h.session.id);
+  assert.equal(h.context.resolutionPending,false);
+});
+
+test('Resolve with an unchanged editor still runs normally',async()=>{
+  const h=harness();h.context.loadedResolutionFormId=h.session.id;
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+});
+
+test('Resolve does not inspect a draft belonging to another session',async()=>{
+  const h=harness(draft=>{draft.final_ruling='Different session edit'});
+  h.context.loadedResolutionFormId='different-session';
+  h.context.captureResolutionEditor=()=>assert.fail('Do not capture another session editor');
+  await vm.runInContext('resolveSelectedNight()',h.context);
+  assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+});
+
 test('fresh Resolve still executes the existing engine without creating correction metadata',async()=>{
   const h=harness();await vm.runInContext('resolveSelectedNight()',h.context);
   assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);

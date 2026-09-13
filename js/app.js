@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.14';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.55';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.2.55';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.68';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.69';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.38';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -884,6 +884,10 @@ function nightEngineInput(session=currentResolutionSession()){
 function persistableNightProposal(proposal){const {starting_snapshot,...persisted}=proposal||{};return persisted}
 async function resolveSelectedNight(){
   const session=currentResolutionSession();if(!session||resolutionPending||['FINALIZED','REJECTED'].includes(session.status))return;
+  if(loadedResolutionFormId===session.id){
+    const edited=captureResolutionEditor(),baseline=buildResolutionDraft({proposal:session.engine_proposal||session.ai_proposal?.resolution||{},actions:session.submitted_actions||[],players:session.pre_resolution_state?.players||state.players});
+    if(edited&&resolutionDifferences(baseline,edited).length){alert('This resolution has manual edits. Use Recalculate to apply supported action corrections, or review and finalize your manual ruling. Resolve has not run; your edits remain in the editor.');return;}
+  }
   resolutionPending=true;renderAll();try{
     const input=nightEngineInput(session),previous=session.engine_proposal;
     // Resolve again is not a reset of saved GM corrections. Reuse the existing
