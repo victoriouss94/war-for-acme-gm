@@ -15,7 +15,7 @@ function harness(edit=()=>{},setup=()=>{}){
   const draft=buildResolutionDraft({proposal:previous,actions,players:snapshot.players});edit(draft);
   const button={},saved=[],alerts=[],elements={recalculateResolutionBtn:{disabled:false},finalizeResolutionBtn:{disabled:false},manualResolutionForm:{}};
   const context={currentResolutionSession:()=>session,currentGame:()=>({id:input.gameId}),resolutionPending:false,resolveNightDeterministically,recalculateNight,buildResolutionDraft,resolutionDifferences,classifyAbility,captureResolutionEditor:()=>draft,
-    renderAll:()=>{},refreshAiGmData:async()=>{},showView:()=>{},alert:value=>alerts.push(value),selectedResolutionSessionId:null,loadedResolutionFormId:'original',
+    renderAll:()=>{},refreshAiGmData:async()=>{},showView:()=>{},alert:value=>alerts.push(value),selectedResolutionSessionId:null,loadedResolutionFormId:'original',loadedResolutionFormVersion:4,
     $:id=>elements[id],document:{querySelectorAll:selector=>selector==='[data-resolution-workflow="recalculate"]'?[button]:[]},
     GMCloud:{saveDeterministicResolution:async(...args)=>saved.push(args),adjudicateInteraction:()=>assert.fail('Recalculation must not call AI')}};
   const start=source.indexOf('function nightEngineInput('),end=source.indexOf('\nfunction resolutionListCard(',start),bind=source.indexOf('function bindTrackerResolutionReview('),bindEnd=source.indexOf('\nfunction syncResolutionLearningControls(',bind);
@@ -126,6 +126,12 @@ test('Resolve does not inspect a draft belonging to another session',async()=>{
   h.context.captureResolutionEditor=()=>assert.fail('Do not capture another session editor');
   await vm.runInContext('resolveSelectedNight()',h.context);
   assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+});
+
+for(const handler of ['resolveSelectedNight','recalculateSelectedNight'])test('stale editor cannot rewrite a newer proposal through '+handler,async()=>{
+  const h=harness(),before=structuredClone(h.draft);h.context.loadedResolutionFormId=h.session.id;h.session.lock_version=5;
+  await vm.runInContext(handler+'()',h.context);
+  assert.equal(h.saved.length,0);assert.match(h.alerts.join(' '),/changed this session/);assert.deepEqual(h.draft,before);
 });
 
 test('fresh Resolve still executes the existing engine without creating correction metadata',async()=>{
