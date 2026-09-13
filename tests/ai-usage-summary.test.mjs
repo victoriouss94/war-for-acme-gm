@@ -7,6 +7,17 @@ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8'),cloud=rea
 const source=app.slice(app.indexOf('function aiUsageTotalsHtml('),app.indexOf('\nfunction ',app.indexOf('function aiUsageTotalsHtml(')+1));
 const summary=()=>({month_start:'2026-09-01T00:00:00+00:00',month_end:'2026-10-01T00:00:00+00:00',requests:501,input_tokens:5010,cached_input_tokens:10,output_tokens:1002,estimated_cost_usd:12.5,pending_requests:3,failed_requests:2});
 function render(value,owner=true){assert.ok(source.startsWith('function aiUsageTotalsHtml('),'Missing aggregate renderer');return vm.runInNewContext(source+'\naiUsageTotalsHtml(value,owner)',{value,owner,esc:value=>String(value).replaceAll('<','&lt;').replaceAll('>','&gt;')});}
+test('usage help distinguishes recorded game-linked costs from pre-game imports and hard caps',()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const help=html.slice(html.indexOf('<h2>AI Usage</h2>'),html.indexOf('<div id="aiUsageTotals">'));
+  assert.match(help,/game-linked document reimports, knowledge indexing and document-search embeddings are included/i);
+  assert.match(help,/Initial Word analysis before a game exists is recorded separately/i);
+  assert.match(help,/not included in this game total/i);
+  assert.match(help,/not a hard account spending cap/i);
+  assert.match(help,/Pending requests and recording failures can leave costs uncounted/i);
+  assert.doesNotMatch(help,/Document imports, knowledge indexing and document-search embeddings are not included/);
+});
+
 test('usage renderer uses complete server aggregate beyond the 250-row display cap',()=>{
   const html=render(summary());assert.match(html,/501 requests/);assert.match(html,/\$12\.5000/);assert.match(html,/2026-09.*UTC/);assert.match(html,/3.*awaiting final usage/);assert.match(html,/2 failed/);
 });
