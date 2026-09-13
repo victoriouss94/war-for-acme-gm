@@ -175,7 +175,7 @@ async function handlerFixture(t,body,options={}){
     resolution_sessions:{id:sessionId,status:'GM_REVIEW',submitted_actions:options.actions||[{id:'action-1'}],pre_resolution_state:options.snapshot||{}}
   };
   const userClient={auth:{getUser:async()=>({data:{user:options.invalidUser?null:{id:'synthetic-user'}}})},
-    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:name==='get_effective_ruleset'?options.effectiveRuleset??null:name==='search_gm_precedents'?options.precedents??[]:null}},
+    rpc:async(name)=>{userRpcCalls.push(name);if(options.failContext&&name==='get_mechanics_review_queue')throw new Error('Synthetic context lookup failed');return {data:name==='get_effective_ruleset'?options.effectiveRuleset??null:name==='search_gm_precedents'?options.precedents??[]:name==='list_standard_abilities'?options.standardAbilities??[]:name==='get_active_effects'?options.activeEffects??[]:name==='get_pending_effects'?options.pendingEffects??[]:null}},
     from:table=>{
       const query={maybeSingle:async()=>({data:rows[table]??null}),single:async()=>({data:rows[table]??null}),then:resolve=>resolve({data:rows[table]??[]})};
       for(const method of ['select','eq','order','limit','in','not'])query[method]=()=>query;
@@ -248,6 +248,27 @@ for(const [name,options,status] of [['viewer',{memberRole:'viewer'},403],['unaut
   const {response,calls,userRpcCalls}=await handlerFixture(t,payload(),{...options,task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,precedents:[learnedPrecedent]});
   assert.equal(response.status,status);assert.deepEqual(calls.attemptedUrls,[]);assert.equal(userRpcCalls.includes('search_gm_precedents'),false);
 });
+
+
+for(const scope of ['GAME_SPECIFIC','ROLE_SPECIFIC','ABILITY_SPECIFIC','GENERAL']){
+  const localPrecedent={...learnedPrecedent,scope,origin_game_id:learnedDocument.game.id,authority_layer:'CURRENT_GAME_APPROVED_PRECEDENT',role_ids:['nova-role'],rule_versions:{standardAbilities:[{abilityId:'nova',version:1}]}};
+  test(scope+' precedent is downgraded when the referenced official ability version changes',async t=>{
+    const {response,calls}=await handlerFixture(t,payload('{"answer":"Review changed source version","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova before?',gameDocument:learnedDocument,standardAbilities:[{ability_id:'nova',display_name:'Nova',dataset_active:true,version_number:2}],precedents:[localPrecedent]});
+    assert.equal(response.status,200);const result=JSON.parse(calls[0].input).tool_context.relevant_precedents[0];
+    assert.equal(result.applicability,'PARTIAL');assert.ok(result.compatibility_reasons.some(reason=>/changed from version 1 to 2/.test(reason)));
+    assert.equal(result.authority_layer,'CURRENT_GAME_APPROVED_PRECEDENT');
+  });
+  test(scope+' precedent does not ignore missing live-status conditions',async t=>{
+    const {response,calls}=await handlerFixture(t,payload('{"answer":"Review changed conditions","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova while poisoned before?',gameDocument:learnedDocument,precedents:[{...localPrecedent,status_types:['Poison']}]});
+    assert.equal(response.status,200);const result=JSON.parse(calls[0].input).tool_context.relevant_precedents[0];
+    assert.equal(result.applicability,'PARTIAL');assert.ok(result.compatibility_reasons.some(reason=>/live-status conditions differ/.test(reason)));
+  });
+  test(scope+' matching versions and status keep the local ruling without global mappings',async t=>{
+    const {response,calls}=await handlerFixture(t,payload('{"answer":"Current context matches","sources":[]}'),{task:'search_precedents',message:'Have we seen Nova while poisoned before?',gameDocument:learnedDocument,standardAbilities:[{ability_id:'nova',display_name:'Nova',dataset_active:true,version_number:1}],activeEffects:[{player_id:'player',status_type:'Poison',status_name:'Poison'}],precedents:[{...localPrecedent,status_types:['Poison'],compatibility_reasons:{currentGame:true}}]});
+    assert.equal(response.status,200);const result=JSON.parse(calls[0].input).tool_context.relevant_precedents[0];
+    assert.equal(result.applicability,'STRONG');assert.equal(result.scope,scope);assert.ok(result.compatibility_reasons.includes('currentGame'));
+  });
+}
 
 test('canonical queue actor alias retains relevant role context without including unrelated players',async t=>{
   // Real normalized public-queue records contain both actorId and sourcePlayerId.

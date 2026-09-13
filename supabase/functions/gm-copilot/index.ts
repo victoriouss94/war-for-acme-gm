@@ -68,8 +68,8 @@ function normalizedId(value:unknown){return slug(value)}
 function versionMap(sourceVersions:any){const versions=new Map<string,number>();for(const record of list(sourceVersions?.standardAbilities,1000)){const id=normalizedId(record?.abilityId),version=Number(record?.version);if(id&&version>0)versions.set(id,version)}return versions}
 function evaluatePrecedentCompatibility(precedent:any,current:any){
   let level=['EXACT','STRONG','PARTIAL','INCOMPATIBLE'].includes(precedent?.applicability)?precedent.applicability:'PARTIAL';const reasons:string[]=[];
-  if(precedent?.scope!=='GLOBAL')return {...precedent,applicability:level,compatibility_reasons:[...(Object.entries(precedent?.compatibility_reasons||{}).filter(([,value])=>value).map(([key])=>key)),...reasons]};
-  if(list(precedent?.role_ids,100).length){level='INCOMPATIBLE';reasons.push('Role-specific precedents cannot be generalized across games.')}
+  if(precedent?.scope!=='GLOBAL')reasons.push(...Object.entries(precedent?.compatibility_reasons||{}).filter(([,value])=>value).map(([key])=>key));
+  if(precedent?.scope==='GLOBAL'&&list(precedent?.role_ids,100).length){level='INCOMPATIBLE';reasons.push('Role-specific precedents cannot be generalized across games.')}
   const requiredStatuses=list(precedent?.status_types,100).map(normalizedId),currentStatuses=new Set(list(current?.statusTypes,100).map(normalizedId));if(requiredStatuses.some((status:string)=>status&&!currentStatuses.has(status))&&level!=='INCOMPATIBLE'){level='PARTIAL';reasons.push('Important live-status conditions differ from the historical ruling.')}
   const currentConcepts=new Map<string,string[]>();
   for(const mapping of list(current?.mappings,1000)){
@@ -77,7 +77,7 @@ function evaluatePrecedentCompatibility(precedent:any,current:any){
     for(const concept of new Set([String(mapping?.global_concept_id||''),String(mapping?.global_ability_concepts?.concept_key||'')].filter(Boolean)))currentConcepts.set(concept,[...(currentConcepts.get(concept)||[]),level]);
   }
   const precedentConcepts=[...new Set(list(precedent?.global_concept_ids,100).map(String))];
-  if(precedentConcepts.length){
+  if(precedent?.scope==='GLOBAL'&&precedentConcepts.length){
     const mapped=precedentConcepts.filter((concept:string)=>currentConcepts.has(concept)),mappedLevels=mapped.flatMap((concept:string)=>currentConcepts.get(concept)||[]);
     if(mapped.length<precedentConcepts.length&&level!=='INCOMPATIBLE'){level='PARTIAL';reasons.push(mapped.length?'Not every required global mechanical concept has an approved current-game ability mapping.':'No approved current-game ability mapping confirms the same global mechanical concept.')}
     if(mappedLevels.includes('INCOMPATIBLE')){level='INCOMPATIBLE';reasons.push('An approved ability mapping marks the mechanics incompatible.')}
