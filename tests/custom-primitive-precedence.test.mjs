@@ -104,6 +104,7 @@ test('actual frontend isolates the custom interaction and saves review when adju
   const context={currentResolutionSession:()=>session,currentGame:()=>({id:input.gameId}),resolutionPending:false,resolveNightDeterministically,
     renderAll:()=>{},refreshAiGmData:async()=>{},showView:()=>{},alert:m=>alerts.push(m),selectedResolutionSessionId:null,loadedResolutionFormId:null,
     GMCloud:{saveDeterministicResolution:async(...args)=>saved.push(args),adjudicateInteraction:async(...args)=>{interactions.push(args);return {status:'GM_REVIEW_REQUIRED'}}}};
+  context.$=()=>({checked:true}); // Explicit optional-AI opt-in.
   vm.createContext(context);vm.runInContext(source.slice(start,end)+'\nglobalThis.resolve=resolveSelectedNight;',context);
   await context.resolve();assert.deepEqual(alerts,[]);assert.equal(interactions.length,1);assert.equal(saved.length,1);
   assert.equal(interactions[0][2].action_id,'custom-action');assert.match(interactions[0][2].ability.original_text,/unresolved condition/);

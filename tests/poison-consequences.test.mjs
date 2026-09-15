@@ -23,7 +23,7 @@ test('Poison deadlines count days, preserve explicit phases, and ignore terminal
 
 test('status-only phases are resolvable and due effects remain distinct from expiration previews',()=>{
   assert.equal(phaseNeedsResolution({cycle:2,phase:'Day',actions:[]},[poison]),true);
-  assert.equal(phaseNeedsResolution({cycle:1,phase:'Night',actions:[]},[poison]),false);
+  assert.equal(phaseNeedsResolution({cycle:1,phase:'Night',actions:[]},[poison]),true); // Empty nights still finalize.
   assert.equal(phaseNeedsResolution({cycle:1,phase:'Night',actions:[{id:'a'}]},[]),true);
   assert.equal(phaseNeedsResolution(null,[poison]),false);
   const preview=normalizeAdvancePreview({due_status_consequences:[poison]});

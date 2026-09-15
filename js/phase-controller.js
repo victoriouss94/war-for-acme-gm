@@ -64,6 +64,7 @@ export function resolutionResultsForPhase(phase,sessions=[]){
   const matching=array(sessions).filter(session=>String(session.phase_id||session.phaseId||'')===String(phase?.id||''));
   const byActionId=new Map();
   for(const session of matching){
+    if(session.status!=='FINALIZED')continue; // Proposed/rejected results are not official.
     const final=session.final_resolution||session.manual_resolution||session.ai_proposal?.resolution||{};
     for(const event of array(final.events)){
       const actionId=String(event?.action_id||event?.actionId||'');
@@ -100,5 +101,12 @@ export function normalizeAdvancePreview(raw={}){
 }
 
 export function phaseNeedsResolution(phase,statuses=[]){
-  return Boolean(phase&&(array(phase.actions??phase.action_queue).length||array(statuses).some(effect=>poisonDueAtPhaseEnd(effect,phase))));
+  return Boolean(phase&&!phaseIsFinalized(phase)&&(phase.phase==='Night'||array(phase.actions??phase.action_queue).length||array(statuses).some(effect=>poisonDueAtPhaseEnd(effect,phase))));
+}
+
+// CURRENT means not advanced yet; the existing resolution summary records
+// finalization independently. Do not invent another phase-status enum.
+export function phaseIsFinalized(phase){
+  const summary=phase?.resolutionSummary??phase?.resolution_summary??{};
+  return summary.status==='FINALIZED'&&summary.official===true;
 }

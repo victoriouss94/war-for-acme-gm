@@ -386,9 +386,9 @@
           <div class="section-heading"><div><p class="eyebrow">GM REVIEW</p><h2 id="resolutionHeading">Resolution</h2><p id="resolutionMeta" class="muted"></p></div><span id="resolutionStateBadge" class="permission-badge"></span></div>
           <div id="resolutionConcurrencyNotice" class="form-notice" aria-live="polite"></div>
           <section class="resolution-snapshot"><h3>Submitted Actions</h3><div id="resolutionActions"></div></section>
-          <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>Tracker Resolution Preview</h3><div><button id="recalculateResolutionBtn" class="secondary" type="button">Recalculate</button><button id="analyzeResolutionBtn" type="button">Resolve Night</button></div></div><div id="resolutionAiOutput"><p class="muted">No system simulation yet. Resolve the night to open the player-tracker review. Nothing changes until GM approval.</p></div></section>
+          <section id="aiResolutionPanel" class="resolution-ai-panel"><div class="section-heading"><h3>Tracker Resolution Preview</h3><div><button id="recalculateResolutionBtn" class="secondary" type="button">Recalculate</button><button id="analyzeResolutionBtn" type="button">Resolve Night</button></div></div><div id="resolutionAiOutput"><p class="muted">No system simulation yet. Resolve the night to open the player-tracker review. Nothing changes until GM approval.</p></div><label class="check"><input id="allowResolutionAi" type="checkbox"> Optional AI help for unknown interactions (off by default)</label></section>
           <form id="manualResolutionForm" class="manual-resolution-form">
-            <div class="section-heading"><div><p class="eyebrow">FINAL AUTHORITY</p><h3>Resolution Editor</h3><p class="muted">Review the system result and any isolated AI adjudications, edit anything that is wrong, then approve one final ruling. Nothing below changes live game state until Approve &amp; Apply succeeds.</p></div></div>
+            <div class="section-heading"><div><p class="eyebrow">FINAL AUTHORITY</p><h3>Resolution Editor</h3><p class="muted">Review the system result and any isolated AI adjudications, edit anything that is wrong, then finalize one reviewed ruling. Nothing below changes live game state until Finalize Night succeeds.</p></div></div>
             <label>Resolution title<input id="resolutionTitle" maxlength="200"></label>
             <label>Summary<textarea id="resolutionSummary" rows="2" maxlength="4000"></textarea></label>
             <section class="ruling-editor-section"><h4>Resolution Order &amp; Action Results</h4><p class="muted">One submitted action remains one attempt even when it redirects, reflects, or affects many players.</p><div id="resolutionActionEditor"></div></section>
@@ -401,7 +401,7 @@
             <div class="grid2"><label>Authority used (one source per line)<textarea id="resolutionAuthorityUsed" rows="3" maxlength="12000"></textarea></label><label>Confidence<select id="resolutionConfidence"><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select></label></div>
             <div class="grid2"><label>Final review status<select id="resolutionFinalStatus"><option value="GM_REVIEW_REQUIRED">GM review required</option><option value="RESOLVED">Resolved by GM / engine</option><option value="RESOLVED_WITH_AI_ASSISTANCE">Resolved with AI assistance</option></select></label><label>Questions still unresolved (one per line)<textarea id="resolutionUnresolvedQuestions" rows="3" maxlength="12000"></textarea><span class="muted">Remove a question only after recording its ruling and consequences above. Select a resolved status when all questions are answered.</span></label></div>
             <div id="resolutionDifferenceSummary" class="resolution-difference-summary"></div>
-            <label class="check"><input id="resolutionOverrideWarnings" type="checkbox"> I reviewed the consistency warnings and authorize this final ruling when a warning remains.</label>
+            <label class="check"><input id="resolutionOverrideWarnings" type="checkbox"> Finalize With Override: I reviewed the remaining questions/warnings and recorded my reason in Why. Every action still needs a valid outcome; unresolved information is retained.</label>
             <details class="legacy-resolution-fields"><summary>Advanced precedent and legacy notes</summary>
               <label>Internal decision<select id="resolutionDecision"><option value="MODIFY">Approve edited/final GM ruling</option><option value="REJECT">Close without applying</option></select></label>
               <div class="grid2"><label>Resolution order (one line per step)<textarea id="manualResolutionOrder" rows="5"></textarea></label><label>Expected results (generated at approval)<textarea id="manualResolutionResults" rows="5" readonly></textarea></label></div>
@@ -415,8 +415,10 @@
             <label class="check"><input id="teachAiFromResolution" type="checkbox"> Teach AI / save this approved decision as a GM precedent</label>
             <div id="teachAiAudiencePanel" class="teach-audience" hidden><label>Learning scope<select id="teachAiAudience"><option value="GLOBAL" selected>Global — All Games (default)</option><option value="GAME_SPECIFIC">This Game Only</option><option value="ABILITY_SPECIFIC">Ability Specific</option><option value="ROLE_SPECIFIC">Role Specific</option><option value="ONE_TIME">One-Time</option></select></label><p class="muted">Global rulings are considered only when mechanics are compatible. Current-game rules, official abilities, role exceptions, and live state always take priority.</p><p id="scopeCompatibilityWarning" class="form-notice"></p></div>
             <p id="resolutionFormError" class="form-notice" aria-live="polite"></p>
-            <button id="finalizeResolutionBtn" type="submit">Approve &amp; Apply</button>
+            <button id="finalizeResolutionBtn" type="submit">Finalize Night</button>
           </form>
+          <p id="nightFinalizationNotice" class="form-notice" aria-live="polite"></p>
+          <button id="advanceFinalizedNightBtn" type="button" hidden>Advance Phase</button>
         </div>
       </div>
     </div>
@@ -733,6 +735,6 @@
 <script src="js/supabase-config.js?v=12.0.1"></script>
 <script src="js/cloud.js?v=12.2.66"></script>
 <script src="vendor/mammoth.browser.min.js?v=1.12.0"></script>
-<script type="module" src="js/app.js?v=12.2.70"></script>
+<script type="module" src="js/app.js?v=12.2.71"></script>
 </body>
 </html>

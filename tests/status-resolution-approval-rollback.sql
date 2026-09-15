@@ -20,12 +20,12 @@ begin
   session_row:=public.start_resolution_session(gid,ver);
   approved:=public.approve_and_apply_resolution(session_row.id,session_row.lock_version,fixture->'ruling','Isolated engine status approval test',false,'GAME_SPECIFIC','{}',gen_random_uuid(),false,false);
   if approved.status<>'FINALIZED' then raise exception 'Status ruling was not finalized'; end if;
-  if (select count(*) from public.player_status_effects where game_id=gid and status_type in ('DRUNK','SOBER') and state='PENDING' and duration='Until Hanging' and expires_at_cycle is null and expires_at_phase is null and remaining_duration is null)<>2 then raise exception 'Pending event statuses did not persist intact'; end if;
+  if (select count(*) from public.player_status_effects where game_id=gid and status_type in ('DRUNK','SOBER') and state='ACTIVE' and duration='Until Hanging' and expires_at_cycle is null and expires_at_phase is null and remaining_duration is null)<>2 then raise exception 'Activated event statuses did not persist intact'; end if;
   select version into ver from public.game_documents where game_id=gid;
   select * into phase_row from public.game_phases where game_id=gid and status='CURRENT';
   perform public.advance_game_phase(gid,ver,phase_row.id,phase_row.queue_version,false,'Advance approved status fixture');
-  if (select count(*) from public.player_status_effects where game_id=gid and state='PENDING')<>2 then raise exception 'Advancing auto-resolved a hanging marker'; end if;
-  perform set_config('audit.result',jsonb_build_object('game_id',gid,'status',approved.status,'checks','real engine and editor payload accepted; two pending event statuses retained across phase advance')::text,true);
+  if (select count(*) from public.player_status_effects where game_id=gid and state='ACTIVE')<>2 then raise exception 'Advancing expired a communication effect before hanging'; end if;
+  perform set_config('audit.result',jsonb_build_object('game_id',gid,'status',approved.status,'checks','real engine and editor payload accepted; two activated event statuses retained across phase advance')::text,true);
 end $test$;
 select current_setting('audit.result')::jsonb as verification;
 rollback;

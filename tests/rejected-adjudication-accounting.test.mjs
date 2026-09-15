@@ -14,6 +14,7 @@ async function run(response){
     renderAll:()=>{},refreshAiGmData:async()=>{},showView:()=>{},alert:value=>alerts.push(value),selectedResolutionSessionId:null,loadedResolutionFormId:null,
     GMCloud:{saveDeterministicResolution:async(...args)=>saved.push(args),adjudicateInteraction:async(...args)=>{calls.push(args);return response;}}};
   const start=source.indexOf('function nightEngineInput('),end=source.indexOf('\nasync function recalculateSelectedNight(',start);
+  context.$=()=>({checked:true}); // Explicit optional-AI opt-in.
   vm.createContext(context);vm.runInContext(source.slice(start,end)+'\nglobalThis.run=resolveSelectedNight;',context);await context.run();
   assert.deepEqual(alerts,[]);assert.equal(calls.length,1);assert.equal(saved.length,1);return saved[0][2];
 }

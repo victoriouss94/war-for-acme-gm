@@ -28,6 +28,7 @@ test('actual Resolve Night binds fresh response to requested context and persist
   const source=readFileSync(new URL('../js/app.js',import.meta.url),'utf8'),start=source.indexOf('function nightEngineInput('),end=source.indexOf('\nasync function recalculateSelectedNight(',start);
   const context={currentResolutionSession:()=>session,currentGame:()=>({id:input.gameId}),resolutionPending:false,resolveNightDeterministically:resolve,renderAll:()=>{},refreshAiGmData:async()=>{},showView:()=>{},alert:message=>assert.fail(message),selectedResolutionSessionId:null,loadedResolutionFormId:null,
     GMCloud:{saveDeterministicResolution:async(...args)=>saved.push(args),adjudicateInteraction:async(...args)=>{calls.push(args);const result=answer(input);delete result.source_context_signature;return result}}};
+  context.$=()=>({checked:true}); // Explicit optional-AI opt-in.
   vm.createContext(context);vm.runInContext(source.slice(start,end)+'\nglobalThis.resolve=resolveSelectedNight;',context);await context.resolve();
   assert.equal(calls.length,1);assert.deepEqual(saved[0][2].deaths,['Target']);assert.match(saved[0][2].ai_adjudications[0].source_context_signature,/^v1:/);
   session.ai_adjudications=saved[0][2].ai_adjudications;await context.resolve();assert.equal(calls.length,1);assert.deepEqual(saved[1][2].deaths,['Target']);

@@ -22,6 +22,17 @@ function harness(edit=()=>{},setup=()=>{}){
   assert.ok(start>=0&&end>start&&bind>=0&&bindEnd>bind);vm.createContext(context);vm.runInContext(source.slice(start,end)+'\n'+source.slice(bind,bindEnd)+'\nglobalThis.bind=bindTrackerResolutionReview;globalThis.recalculate=recalculateSelectedNight;',context);context.bind();
   return {button,saved,alerts,session,draft,previous,context,elements};
 }
+
+test('unknown interactions remain reviewable without optional AI opt-in',async()=>{
+ const h=harness(()=>{},input=>{
+  input.snapshot.abilities.push({id:'unknown',name:'Unknown custom action',engineBehavior:{effect:'CUSTOM',requiresExplicitRule:true}});
+  input.actions.push({id:'unknown-action',abilityId:'unknown',name:'Unknown custom action',sourcePlayerId:'observer',targetIds:['attacker']});
+ });
+ h.context.GMCloud.adjudicateInteraction=()=>assert.fail('AI must be explicitly enabled');
+ await vm.runInContext('resolveSelectedNight()',h.context);
+ assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);
+ assert.equal(h.saved[0][2].resolution_status,'GM_REVIEW_REQUIRED');
+});
 test('tracker Recalculate button runs canonical correction and saves dependent outcomes',async()=>{
   const h=harness(draft=>{const attack=draft.action_results.find(a=>a.action_id==='attack');attack.result='CANCELLED';attack.reason='GM cancelled the attack.'}),before=structuredClone(h.session);
   assert.equal(h.button.disabled,false);await h.button.onclick();assert.deepEqual(h.alerts,[]);assert.equal(h.saved.length,1);assert.deepEqual(h.saved[0].slice(0,2),['session',4]);
@@ -79,6 +90,7 @@ test('unknown-interaction second pass cannot discard a saved GM cancellation',as
     input.snapshot.abilities.push({id:'unknown',name:'Unknown custom action',engineBehavior:{effect:'CUSTOM',requiresExplicitRule:true,tags:['ACTIVE_ACTION']}});
     input.actions.push({id:'unknown-action',abilityId:'unknown',name:'Unknown custom action',sourcePlayerId:'observer',targetIds:['attacker']});
   });
+  h.elements.allowResolutionAi={checked:true};
   const input={gameId:'button-test',resolutionId:'session',round:1,phase:'Night',snapshot:h.session.pre_resolution_state,actions:h.session.submitted_actions};
   h.session.engine_proposal=recalculateNight(h.previous,input,{actionId:'attack',actionPatch:{forceResult:'CANCELLED'}});
   let requests=0;h.context.GMCloud.adjudicateInteraction=async()=>{requests++;return {status:'REJECTED',accounting_warning:'Synthetic accounting warning.'}};
