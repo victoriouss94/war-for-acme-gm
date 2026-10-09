@@ -11,9 +11,9 @@ test('v11.6 migration installs the exact global order and all 37 seeded abilitie
   assert.match(sql,/count\(\*\) from global_master_ability_seed\)<>37/);
   const seedSection=sql.match(/insert into global_master_ability_seed values([\s\S]*?);\s*\n\s*update public\.standard_ability_datasets/i)?.[1]||'';
   assert.equal((seedSection.match(/^\('/gm)||[]).length,37);
-  assert.deepEqual([...seedSection.matchAll(/^\('([^']+)'/gm)].map(match=>match[1]),GLOBAL_ABILITY_DEFINITIONS.map(item=>item.abilityId));
+  assert.deepEqual([...seedSection.matchAll(/^\('([^']+)'/gm)].map(match=>match[1]),GLOBAL_ABILITY_DEFINITIONS.filter(item=>item.abilityId!=='gift').map(item=>item.abilityId));
   const seedRows=seedSection.split(/\r?\n/).filter(line=>line.startsWith("('"));
-  seedRows.forEach((line,index)=>{const tail=line.match(/,'([A-Z_]+)',(null|\d+),'([A-Z_]+)','(ACTIVE|PASSIVE)','\{.*\}'\),?$/);assert.ok(tail,`Resolution metadata missing from seed row ${index+1}`);const definition=GLOBAL_ABILITY_DEFINITIONS[index];assert.deepEqual([tail[1],tail[2]==='null'?null:Number(tail[2]),tail[3],tail[4]],[definition.resolutionCategory,definition.resolutionPriority,definition.resolutionTiming,definition.activePassive])});
+  seedRows.forEach((line,index)=>{const tail=line.match(/,'([A-Z_]+)',(null|\d+),'([A-Z_]+)','(ACTIVE|PASSIVE)','\{.*\}'\),?$/);assert.ok(tail,`Resolution metadata missing from seed row ${index+1}`);const definition=GLOBAL_ABILITY_DEFINITIONS.filter(item=>item.abilityId!=='gift')[index];assert.deepEqual([tail[1],tail[2]==='null'?null:Number(tail[2]),tail[3],tail[4]],[definition.resolutionCategory,definition.resolutionPriority,definition.resolutionTiming,definition.activePassive])});
   for(const ability of ['den_block','villagers_block','place_swap','role_swap','redirect','heal','counterattack'])assert.match(seedSection,new RegExp(`\\('${ability}'`));
 });
 

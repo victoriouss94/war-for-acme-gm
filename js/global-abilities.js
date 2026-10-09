@@ -11,7 +11,7 @@ export const GLOBAL_AUTHORITY_PRECEDENCE=Object.freeze([
 export const PASSIVE_RESOLUTION_NOTE='PASSIVES — EVENT/TRIGGER BASED';
 export const HEAL_RESOLUTION_NOTE='HEAL — DOC ABILITY / ANY-TIME RESOLUTION';
 
-export const ENGINE_EFFECTS=Object.freeze(['BLOCK_ACTION','ALLOW_ACTION','GENERATE_ACTION','SWAP_TARGET_POSITION','SWAP_ROLE_CONTEXT','CHANGE_TARGET','APPLY_PROTECTION','APPLY_STATUS','REMOVE_STATUS','INVESTIGATE','CHANGE_FACTION','ATTEMPT_KILL','PREVENT_DEATH','GRANT_ABILITY_USE','REMOVE_ABILITY_USE','CHANGE_MODE']);
+export const ENGINE_EFFECTS=Object.freeze(['REPORT_GIFT','BLOCK_ACTION','ALLOW_ACTION','GENERATE_ACTION','SWAP_TARGET_POSITION','SWAP_ROLE_CONTEXT','CHANGE_TARGET','APPLY_PROTECTION','APPLY_STATUS','REMOVE_STATUS','INVESTIGATE','CHANGE_FACTION','ATTEMPT_KILL','PREVENT_DEATH','GRANT_ABILITY_USE','REMOVE_ABILITY_USE','CHANGE_MODE']);
 export const ENGINE_TAGS=Object.freeze(['STANDARD_KILL','SUPER_KILL','OMEGA_KILL','INTEL','ACTIVE_ACTION','PASSIVE','FACTION_ACTION','REDIRECTABLE','REFLECTABLE','BLOCKABLE','PROTECTABLE','ROLE_WIDE','MODE_SPECIFIC']);
 
 const clean=(value,limit=12000)=>String(value??'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim().slice(0,limit);
@@ -22,6 +22,7 @@ const list=value=>Array.isArray(value)?value.filter(Boolean):[];
 const priority=category=>GLOBAL_RESOLUTION_ORDER.indexOf(category)+1||null;
 
 const entries=[
+  ['Gift','Support','CONTROL','Night','ACTIVE','Attempt to deliver a gift to one living player. Report whether the action succeeds or what prevents it. GMs handle the gift with players outside the tracker; this action does not create inventory, abilities, or uses.','gift, external GM handling',['give gift']],
   ['Roleblock','Harmful','BLOCKS','Night','ACTIVE','Target one player and prevent applicable active abilities during the current cycle. Passives remain active unless an explicit role or game rule says otherwise.','block, player, active ability',['role block','stop a player from acting','prevent a player from acting']],
   ['Den Block','Harmful','BLOCKS','Night','ACTIVE','Target the entire Den faction and prevent applicable active abilities by Den members during the current cycle, including applicable faction-level Den actions. Passives remain active unless explicitly disabled.','block, faction, den, active ability',['block the den','denblock']],
   ['Villagers Block','Harmful','BLOCKS','Night','ACTIVE','Target the entire Villager faction and prevent applicable active abilities by Villager-aligned players during the current cycle. Passives remain active unless explicitly disabled.','block, faction, villager, active ability',['villager block','village block','block the villagers']],
@@ -62,6 +63,7 @@ const entries=[
 ];
 
 const executableBehavior=Object.freeze({
+  gift:{effect:'REPORT_GIFT',tags:['ACTIVE_ACTION','BLOCKABLE']},
   roleblock:{effect:'BLOCK_ACTION',scope:'PLAYER',tags:['ACTIVE_ACTION','BLOCKABLE','REDIRECTABLE','REFLECTABLE']},
   den_block:{effect:'BLOCK_ACTION',scope:'FACTION',factionKind:'DEN',tags:['ACTIVE_ACTION','FACTION_ACTION','BLOCKABLE']},
   villagers_block:{effect:'BLOCK_ACTION',scope:'FACTION',factionKind:'VILLAGER',tags:['ACTIVE_ACTION','FACTION_ACTION','BLOCKABLE']},

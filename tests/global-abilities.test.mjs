@@ -6,9 +6,9 @@ import {
   globalInteractionOutcome,globalStatusTiming,normalizeResolutionAction,transformAction
 } from '../js/global-abilities.js';
 
-test('global catalog has 37 unique standardized abilities and the exact order',()=>{
-  assert.equal(GLOBAL_ABILITY_DEFINITIONS.length,37);
-  assert.equal(new Set(GLOBAL_ABILITY_DEFINITIONS.map(item=>item.abilityId)).size,37);
+test('global catalog has 38 unique standardized abilities and the exact order',()=>{
+  assert.equal(GLOBAL_ABILITY_DEFINITIONS.length,38);
+  assert.equal(new Set(GLOBAL_ABILITY_DEFINITIONS.map(item=>item.abilityId)).size,38);
   assert.ok(GLOBAL_ABILITY_DEFINITIONS.every(item=>/^[a-z0-9_]+$/.test(item.abilityId)));
   assert.equal(globalAbilityDefinition('Roleblock').abilityId,'roleblock');
   assert.deepEqual(GLOBAL_RESOLUTION_ORDER,['BLOCKS','GUARANTEE','CONTROL','SWAPS','REDIRECTS','STATUS_EFFECTS','INTEL','CONVERTS','KILLS','DOC']);
