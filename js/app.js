@@ -10,7 +10,7 @@ import {abilityTargeting,effectiveFactionAbilities,effectivePlayerAbilities,norm
 import {phaseIsFinalized,phaseNeedsResolution,nextPhase,normalizeAdvancePreview,normalizePhaseContext,phaseById,phaseTitle,queuePhaseSummary,resolutionResultsForPhase} from './phase-controller.js?v=12.2.71';
 import {remapSetupReferences,mechanicsReviewKey,mechanicsReviewQueue,normalizeCloudMechanicsReviews,normalizeAbilityUnderstanding,normalizeRoleUnderstanding,normalizeTargeting} from './mechanics.js?v=12.2.72';
 import {GLOBAL_RESOLUTION_ORDER,classifyAbility,createGlobalAbilityCatalog,normalizeResolutionAction} from './global-abilities.js?v=12.2.72';
-import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.73';
+import {recalculateNight,resolveNightDeterministically} from './night-engine.js?v=12.2.74';
 import {copyRoleModeReferences,effectiveModeMechanics,formatRoleModeAssignments,isModeContextAbility,normalizeRoleModes,parseRoleModeAssignments} from './role-modes.js?v=12.2.38';
 
 const LEGACY_STORAGE_KEY='gm_command_center_generic_v3';
@@ -465,6 +465,7 @@ function renderGames(){
   });
 }
 function renderChrome(){
+  const queueSubmitDisabled=$('addActionBtn').disabled;
   const game=currentGame(),hasGame=Boolean(game&&state);
   document.body.classList.remove('auth-pending');document.body.classList.toggle('authenticated',Boolean(cloudSession));document.body.classList.toggle('signed-out',!cloudSession);
   $('currentGameLabel').textContent=hasGame?'CURRENT GAME: '+game.name:'No game open';
@@ -480,6 +481,8 @@ function renderChrome(){
   switcher.value=selected;document.title=hasGame?game.name+' — GM Command Center':'Games — GM Command Center';
   $('createGameBtn').disabled=legacyAccount;$('emptyCreateGameBtn').disabled=legacyAccount;$('showJoinGameBtn').disabled=legacyAccount;$('importWordBtn').disabled=legacyAccount;const readOnly=hasGame&&!canEditGame(),owner=hasGame&&game.memberRole==='owner';
   ['factionName','factionClass','factionAlias','factionTeamNumber','factionAlignment','factionDescription','factionWinCondition','factionNotes','addFactionBtn','cancelFactionEditBtn','playerName','playerRole','addPlayerBtn','actionCategory','actionActor','actionTarget','actionName','addActionBtn','abilityName','abilityCategory','abilityDefinition','abilityPhase','abilityMechanics','addAbilityBtn','cancelAbilityEditBtn','ruleTitle','ruleDescription','ruleCategory','ruleVisibility','ruleNotes','ruleEnabled','saveRuleBtn','cancelRuleEditBtn','gameName','gameTheme','gameDescription','gameStatus','currentDay','currentPhase','gameNotes','villagerLabel','denLabel','neutralLabel','allowMultiDen','saveSettingsBtn','resetCurrentGameBtn','browseRoleTemplatesBtn','addRoleTemplateBtn'].forEach(key=>{if($(key))$(key).disabled=readOnly});
+  // Chrome refreshes must not override draft validity or an in-flight queue lock.
+  $('addActionBtn').disabled=!hasGame||readOnly||queueSubmitDisabled;
   $('gameStatus').disabled=true;$('currentDay').readOnly=true;$('currentPhase').disabled=true;
   ['archiveCurrentGameBtn','deleteCurrentGameBtn'].forEach(key=>{if($(key))$(key).disabled=!owner});
 }
